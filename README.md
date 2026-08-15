@@ -10,7 +10,8 @@ favicon.svg      the W mark
 robots.txt       crawl rules
 sitemap.xml      submitted to Search Console
 assets/          fonts, images, and the vendored runtime + React
-api/             serverless functions (auth, chat, provisioning, rate limiting)
+api/             serverless functions (auth, chat, provisioning)
+lib/             shared helpers — NOT routes (see below)
 vercel.json      security headers, caching, clean URLs
 ```
 
@@ -38,6 +39,14 @@ Vercel → Project → Settings → Environment Variables.
 
 ## Things that will bite you
 
+**Every `.js` file in `api/` becomes a public endpoint.** Shared helpers go in
+`lib/`, which Vercel bundles by dependency tracing. A helper left in `api/`
+ships as a route that 500s on any request.
+
+**`www` is the canonical host** and the apex 308s to it. Canonical tags, `og:url`
+and the sitemap must all use `www.wolfeintelligence.com` — pointing them at a
+URL that redirects defeats the purpose.
+
 **Assets are cached for a year as immutable.** If you change the *contents* of
 anything in `assets/`, rename the file too. Browsers that already have the old
 one will not re-fetch it otherwise.
@@ -60,7 +69,7 @@ and cannot reach `/api/apps`. It is safe to send to a prospect.
 
 ## Rate limits
 
-`api/ratelimit.js` counts per IP, backed by Upstash when configured and by
+`lib/ratelimit.js` counts per IP, backed by Upstash when configured and by
 per-instance memory otherwise.
 
 - `/api/chat` — 15 messages per 10 min, 60 per day

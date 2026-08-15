@@ -11,7 +11,7 @@ async function kvGet(key) {
   if (!r.ok) return null;
   return (await r.json()).result;
 }
-const { limit, sameSite } = require('./ratelimit');
+const { limit, sameSite } = require('../lib/ratelimit');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
