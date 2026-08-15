@@ -1,69 +1,79 @@
-# Deploy to Vercel
+# wolfeintelligence.com
 
-This folder is a complete site: static pages (`index.html`, `portal.html`) plus serverless functions in `api/` (auth, deploys, chatbot). No build step.
+The live site. Plain static HTML plus Vercel serverless functions — no build
+step, no bundler, no framework CLI. Edit a file, push, it deploys.
 
-## Environment variables (Vercel → Project → Settings → Environment Variables)
-
-Auth (portal login):
-- `OWNER_CODE` — your access code. Owner login = zachary@wolfeintelligence.com + this code. **Required for real auth**; without it the portal runs in preview mode.
-- `SESSION_SECRET` — any long random string (signs login tokens).
-- `OWNER_EMAIL` — optional, defaults to zachary@wolfeintelligence.com.
-- `CLIENT_ACCOUNTS` — optional quick client list: `a@b.com:code1,c@d.com:code2`.
-
-Deploys & provisioning from the portal (owner-only "Deploy to a customer"):
-- `KV_REST_API_URL` + `KV_REST_API_TOKEN` — add Upstash Redis from the Vercel Marketplace (Storage tab); these are set automatically. Without them, deploys report "storage not configured".
-
-Chatbot (Site Guide goes from scripted to live model):
-- `ANTHROPIC_API_KEY` — your Anthropic key. Stays server-side; the site only calls `/api/chat`.
-- `CHAT_MODEL` — optional, defaults to `claude-3-5-haiku-latest`.
-
-## Option 1 — Drag & drop (fastest)
-
-1. Go to https://vercel.com/new
-2. Drag this whole `deploy` folder onto the page.
-3. Vercel detects "Other / static" — just click **Deploy**.
-
-Live in ~20 seconds at `your-project.vercel.app`.
-
-## Option 2 — Vercel CLI
-
-```bash
-npm i -g vercel
-cd deploy
-vercel          # preview deploy
-vercel --prod   # production
+```
+index.html       landing page
+portal.html      client portal (Wolfe OS) — login gate + Home / Build / Running
+favicon.svg      the W mark
+robots.txt       crawl rules
+sitemap.xml      submitted to Search Console
+assets/          fonts, images, and the vendored runtime + React
+api/             serverless functions (auth, chat, provisioning, rate limiting)
+vercel.json      security headers, caching, clean URLs
 ```
 
-## Option 3 — Git (best for ongoing updates) ← current setup
+## Deploying
 
-Repo: `WolfeIntelligence/consulting-site` (branch `main`).
+Repo `WolfeIntelligence/consulting-site`, branch `main`. Every push redeploys.
 
-First push (repo is empty) — easiest without a terminal:
-1. Go to https://github.com/WolfeIntelligence/consulting-site
-2. Click **uploading an existing file** (or Add file → Upload files).
-3. Drag in `index.html`, `portal.html`, `vercel.json`, `README.md`, and the `api` folder → **Commit**.
-
-Or with git:
 ```bash
-cd deploy
-git init && git add . && git commit -m "Initial site"
-git branch -M main
-git remote add origin https://github.com/WolfeIntelligence/consulting-site.git
-git push -u origin main
+git add . && git commit -m "..." && git push
 ```
 
-Then on vercel.com → **Add New → Project** → import the repo. Framework preset: **Other**, no build command, output directory `.`. Every push to `main` redeploys automatically — after any design update here, download the fresh `deploy` folder and repeat the upload.
+## Environment variables
 
-## Custom domain
+Vercel → Project → Settings → Environment Variables.
 
-Vercel dashboard → your project → **Settings → Domains** → add `wolfeintelligence.com`, then point your registrar's nameservers or add the A/CNAME records Vercel shows.
+| Variable | Effect if missing |
+| --- | --- |
+| `OWNER_CODE` | Portal sign-in returns 503; **nobody can get in** (fails closed). |
+| `SESSION_SECRET` | Same as above. Any long random string. |
+| `OWNER_EMAIL` | Defaults to `zachary@wolfeintelligence.com`. |
+| `CLIENT_ACCOUNTS` | Optional quick client list: `a@b.com:code1,c@d.com:code2`. |
+| `ANTHROPIC_API_KEY` | Site Guide falls back to its scripted answer set. |
+| `CHAT_MODEL` | Defaults to `claude-haiku-4-5`. |
+| `KV_REST_API_URL` + `KV_REST_API_TOKEN` | Portal provisioning reports "storage not configured", and rate limits fall back to per-instance memory. Add Upstash Redis from the Vercel Marketplace to set both automatically. |
 
-## Updating the site
+## Things that will bite you
 
-Edit the design in this project, then re-export a fresh `index.html` and re-deploy (drag-drop again, or `vercel --prod`, or push to Git).
+**Assets are cached for a year as immutable.** If you change the *contents* of
+anything in `assets/`, rename the file too. Browsers that already have the old
+one will not re-fetch it otherwise.
 
-## Before you go live
+**The CSP allows `'unsafe-eval'`.** The page runtime evaluates the component
+logic class as a string, so the site renders blank without it. Everything else
+is locked down — no external scripts, no external fonts, frames limited to the
+Google Calendar booking widget. If the render path ever stops needing `eval`,
+drop it from `vercel.json`.
 
-- Replace the workspace/product imagery as real screenshots become available.
-- Set the env vars above — until then: portal opens in preview mode, deploys don't persist, and the chatbot answers from its fixed script.
-- Confirm `hello@wolfeintelligence.com` is a live inbox.
+**React is served from `assets/`, not a CDN.** `assets/resources.js` maps the
+runtime's hardcoded unpkg.com URLs to local copies. Delete that file and the
+site silently starts loading React from a third party — which breaks the CSP,
+adds an outage dependency, and leaks visitor IPs to unpkg.
+
+**The portal fails closed.** Any response from `/api/login` other than a signed
+token keeps the gate shut. `?tour=1` is the only credential-free way in; it
+shows sample data, is labelled `GUIDED TOUR · SAMPLE DATA`, carries no token,
+and cannot reach `/api/apps`. It is safe to send to a prospect.
+
+## Rate limits
+
+`api/ratelimit.js` counts per IP, backed by Upstash when configured and by
+per-instance memory otherwise.
+
+- `/api/chat` — 15 messages per 10 min, 60 per day
+- `/api/login` — 10 attempts per 15 min
+
+Both also reject browser requests whose `Origin` is not this site.
+
+## Still worth doing
+
+- A proper 1200×630 branded social card. Cards currently use the portrait, so
+  they render as a small square rather than a wide banner.
+- `assets/newsreader.woff2` is 123 KB, the largest asset. It is a variable font
+  covering weights 400–600; splitting it into static instances would save
+  roughly 30 KB, at the cost of an extra request.
+- Confirm `support@wolfeintelligence.com` is a live, monitored inbox — the Site
+  Guide sends people there whenever it refuses a question.

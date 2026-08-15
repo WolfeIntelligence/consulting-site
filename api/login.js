@@ -11,8 +11,17 @@ async function kvGet(key) {
   if (!r.ok) return null;
   return (await r.json()).result;
 }
+const { limit, sameSite } = require('./ratelimit');
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
+  if (!sameSite(req)) return res.status(403).json({ error: 'forbidden' });
+  // Without this the access code can simply be guessed at network speed.
+  const attempts = await limit(req, 'login', 10, 900);
+  if (!attempts.allowed) {
+    res.setHeader('Retry-After', String(attempts.retryAfter));
+    return res.status(429).json({ error: 'too-many-attempts' });
+  }
   const secret = process.env.SESSION_SECRET, ownerCode = process.env.OWNER_CODE;
   if (!secret || !ownerCode) return res.status(503).json({ error: 'auth-not-configured' });
   const body = req.body || {};

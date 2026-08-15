@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /portal
+
+Sitemap: https://wolfeintelligence.com/sitemap.xml
