@@ -333,6 +333,7 @@ class Component extends DCLogic {
     r6: 'running', hDoneIds: [], hRead: false,
     role: 'client', token: '', previewMode: false, loggingIn: false,
     deployments: [], depEmail: '', depCode: '', depStatus: '',
+    onboarding: [],
   };
   set(patch) { this.setState(patch); }
   componentDidMount() {
@@ -366,6 +367,7 @@ class Component extends DCLogic {
       if (r.ok) {
         let d = null; try { d = await r.json(); } catch (e) {}
         if (d && Array.isArray(d.deployments)) this.setState({ deployments: d.deployments });
+        if (d && Array.isArray(d.onboarding)) this.setState({ onboarding: d.onboarding });
       }
     } catch (e) {}
   }
@@ -513,6 +515,19 @@ class Component extends DCLogic {
           ]
         : [
             ['Site Guide', 'Live on this site', '#9dbb7a', null],
+            // Onboarding progress, written by the owner console. Shows the client
+            // where their setup actually stands instead of leaving them guessing
+            // through the verification wait.
+            ...s.onboarding.map((o) => {
+              const done = (o.steps || []).filter((x) => x.done).length;
+              const total = (o.steps || []).length;
+              return [
+                o.businessName || 'Your Google setup',
+                total ? done + ' of ' + total + ' done' : (o.phase || 'In progress'),
+                done && done === total ? '#9dbb7a' : ochre,
+                null,
+              ];
+            }),
             ...s.deployments.map((d) => [d.name, 'Deployed to you', ochre, 'run']),
           ]
       ).map(([name, state, tone, dest]) => ({

@@ -25,7 +25,21 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     let all = [];
     if (kvReady()) { try { all = JSON.parse((await kv('get/deployments')) || '[]'); } catch (e) {} }
-    return res.json({ role: ses.r, deployments: ses.r === 'owner' ? all : all.filter((d) => d.to === ses.e) });
+    // Onboarding records are written by the owner console and read back here.
+    // A client only ever sees their own; the filter is server-side because the
+    // client holds a token, not a trustworthy claim about who they are.
+    let onb = [];
+    if (kvReady()) { try { onb = JSON.parse((await kv('get/onboarding')) || '[]'); } catch (e) {} }
+    return res.json({
+      role: ses.r,
+      deployments: ses.r === 'owner' ? all : all.filter((d) => d.to === ses.e),
+      // The record carries the full intake so the console works from any
+      // machine. A client must never receive it — strip it here rather than
+      // trusting the front end to hide it.
+      onboarding: ses.r === 'owner'
+        ? onb
+        : onb.filter((o) => o.email === ses.e).map(({ intake, ...safe }) => safe),
+    });
   }
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
   if (ses.r !== 'owner') return res.status(403).json({ error: 'owner-only' });
@@ -44,6 +58,49 @@ module.exports = async (req, res) => {
     try { all = JSON.parse((await kv('get/deployments')) || '[]'); } catch (e) {}
     all.push({ name, to, by: ses.e, at: new Date().toISOString() });
     await kv('set/deployments/' + encodeURIComponent(JSON.stringify(all).slice(0, 100000)));
+    return res.json({ ok: true });
+  }
+  if (b.action === 'onboarding') {
+    // Upsert one client's engagement record. The console sends the whole
+    // record each time — simpler than patching, and these are small.
+    const rec = b.record || {};
+    const email = String(rec.email || '').trim().toLowerCase();
+    if (!email.includes('@')) return res.status(400).json({ error: 'bad-input' });
+    const clean = {
+      email,
+      businessName: String(rec.businessName || '').slice(0, 120),
+      route: String(rec.route || '').slice(0, 120),
+      phase: String(rec.phase || '').slice(0, 120),
+      nextAction: String(rec.nextAction || '').slice(0, 240),
+      steps: (Array.isArray(rec.steps) ? rec.steps : []).slice(0, 40).map((s) => ({
+        label: String(s && s.label || '').slice(0, 120),
+        done: !!(s && s.done),
+        date: String(s && s.date || '').slice(0, 10),
+      })),
+      updatedAt: new Date().toISOString(),
+    };
+    // Owner-only working notes. Bounded so one record cannot crowd out the rest.
+    if (rec.intake && typeof rec.intake === 'object' && !Array.isArray(rec.intake)) {
+      const trimmed = {};
+      for (const k of Object.keys(rec.intake).slice(0, 60)) {
+        trimmed[String(k).slice(0, 40)] = String(rec.intake[k] == null ? '' : rec.intake[k]).slice(0, 2000);
+      }
+      clean.intake = trimmed;
+    }
+    let all = [];
+    try { all = JSON.parse((await kv('get/onboarding')) || '[]'); } catch (e) {}
+    all = all.filter((o) => o.email !== email);
+    all.push(clean);
+    await kv('set/onboarding/' + encodeURIComponent(JSON.stringify(all).slice(0, 200000)));
+    return res.json({ ok: true, record: clean });
+  }
+  if (b.action === 'onboarding-remove') {
+    const email = String(b.email || '').trim().toLowerCase();
+    if (!email.includes('@')) return res.status(400).json({ error: 'bad-input' });
+    let all = [];
+    try { all = JSON.parse((await kv('get/onboarding')) || '[]'); } catch (e) {}
+    all = all.filter((o) => o.email !== email);
+    await kv('set/onboarding/' + encodeURIComponent(JSON.stringify(all).slice(0, 200000)));
     return res.json({ ok: true });
   }
   return res.status(400).json({ error: 'unknown-action' });
