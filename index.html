@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="assets/resources.js"></script>
 <script src="assets/runtime.js"></script>
-<title>Wolfe Intelligence — AI Setup for Local Business, Winston-Salem NC</title>
+<title>Wolfe Intelligence — AI Setup &amp; Automation for Local Business</title>
 <meta name="description" content="Wolfe Intelligence sets up private AI for owner-operators and small businesses — get found on Google, capture every lead, and automate the follow-up, with tools you own.">
 <link rel="canonical" href="https://www.wolfeintelligence.com/">
 <meta name="robots" content="index,follow,max-image-preview:large">
@@ -35,18 +35,8 @@
   "url": "https://www.wolfeintelligence.com/",
   "email": "support@wolfeintelligence.com",
   "description": "Private AI setup for owner-operators and small businesses: Google Business profiles, customer intake and follow-up automation, private AI assistants, and coaching.",
-  "areaServed": [
-    { "@type": "City", "name": "Winston-Salem" },
-    { "@type": "State", "name": "North Carolina" },
-    { "@type": "Country", "name": "United States" }
-  ],
+  "areaServed": { "@type": "Country", "name": "United States" },
   "knowsAbout": ["Google Business Profile", "customer intake automation", "marketing automation", "small business AI", "workflow automation"],
-  "address": {
-    "@type": "PostalAddress",
-    "addressLocality": "Winston-Salem",
-    "addressRegion": "NC",
-    "addressCountry": "US"
-  },
   "founder": {
     "@type": "Person",
     "name": "Zachary Wolfe",
@@ -89,11 +79,6 @@
       "@type": "Question",
       "name": "Is my data private?",
       "acceptedAnswer": { "@type": "Answer", "text": "Agents run on your own machines. Provider keys are encrypted on your machine and never shown back to any interface, and nothing publishes, emails, or sends on its own without your explicit approval." }
-    },
-    {
-      "@type": "Question",
-      "name": "Where is Wolfe Intelligence based?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Winston-Salem, North Carolina, working with owner-operators and small businesses across the United States." }
     }
   ]
 }
@@ -315,7 +300,7 @@
   <div id="about" data-screen-label="About" style="border-top:1px solid rgba(244,238,227,.14);">
     <div data-pad="x" style="max-width:1240px;margin:0 auto;padding:96px 40px;display:grid;grid-template-columns:.8fr 1.2fr;gap:56px;align-items:center;" data-grid="split">
       <div style="border:1px solid rgba(244,238,227,.14);overflow:hidden;">
-        <img src="assets/zachary-wolfe.jpg" alt="Zachary Wolfe, founder of Wolfe Intelligence, Winston-Salem NC" style="width:100%;display:block;">
+        <img src="assets/zachary-wolfe.jpg" alt="Zachary Wolfe, founder of Wolfe Intelligence" style="width:100%;display:block;">
       </div>
       <div style="display:flex;flex-direction:column;justify-content:center;">
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:22px;">THE ADVISOR</div>
@@ -343,7 +328,7 @@
     <div data-pad="x" style="max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:34px 40px;font:400 12.5px 'Instrument Sans',sans-serif;color:#8f8375;flex-wrap:wrap;gap:16px;">
       <div style="font:700 12px 'Space Mono',monospace;letter-spacing:.22em;color:#d8cdba;">WOLFE&nbsp;INTELLIGENCE</div>
       <div style="display:flex;gap:28px;"><a href="#services">Services</a><a href="#approach">Approach</a><a href="/portal">Portal</a><a href="#about">About</a><a href="#book">Book</a></div>
-      <div style="font-family:'Space Mono',monospace;">© 2026 · Winston-Salem, NC</div>
+      <div style="font-family:'Space Mono',monospace;">© 2026 Wolfe Intelligence</div>
     </div>
   </div>
 
@@ -403,7 +388,7 @@ class Component extends DCLogic {
     if (has('privacy', 'private', 'my data', 'data ', 'local', 'secure', 'security', 'key', 'credential', 'cloud', 'on prem')) return { text: 'Local-first is the rule: agents run on your machines, provider keys are encrypted on your device and never shown back to any interface, and your data stays with you.' };
     if (has("can't", 'cannot', 'cant', 'limit', 'not do', "won't", 'wont', 'trade', 'publish', 'guarantee', 'risk', 'autonomous')) return { text: "What it will not do: nothing trades, publishes, or emails on its own — external effects always wait for your explicit word. And no outcome guarantees: every capability is labeled by evidence (planned, simulated, operational, tested, proven in use), never by promises." };
     if (has('service', 'offer', 'install', 'set up', 'setup', 'agent', 'automat', 'research', 'coach', 'knowledge', 'flywheel', 'do for me', 'help me', 'can it', 'can you')) return { text: 'Six services, standalone or combined: getting you found on Google, customer intake that runs itself, automatic follow-up, your own private AI assistant on your machine, research that files itself, and one-on-one coaching.' };
-    if (has('who', 'zach', 'founder', 'advisor', 'wake forest', 'background', 'about you')) return { text: "Wolfe Intelligence is a solo advisory practice in Winston-Salem, NC, founded to give owners the private, compounding AI advantage large firms build in-house. The advisor holds an M.S. in AI Strategy & Innovation from Wake Forest University." };
+    if (has('who', 'zach', 'founder', 'advisor', 'wake forest', 'background', 'about you')) return { text: "Wolfe Intelligence is a solo advisory practice founded to give owners the private, compounding AI advantage large firms build in-house. The advisor holds an M.S. in AI Strategy & Innovation from Wake Forest University." };
     if (has('email', 'contact', 'reach', 'phone', 'write')) return { text: 'The direct line is support@wolfeintelligence.com — or book the free consult and skip the inbox.', href: 'mailto:support@wolfeintelligence.com', linkLabel: 'support@wolfeintelligence.com' };
     if (/^(hi|hello|hey|yo|howdy)\b/.test(t.trim())) return { text: 'Hello. Ask me what this practice is, what it can and cannot do, how privacy works, or what it costs.' };
     if (has('what is', 'what do', 'about', 'wolfe intelligence', 'this site', 'company', 'explain')) return { text: 'Wolfe Intelligence sets up private AI and automation for owner-operators and small businesses: getting found on Google, capturing every lead, automating follow-up, and running an AI assistant on your own machine, with every external action gated on your word — then coaches you until running them is second nature.' };
