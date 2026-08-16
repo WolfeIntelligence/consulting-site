@@ -9,7 +9,7 @@ portal.html      client portal (Wolfe OS) — login gate + Home / Build / Runnin
 favicon.svg      the W mark
 robots.txt       crawl rules
 sitemap.xml      submitted to Search Console
-assets/          fonts, images, and the vendored runtime + React
+assets/          fonts, images, the social card, and the vendored runtime + React
 api/             serverless functions (auth, chat, provisioning)
 lib/             shared helpers — NOT routes (see below)
 vercel.json      security headers, caching, clean URLs
@@ -42,6 +42,11 @@ Vercel → Project → Settings → Environment Variables.
 **Every `.js` file in `api/` becomes a public endpoint.** Shared helpers go in
 `lib/`, which Vercel bundles by dependency tracing. A helper left in `api/`
 ships as a route that 500s on any request.
+
+**The booking calendar is pop-out only.** No iframe — the CTA opens Google
+Calendar in a new tab. That is why the CSP sets `frame-src 'none'`; if an embed
+is ever reintroduced, that directive has to allow `calendar.app.google` again or
+the frame will be blocked.
 
 **`www` is the canonical host** and the apex 308s to it. Canonical tags, `og:url`
 and the sitemap must all use `www.wolfeintelligence.com` — pointing them at a
@@ -79,8 +84,6 @@ Both also reject browser requests whose `Origin` is not this site.
 
 ## Still worth doing
 
-- A proper 1200×630 branded social card. Cards currently use the portrait, so
-  they render as a small square rather than a wide banner.
 - `assets/newsreader.woff2` is 123 KB, the largest asset. It is a variable font
   covering weights 400–600; splitting it into static instances would save
   roughly 30 KB, at the cost of an extra request.
