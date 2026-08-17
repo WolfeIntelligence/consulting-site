@@ -368,12 +368,14 @@
       });
     } else { inp = el('input'); inp.type = 'text'; }
     inp.value = c.intake[k] || '';
-    if (hint) inp.placeholder = hint;
+    // A select cannot show a placeholder, so its hint goes underneath. Inputs and
+    // textareas carry it as placeholder text — showing both reads as a mistake.
+    if (hint && type.indexOf('select:') !== 0) inp.placeholder = hint;
     var commit = function () { c.intake[k] = inp.value; renderVerdict(); };
     inp.oninput = commit;
     inp.onchange = function () { commit(); persist(c, true); renderRail(); };
     w.appendChild(inp);
-    if (hint && type !== 'text') w.appendChild(el('span', 'hint', hint));
+    if (hint && type.indexOf('select:') === 0) w.appendChild(el('span', 'hint', hint));
     return w;
   }
 
