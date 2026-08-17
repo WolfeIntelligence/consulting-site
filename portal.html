@@ -477,30 +477,9 @@ class Component extends DCLogic {
     const full = s.role === 'owner' || s.previewMode;
     // A client has at most one onboarding record; the owner may hold many, and
     // the panel is written for the client, so the owner view shows none.
-    // The guided tour gets sample data — this panel is the clearest thing the
-    // portal does, and a demo that hides it undersells the product.
-    const SAMPLE_OB = {
-      businessName: 'Carolina Cut Lawn Care',
-      steps: [
-        { label: 'Intake complete', done: true, date: '2026-07-28', owner: 'wolfe' },
-        { label: 'Google account created or confirmed', done: true, date: '2026-07-30', owner: 'you' },
-        { label: '2-Step Verification on, backup codes saved offline', done: true, date: '2026-07-30', owner: 'you' },
-        { label: 'Searched Google and Maps for an existing listing', done: true, date: '2026-07-30', owner: 'wolfe' },
-        { label: 'Profile created or claimed', done: true, date: '2026-07-31', owner: 'wolfe' },
-        { label: 'Verification video recorded', done: true, date: '2026-08-01', owner: 'you' },
-        { label: 'Verification approved by Google', done: false, owner: 'google' },
-        { label: 'Wolfe added as Manager', done: false, owner: 'you' },
-        { label: 'Review drive started', done: false, owner: 'you' },
-        { label: 'Real photos added', done: false, owner: 'you' },
-        { label: 'Booking page live', done: false, owner: 'wolfe' },
-        { label: 'Booking link added to the profile', done: false, owner: 'wolfe' },
-        { label: 'Advertising account set up', done: false, owner: 'wolfe' },
-        { label: 'Test lead booked end to end, then deleted', done: false, owner: 'wolfe' },
-        { label: 'Handoff sent', done: false, owner: 'wolfe' },
-      ],
-    };
-    const ob = s.previewMode ? SAMPLE_OB
-      : (!full && Array.isArray(s.onboarding) && s.onboarding.length) ? s.onboarding[0] : null;
+    // No sample data: the tour therefore does not show this panel. It renders
+    // only for a client with a real record.
+    const ob = (!full && Array.isArray(s.onboarding) && s.onboarding.length) ? s.onboarding[0] : null;
     const obSteps = ob && Array.isArray(ob.steps) ? ob.steps : [];
     const obNext = obSteps.filter((x) => !x.done)[0] || null;
 

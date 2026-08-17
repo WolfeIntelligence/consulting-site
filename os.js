@@ -12,7 +12,7 @@
 
   var S = { authed: false, email: '', token: '', clients: [], sel: null, tab: 'intake',
             emailDraft: '', codeDraft: '', err: '', busy: false, saveError: '',
-            adding: false, newEmail: '', newName: '' };
+            adding: false, newEmail: '', newName: '', expired: false };
 
   /* ------------------------------------------------------------ helpers */
   function el(tag, cls, txt) {
@@ -199,6 +199,7 @@
     if (body) { opt.headers['content-type'] = 'application/json'; opt.body = JSON.stringify(body); }
     return fetch('/api/apps', opt).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (d) {
+        if (r.status === 401) { var a = new Error('unauthorized'); a.expired = true; throw a; }
         if (!r.ok) throw new Error(d.error || ('http-' + r.status));
         return d;
       });
@@ -252,7 +253,10 @@
       if (had) renderMain();
       return true;
     }).catch(function (e) {
-      S.saveError = e.message === 'storage-not-configured'
+      S.expired = !!e.expired;
+      S.saveError = e.expired
+        ? 'Your sign-in expired, so this change was not saved. Sign in again and re-enter it — the token lasts 24 hours.'
+        : e.message === 'storage-not-configured'
         ? 'Nothing is being saved. This project has no KV storage connected, so every change here is lost on reload. Connect a Redis/KV store to the Vercel project, redeploy, then reload this page.'
         : 'Nothing is being saved. The server rejected the write (' + e.message + ').';
       renderMain();
@@ -479,6 +483,72 @@
     host.appendChild(verdictNode(c));
   }
 
+  /* ------------------------------------------------------------- packet */
+  // The document the operator actually works from during a live session: the
+  // decisions already settled, the blockers, and the verification route.
+  function packetMd(c) {
+    var a = c.intake, v = decide(a), b = blockers(a), L = [];
+    var g = function (k, lab) { L.push('- **' + lab + ':** ' + (a[k] || '_______')); };
+    L.push('# Onboarding packet — ' + (a.businessName || c.email));
+    L.push('Prepared ' + today());
+    L.push('');
+    L.push('## Recommended direction');
+    L.push('');
+    L.push('**' + v.title + '** (' + v.badge + ')');
+    L.push('');
+    L.push(v.lead.replace(/<\/?strong>/g, '**'));
+    if (v.deliver.length) {
+      L.push(''); L.push('**Wolfe delivers**'); L.push('');
+      v.deliver.forEach(function (x) { L.push('- ' + x.replace(/<\/?strong>/g, '**')); });
+    }
+    if (v.next.length) {
+      L.push(''); L.push('**Watch for**'); L.push('');
+      v.next.forEach(function (x) { L.push('- ' + x.replace(/<\/?strong>/g, '**')); });
+    }
+    if (b.length) {
+      L.push(''); L.push('## Resolve first'); L.push('');
+      b.forEach(function (x) { L.push('- [ ] ' + x); });
+    }
+    L.push(''); L.push('## Decisions (settled — do not re-open in front of the client)'); L.push('');
+    g('businessName', 'Business name'); g('category', 'Primary category');
+    g('secondary', 'Secondary categories'); g('businessType', 'Business shape');
+    g('serviceArea', 'Service area'); g('hours', 'Hours'); g('phone', 'Phone'); g('website', 'Website');
+    L.push(''); L.push('**Description**'); L.push('');
+    L.push('> ' + (a.description || '[write before the session]'));
+    L.push(''); L.push('## Verification readiness'); L.push('');
+    L.push('- Permanent signage: ' + (a.signage === 'yes' ? 'confirmed'
+      : '**NOT CONFIRMED — the commonest cause of failure**'));
+    L.push('- Film at: ' + (a.baseAddress || '_______'));
+    L.push('- Route: signage → equipment → vehicle → sign into the account. '
+      + 'One live take, 30+ seconds, no edits.');
+    L.push(''); L.push('## Progress'); L.push('');
+    PHASES.forEach(function (p) {
+      var st = (c.phaseState || {})[p[0]] || {};
+      L.push('- [' + (st.done ? 'x' : ' ') + '] ' + p[1] + (st.date ? '  (' + st.date + ')' : '')
+        + (st.done ? '' : '  — ' + (p[3] === 'you' ? 'client' : p[3])));
+    });
+    L.push(''); L.push('## Audit'); L.push('');
+    AUDIT.forEach(function (x) {
+      L.push('- ' + x[1] + ': ' + ((c.audit || {})[x[0]] || '—'));
+    });
+    return L.join('\n') + '\n';
+  }
+
+  function downloadText(filename, text) {
+    var blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function slug(c) {
+    return String(c.intake.businessName || c.email || 'client')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'client';
+  }
+
   /* ------------------------------------------------------------ overview */
   function daysSince(iso) {
     if (!iso) return null;
@@ -567,8 +637,19 @@
     if (S.saveError) {
       var warn = el('div', 'blk');
       warn.style.marginBottom = '18px';
-      warn.appendChild(el('b', null, 'Not saving'));
+      warn.appendChild(el('b', null, S.expired ? 'Signed out' : 'Not saving'));
       warn.appendChild(el('div', null, S.saveError));
+      if (S.expired) {
+        var again = el('button', 'ghost', 'Sign in again');
+        again.style.cssText += 'margin-top:10px;border-color:var(--stop);color:var(--stop);';
+        again.onclick = function () {
+          try { sessionStorage.removeItem('wolfe-os-auth'); } catch (e) {}
+          S.authed = false; S.token = ''; S.clients = []; S.sel = null;
+          S.saveError = ''; S.expired = false;
+          render();
+        };
+        warn.appendChild(again);
+      }
       m.appendChild(warn);
     }
 
@@ -673,6 +754,9 @@
       var save = el('button', 'ghost', 'Save now');
       save.onclick = function () { persist(c); };
       bar.appendChild(save);
+      var dl = el('button', 'newbtn', 'Download packet (.md)');
+      dl.onclick = function () { downloadText(slug(c) + '-packet.md', packetMd(c)); };
+      bar.appendChild(dl);
       // Inline confirmation for the same reason the new-client prompt went:
       // a native dialog blocks the page and cannot be styled or automated.
       var del = el('button', 'ghost', 'Remove client');
