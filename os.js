@@ -479,6 +479,86 @@
     host.appendChild(verdictNode(c));
   }
 
+  /* ------------------------------------------------------------ overview */
+  function daysSince(iso) {
+    if (!iso) return null;
+    var t = Date.parse(iso + 'T00:00:00');
+    if (isNaN(t)) return null;
+    return Math.floor((Date.now() - t) / 86400000);
+  }
+
+  // Google publishes no review SLA, and profiles do sometimes sit for weeks or
+  // land in a loop where video is accepted repeatedly and never completes. So
+  // these are chase prompts, not deadlines: check in at 5 days so silence does
+  // not read as abandonment, escalate at 14.
+  function stall(c) {
+    var sub = (c.phaseState || {}).verifySub || {};
+    var pass = (c.phaseState || {}).verifyPass || {};
+    if (!sub.done || pass.done) return null;
+    var d = daysSince(sub.date);
+    if (d == null) return null;
+    if (d >= 14) return { level: 'stop', text: d + ' days since the video went in. Escalate to Google support — repeated accepted videos that never complete is a known loop.' };
+    if (d >= 5) return { level: 'warn', text: d + ' days waiting on Google. Message the client either way so the silence does not read as abandonment.' };
+    return null;
+  }
+
+  function overviewNode() {
+    var wrap = el('div');
+    var h = el('div', 'hd');
+    h.innerHTML = '<h2>All clients</h2>';
+    wrap.appendChild(h);
+    wrap.appendChild(el('p', 'sub', S.clients.length + (S.clients.length === 1 ? ' engagement' : ' engagements')));
+
+    var flagged = 0;
+    S.clients.forEach(function (c) {
+      var v = decide(c.intake);
+      var steps = PHASES.filter(function (p) { return ((c.phaseState || {})[p[0]] || {}).done; });
+      var next = null;
+      for (var i = 0; i < PHASES.length; i++) {
+        if (!((c.phaseState || {})[PHASES[i][0]] || {}).done) { next = PHASES[i]; break; }
+      }
+      var st = stall(c);
+      if (st) flagged++;
+
+      var r = el('div', 'row');
+      r.style.cursor = 'pointer';
+      r.style.flexDirection = 'column';
+      r.style.gap = '6px';
+      r.onclick = function () { S.sel = c.email; S.tab = 'progress'; render(); };
+
+      var top = el('div');
+      top.style.cssText = 'display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;width:100%;';
+      top.innerHTML = '<b style="font-size:15px;">' + esc(c.intake.businessName || c.email) + '</b>'
+        + '<span class="chip c-' + (v.kind === 'none' ? 'none' : v.kind) + '">' + esc(v.badge) + '</span>'
+        + '<span style="flex:1"></span>'
+        + '<span style="font-family:\'Space Mono\',monospace;font-size:11px;color:var(--faint);">'
+        + steps.length + '/' + PHASES.length + '</span>';
+      r.appendChild(top);
+
+      var line = el('div');
+      line.style.cssText = 'font-size:13px;color:var(--muted);';
+      line.textContent = next
+        ? (next[3] === 'you' ? 'Waiting on the client — ' : next[3] === 'google' ? 'With Google — ' : 'Next — ') + next[1]
+        : 'Complete';
+      r.appendChild(line);
+
+      if (st) {
+        var w = el('div');
+        w.style.cssText = 'font-size:12.5px;padding:7px 9px;border-radius:3px;width:100%;background:'
+          + (st.level === 'stop' ? 'var(--stop-bg);color:var(--stop)' : 'var(--warn-bg);color:var(--warn)') + ';';
+        w.textContent = st.text;
+        r.appendChild(w);
+      }
+      wrap.appendChild(r);
+    });
+
+    var n = el('p', 'note', flagged
+      ? flagged + ' onboarding' + (flagged === 1 ? '' : 's') + ' needs chasing. Everything else is moving.'
+      : 'Nothing is stalled. Verification waits are flagged here at 5 days and escalated at 14.');
+    wrap.appendChild(n);
+    return wrap;
+  }
+
   function renderMain() {
     var m = document.getElementById('main');
     if (!m) return;
@@ -495,6 +575,9 @@
     if (S.adding) { m.appendChild(addFormNode()); return; }
 
     var c = cur();
+    // With clients on the books the useful default is the overview, not a
+    // placeholder — the daily question is which engagement needs chasing.
+    if (!c && S.clients.length) { m.appendChild(overviewNode()); return; }
     if (!c) {
       var e = el('div', 'empty');
       e.innerHTML = '<h2>No client selected</h2>' +
