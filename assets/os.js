@@ -37,22 +37,25 @@
   }
 
   /* -------------------------------------------------------------- model */
+  // Fourth field is whose turn the step is. Google binds five actions to the
+  // business owner and nobody else can do them, so the client's portal can say
+  // plainly when it is waiting on them rather than leaving them guessing.
   var PHASES = [
-    ['intake', 'Intake complete', 'Facts gathered by conversation, not a form'],
-    ['account', 'Google account created or confirmed', ''],
-    ['twofa', '2-Step Verification on, backup codes saved offline', 'The whole continuity plan for a solo operator'],
-    ['search', 'Searched Google and Maps for an existing listing', 'Before creating anything'],
-    ['profile', 'Profile created or claimed', 'A claim inherits old settings — re-check them'],
-    ['verifySub', 'Verification video submitted', ''],
-    ['verifyPass', 'Verification approved', 'Days, sometimes weeks. Silence is normal'],
-    ['manager', 'Wolfe added as Manager', 'Never Owner'],
-    ['reviews', 'Review drive started', 'Free, and usually beats early ad spend'],
-    ['photos', 'Real photos added', ''],
-    ['booking', 'Booking page live', ''],
-    ['bookLink', 'Booking link added to the profile', 'Only possible after verification'],
-    ['adsAcct', 'Advertising account set up', 'Route decided first'],
-    ['testLead', 'Test lead booked end to end, then deleted', 'The only step that proves the funnel works'],
-    ['handoff', 'Handoff sent', '']
+    ['intake', 'Intake complete', 'Facts gathered by conversation, not a form', 'wolfe'],
+    ['account', 'Google account created or confirmed', '', 'you'],
+    ['twofa', '2-Step Verification on, backup codes saved offline', 'The whole continuity plan for a solo operator', 'you'],
+    ['search', 'Searched Google and Maps for an existing listing', 'Before creating anything', 'wolfe'],
+    ['profile', 'Profile created or claimed', 'A claim inherits old settings — re-check them', 'wolfe'],
+    ['verifySub', 'Verification video recorded', 'Filmed live, one take, name on something permanent', 'you'],
+    ['verifyPass', 'Verification approved by Google', 'Days, sometimes weeks. Silence is normal', 'google'],
+    ['manager', 'Wolfe added as Manager', 'Never Owner', 'you'],
+    ['reviews', 'Review drive started', 'Free, and usually beats early ad spend', 'you'],
+    ['photos', 'Real photos added', '', 'you'],
+    ['booking', 'Booking page live', '', 'wolfe'],
+    ['bookLink', 'Booking link added to the profile', 'Only possible after verification', 'wolfe'],
+    ['adsAcct', 'Advertising account set up', 'Route decided first', 'wolfe'],
+    ['testLead', 'Test lead booked end to end, then deleted', 'The only step that proves the funnel works', 'wolfe'],
+    ['handoff', 'Handoff sent', '', 'wolfe']
   ];
 
   var AUDIT = [
@@ -224,7 +227,7 @@
     var v = decide(c.intake);
     var steps = PHASES.map(function (p) {
       var st = (c.phaseState || {})[p[0]] || {};
-      return { label: p[1], done: !!st.done, date: st.date || '' };
+      return { label: p[1], done: !!st.done, date: st.date || '', owner: p[3] };
     });
     var doneCount = steps.filter(function (s) { return s.done; }).length;
     var rec = {

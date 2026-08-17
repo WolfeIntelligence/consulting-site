@@ -131,6 +131,24 @@
       </div>
     </sc-if>
 
+    <sc-if value="{{ obShow }}" hint-placeholder-val="{{ true }}">
+    <div style="display:grid;gap:14px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
+      <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOUR GOOGLE SETUP</span>
+      <div style="{{ obStatusStyle }}">{{ obStatus }}</div>
+      <div style="font:400 14px/1.55 'Newsreader',serif;color:#a2968a;max-width:62ch;">{{ obStatusNote }}</div>
+      <div style="display:grid;gap:9px;margin-top:4px;">
+        <sc-for list="{{ obSteps }}" as="st" hint-placeholder-count="5">
+          <div style="display:flex;align-items:baseline;gap:12px;">
+            <span style="{{ st.markStyle }}">{{ st.mark }}</span>
+            <span style="{{ st.labelStyle }}">{{ st.label }}</span>
+            <span style="flex:1;height:1px;background:linear-gradient(to right, rgba(239,231,214,.12), transparent 90%);"></span>
+            <span style="{{ st.tagStyle }}">{{ st.tag }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
     <div style="display:grid;gap:14px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
       <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOURS</span>
       <sc-for list="{{ hApps }}" as="a" hint-placeholder-count="4">
@@ -457,6 +475,11 @@ class Component extends DCLogic {
     // prospect walking through gets the real thing rather than an empty shell.
     // Provisioning is gated separately below — the tour must never see it.
     const full = s.role === 'owner' || s.previewMode;
+    // A client has at most one onboarding record; the owner may hold many, and
+    // the panel is written for the client, so the owner view shows none.
+    const ob = (!full && Array.isArray(s.onboarding) && s.onboarding.length) ? s.onboarding[0] : null;
+    const obSteps = ob && Array.isArray(ob.steps) ? ob.steps : [];
+    const obNext = obSteps.filter((x) => !x.done)[0] || null;
 
     return {
       /* --- auth + nav --- */
@@ -477,6 +500,30 @@ class Component extends DCLogic {
       // Deliberately not `full`: that includes the guided tour, which any
       // prospect can open, and the console is not theirs to know about.
       isOwner: s.role === 'owner' && !s.previewMode,
+
+      /* --- onboarding status, written by the owner console --- */
+      obShow: !!ob,
+      obStatus: !ob ? ''
+        : !obNext ? 'Everything is set up.'
+        : obNext.owner === 'you' ? 'Waiting on you'
+        : obNext.owner === 'google' ? 'With Google'
+        : 'With Wolfe Intelligence',
+      obStatusStyle: 'font:400 26px/1.2 \'Newsreader\',serif;color:'
+        + (!obNext ? '#9dbb7a' : obNext && obNext.owner === 'you' ? '#e9c98d' : '#efe7d6') + ';',
+      obStatusNote: !ob ? ''
+        : !obNext ? 'Nothing outstanding. Anything new will show up here.'
+        : obNext.owner === 'you' ? obNext.label + '. This one only you can do — Google ties it to the business owner, so nobody else can do it for you.'
+        : obNext.owner === 'google' ? 'Google reviews new listings by hand. It usually takes a few days and sometimes a couple of weeks. Silence is normal and does not mean anything went wrong.'
+        : obNext.label + '. Nothing needed from you.',
+      obSteps: obSteps.map((x) => ({
+        label: x.label,
+        mark: x.done ? '✓' : '○',
+        markStyle: 'font:400 15px/1.4 \'Newsreader\',serif;color:' + (x.done ? '#9dbb7a' : '#6f6459') + ';width:14px;',
+        labelStyle: 'font:400 16px/1.4 \'Newsreader\',serif;color:' + (x.done ? '#8c8072' : '#efe7d6') + ';',
+        tag: x.done ? (x.date || 'done') : x.owner === 'you' ? 'YOU' : x.owner === 'google' ? 'GOOGLE' : 'WOLFE',
+        tagStyle: 'font:700 10px/1 \'Space Mono\',monospace;letter-spacing:.12em;white-space:nowrap;color:'
+          + (x.done ? '#6f6459' : x.owner === 'you' ? '#c9a15f' : '#8c8072') + ';',
+      })),
       sessionBadge: !s.authed ? 'CLIENT PORTAL'
         : s.previewMode ? 'GUIDED TOUR · SAMPLE DATA'
         : s.role === 'owner' ? 'OWNER · BUILD ENABLED' : 'CLIENT',

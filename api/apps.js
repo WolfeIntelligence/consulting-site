@@ -76,6 +76,8 @@ module.exports = async (req, res) => {
         label: String(s && s.label || '').slice(0, 120),
         done: !!(s && s.done),
         date: String(s && s.date || '').slice(0, 10),
+        // Whose turn the step is, so the client's portal can say so plainly.
+        owner: ['you', 'wolfe', 'google'].includes(s && s.owner) ? s.owner : 'wolfe',
       })),
       updatedAt: new Date().toISOString(),
     };
