@@ -57,6 +57,9 @@
       </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:18px;">
         <span style="color:#8c8072;font:400 12px 'Space Mono',monospace;">{{ email }}</span>
+        <sc-if value="{{ isOwner }}" hint-placeholder-val="{{ false }}">
+          <a href="/os" style="border:1px solid rgba(201,161,95,.55);background:rgba(201,161,95,.12);color:#e9c98d;padding:8px 14px;border-radius:2px;font:400 13.5px 'Newsreader',serif;">Console →</a>
+        </sc-if>
         <a href="#" sc-camel-on-click="{{ logout }}" style="border:1px solid rgba(239,231,214,.25);color:#cfc4b2;padding:8px 14px;border-radius:2px;font:400 13.5px 'Newsreader',serif;">Sign out</a>
       </div>
     </sc-if>
@@ -471,6 +474,9 @@ class Component extends DCLogic {
         this.set({ authed: false, email: '', emailDraft: '', codeDraft: '', view: 'home', role: 'client', token: '', previewMode: false, deployments: [], depStatus: '' });
       },
       loginLabel: s.loggingIn ? 'Checking…' : 'Enter portal →',
+      // Deliberately not `full`: that includes the guided tour, which any
+      // prospect can open, and the console is not theirs to know about.
+      isOwner: s.role === 'owner' && !s.previewMode,
       sessionBadge: !s.authed ? 'CLIENT PORTAL'
         : s.previewMode ? 'GUIDED TOUR · SAMPLE DATA'
         : s.role === 'owner' ? 'OWNER · BUILD ENABLED' : 'CLIENT',

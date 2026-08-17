@@ -11,7 +11,7 @@
   'use strict';
 
   var S = { authed: false, email: '', token: '', clients: [], sel: null, tab: 'intake',
-            emailDraft: '', codeDraft: '', err: '', busy: false };
+            emailDraft: '', codeDraft: '', err: '', busy: false, saveError: '' };
 
   /* ------------------------------------------------------------ helpers */
   function el(tag, cls, txt) {
@@ -239,10 +239,20 @@
     // Local state kept alongside so the console does not lose audit marks that
     // the client-facing record has no place for.
     rec.audit = c.audit;
+    // Resolves true only when the server actually stored it. A failed save must
+    // never look like a successful one — the banner stays up until it works.
     return api('POST', { action: 'onboarding', record: rec }).then(function () {
+      var had = S.saveError;
+      S.saveError = '';
       if (!quiet) toast('Saved — client portal updated');
+      if (had) renderMain();
+      return true;
     }).catch(function (e) {
-      toast(e.message === 'storage-not-configured' ? 'KV storage not configured' : 'Save failed: ' + e.message);
+      S.saveError = e.message === 'storage-not-configured'
+        ? 'Nothing is being saved. This project has no KV storage connected, so every change here is lost on reload. Connect a Redis/KV store to the Vercel project, redeploy, then reload this page.'
+        : 'Nothing is being saved. The server rejected the write (' + e.message + ').';
+      renderMain();
+      return false;
     });
   }
 
@@ -349,8 +359,13 @@
     var name = prompt('Business name') || email;
     var c = { email: email, businessName: name, intake: { businessName: name, businessType: 'field_service', bookingTitle: 'Free Estimate' },
               phaseState: {}, audit: {}, steps: [] };
-    S.clients.push(c); S.sel = email; S.tab = 'intake';
-    persist(c, true).then(render);
+    // Only keep it locally once the server has it. Otherwise a storage outage
+    // leaves a client sitting in the rail that does not exist anywhere.
+    persist(c, true).then(function (ok) {
+      if (!ok) { render(); return; }
+      S.clients.push(c); S.sel = email; S.tab = 'intake';
+      render();
+    });
   }
 
   function fieldNode(c, f) {
@@ -418,6 +433,15 @@
     var m = document.getElementById('main');
     if (!m) return;
     m.innerHTML = '';
+
+    if (S.saveError) {
+      var warn = el('div', 'blk');
+      warn.style.marginBottom = '18px';
+      warn.appendChild(el('b', null, 'Not saving'));
+      warn.appendChild(el('div', null, S.saveError));
+      m.appendChild(warn);
+    }
+
     var c = cur();
     if (!c) {
       var e = el('div', 'empty');
