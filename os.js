@@ -12,7 +12,8 @@
 
   var S = { authed: false, email: '', token: '', clients: [], sel: null, tab: 'intake',
             emailDraft: '', codeDraft: '', err: '', busy: false, saveError: '',
-            adding: false, newEmail: '', newName: '', expired: false };
+            adding: false, newEmail: '', newName: '', expired: false,
+            leads: [], addingLead: false, newLead: {} };
 
   /* ------------------------------------------------------------ helpers */
   function el(tag, cls, txt) {
@@ -208,6 +209,7 @@
 
   function loadClients() {
     return api('GET').then(function (d) {
+      S.leads = d.leads || [];
       S.clients = (d.onboarding || []).map(function (o) {
         o.intake = o.intake || {};
         o.phaseState = o.phaseState || {};
@@ -679,7 +681,7 @@
     m.appendChild(el('p', 'sub', c.email + (c.updatedAt ? ' · updated ' + c.updatedAt.slice(0, 10) : '')));
 
     var tabs = el('div', 'tabs');
-    [['intake', 'Intake'], ['route', 'Direction'], ['progress', 'Progress'], ['audit', 'Audit'], ['export', 'Export']]
+    [['intake', 'Intake'], ['route', 'Direction'], ['progress', 'Progress'], ['leads', 'Leads'], ['audit', 'Audit'], ['export', 'Export']]
       .forEach(function (t) {
         var b = el('button', S.tab === t[0] ? 'on' : null, t[1]);
         b.onclick = function () { S.tab = t[0]; renderMain(); };
@@ -729,6 +731,169 @@
         m.appendChild(r);
       });
       m.appendChild(el('p', 'note', 'Ticking a step updates the client portal immediately.'));
+    }
+
+    if (S.tab === 'leads') {
+      var mine = S.leads.filter(function (l) { return l.to === c.email; })
+        .sort(function (a, b) { return (b.at || '').localeCompare(a.at || ''); });
+
+      // The funnel, computed from the leads themselves. Recurring and one-off
+      // are kept apart because a weekly customer is worth their annual value
+      // every year and a one-off pays once — averaging the two hides which
+      // kind the advertising actually bought.
+      var booked = mine.filter(function (l) { return l.booked === 'Yes'; }).length;
+      var won = mine.filter(function (l) { return l.won === 'Yes'; });
+      var recurring = won.filter(function (l) { return l.contract && l.contract !== 'One-off'; });
+      var annual = recurring.reduce(function (t, l) {
+        var v = parseFloat(l.perVisit) * parseFloat(l.visitsPerYear);
+        return t + (isFinite(v) ? v : 0);
+      }, 0);
+
+      var sum = el('div', 'verdict');
+      sum.style.borderLeftColor = 'var(--ok)';
+      sum.innerHTML =
+        '<h3>' + mine.length + ' lead' + (mine.length === 1 ? '' : 's') + '</h3>' +
+        '<p>' + booked + ' booked an estimate &middot; ' + won.length + ' became customers &middot; ' +
+        recurring.length + ' on recurring work</p>' +
+        '<div class="lbl">Annual value of recurring customers won</div>' +
+        '<div style="font-size:26px;font-weight:680;">$' +
+        annual.toLocaleString(undefined, { maximumFractionDigits: 0 }) + '</div>';
+      m.appendChild(sum);
+
+      var addBar = el('div', 'bar');
+      var addBtn = el('button', 'newbtn', S.addingLead ? 'Cancel' : '+ Log a lead');
+      addBtn.onclick = function () { S.addingLead = !S.addingLead; S.newLead = {}; renderMain(); };
+      addBar.appendChild(addBtn);
+      m.appendChild(addBar);
+
+      if (S.addingLead) {
+        var fs = el('fieldset');
+        fs.appendChild(el('legend', null, 'Lead that came in by phone, text or LSA'));
+        var g = el('div', 'grid');
+        [['name', 'Name'], ['phone', 'Phone'], ['service', 'What they want'],
+         ['address', 'Address'], ['source', 'Where it came from']].forEach(function (f) {
+          var lw = el('label');
+          lw.appendChild(el('span', null, f[1]));
+          var inp = el('input');
+          inp.type = 'text';
+          inp.value = S.newLead[f[0]] || '';
+          inp.oninput = function () { S.newLead[f[0]] = inp.value; };
+          lw.appendChild(inp);
+          g.appendChild(lw);
+        });
+        fs.appendChild(g);
+        var er = el('div');
+        er.style.cssText = 'color:var(--stop);font-size:13px;min-height:18px;margin-top:8px;';
+        fs.appendChild(er);
+        var sb = el('div', 'bar');
+        var save = el('button', 'newbtn', 'Save lead');
+        save.onclick = function () {
+          if (!(S.newLead.name || '').trim()) { er.textContent = 'A name, at least.'; return; }
+          if (!(S.newLead.phone || '').trim()) {
+            er.textContent = 'A phone number, so they can be called back.';
+            return;
+          }
+          save.disabled = true;
+          save.textContent = 'Saving...';
+          var rec = Object.assign({ to: c.email, source: 'phone' }, S.newLead);
+          api('POST', { action: 'lead-add', lead: rec }).then(function (d) {
+            S.leads.push(d.lead);
+            S.addingLead = false;
+            S.newLead = {};
+            toast('Lead logged');
+            renderMain();
+          }).catch(function (e) {
+            save.disabled = false;
+            save.textContent = 'Save lead';
+            er.textContent = 'Could not save: ' + e.message;
+          });
+        };
+        sb.appendChild(save);
+        fs.appendChild(sb);
+        m.appendChild(fs);
+      }
+
+      if (!mine.length) {
+        m.appendChild(el('p', 'note',
+          'No leads yet. They arrive here two ways: posted by a form on the client’s site, '
+          + 'or logged by hand when someone phones or comes through Local Services Ads.'));
+      }
+
+      mine.forEach(function (l) {
+        var r = el('div', 'row');
+        r.style.flexDirection = 'column';
+        r.style.gap = '8px';
+
+        var top = el('div');
+        top.style.cssText = 'display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;width:100%;';
+        top.innerHTML = '<b style="font-size:15px;">' + esc(l.name || '(no name)') + '</b>'
+          + '<span style="color:var(--muted);font-size:13px;">' + esc(l.phone || l.email || '') + '</span>'
+          + '<span style="flex:1"></span>'
+          + '<span class="mono" style="font-size:10.5px;color:var(--faint);">'
+          + esc((l.source || 'unknown').toUpperCase()) + (l.gclid ? ' &middot; TRACKED' : '') + '</span>'
+          + '<span class="mono" style="font-size:10.5px;color:var(--faint);">'
+          + esc((l.at || '').slice(0, 10)) + '</span>';
+        r.appendChild(top);
+
+        if (l.service || l.address) {
+          var d2 = el('div');
+          d2.style.cssText = 'font-size:13px;color:var(--muted);';
+          d2.textContent = [l.service, l.address].filter(Boolean).join(' · ');
+          r.appendChild(d2);
+        }
+
+        var saveLead = function () {
+          api('POST', { action: 'lead-update', lead: l })
+            .then(function () { renderMain(); })
+            .catch(function (e) { toast('Could not save: ' + e.message); });
+        };
+
+        var ctrls = el('div');
+        ctrls.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;width:100%;';
+        var mkSelect = function (label, key, opts, width) {
+          var w = el('label');
+          w.style.cssText = 'flex:0 0 auto;font-size:11px;gap:3px;';
+          w.appendChild(el('span', null, label));
+          var sel = el('select');
+          sel.style.cssText = 'width:' + width + 'px;font-size:12px;';
+          opts.forEach(function (o) {
+            var op = el('option');
+            op.value = o;
+            op.textContent = o || '—';
+            sel.appendChild(op);
+          });
+          sel.value = l[key] || '';
+          sel.setAttribute('aria-label', label + ' for ' + (l.name || 'lead'));
+          sel.onchange = function () { l[key] = sel.value; saveLead(); };
+          w.appendChild(sel);
+          return w;
+        };
+        ctrls.appendChild(mkSelect('Estimate booked', 'booked', ['', 'Yes', 'No'], 78));
+        ctrls.appendChild(mkSelect('Became a customer', 'won', ['', 'Yes', 'No', 'Pending'], 96));
+        ctrls.appendChild(mkSelect('Contract', 'contract', ['', 'Weekly', 'Biweekly', 'Monthly', 'One-off'], 104));
+
+        [['perVisit', 'Price per visit'], ['visitsPerYear', 'Visits per year']].forEach(function (f) {
+          var w = el('label');
+          w.style.cssText = 'flex:0 0 auto;font-size:11px;gap:3px;';
+          w.appendChild(el('span', null, f[1]));
+          var inp = el('input');
+          inp.type = 'text';
+          inp.style.cssText = 'width:78px;font-size:12px;';
+          inp.value = l[f[0]] || '';
+          inp.setAttribute('aria-label', f[1] + ' for ' + (l.name || 'lead'));
+          inp.oninput = function () { l[f[0]] = inp.value; };
+          inp.onchange = saveLead;
+          w.appendChild(inp);
+          ctrls.appendChild(w);
+        });
+        r.appendChild(ctrls);
+        m.appendChild(r);
+      });
+
+      m.appendChild(el('p', 'note',
+        'Cost per recurring customer needs ad spend, which lives in the lead tracker spreadsheet. '
+        + 'A lead marked TRACKED carried a Google click id, so it can be uploaded back to Google Ads '
+        + 'as an offline conversion once volume justifies it.'));
     }
 
     if (S.tab === 'audit') {

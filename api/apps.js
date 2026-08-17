@@ -30,6 +30,8 @@ module.exports = async (req, res) => {
     // client holds a token, not a trustworthy claim about who they are.
     let onb = [];
     if (kvReady()) { try { onb = JSON.parse((await kv('get/onboarding')) || '[]'); } catch (e) {} }
+    let leads = [];
+    if (kvReady()) { try { leads = JSON.parse((await kv('get/leads')) || '[]'); } catch (e) {} }
     return res.json({
       role: ses.r,
       deployments: ses.r === 'owner' ? all : all.filter((d) => d.to === ses.e),
@@ -39,6 +41,8 @@ module.exports = async (req, res) => {
       onboarding: ses.r === 'owner'
         ? onb
         : onb.filter((o) => o.email === ses.e).map(({ intake, ...safe }) => safe),
+      // A client sees their own leads; the owner sees every client's.
+      leads: ses.r === 'owner' ? leads : leads.filter((l) => l.to === ses.e),
     });
   }
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
@@ -103,6 +107,49 @@ module.exports = async (req, res) => {
     try { all = JSON.parse((await kv('get/onboarding')) || '[]'); } catch (e) {}
     all = all.filter((o) => o.email !== email);
     await kv('set/onboarding/' + encodeURIComponent(JSON.stringify(all).slice(0, 200000)));
+    return res.json({ ok: true });
+  }
+  if (b.action === 'lead-add' || b.action === 'lead-update') {
+    // The operator's own entry point: a lead that arrived by phone, by text, or
+    // through the Local Services Ads inbox, plus the booked/won outcome that
+    // only they can know.
+    const l = b.lead || {};
+    const id = String(l.id || '').slice(0, 40);
+    const to = String(l.to || '').trim().toLowerCase();
+    if (!to.includes('@')) return res.status(400).json({ error: 'bad-target' });
+    let all = [];
+    try { all = JSON.parse((await kv('get/leads')) || '[]'); } catch (e) {}
+    const str = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+    const clean = {
+      id: id || 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      to,
+      at: str(l.at, 40) || new Date().toISOString(),
+      name: str(l.name, 120),
+      phone: str(l.phone, 40),
+      email: str(l.email, 160),
+      service: str(l.service, 200),
+      address: str(l.address, 200),
+      notes: str(l.notes, 1000),
+      gclid: str(l.gclid, 200),
+      source: str(l.source, 60),
+      booked: str(l.booked, 20),
+      won: str(l.won, 20),
+      contract: str(l.contract, 30),
+      perVisit: str(l.perVisit, 20),
+      visitsPerYear: str(l.visitsPerYear, 20),
+    };
+    all = all.filter((x) => x.id !== clean.id);
+    all.push(clean);
+    if (all.length > 2000) all = all.slice(-2000);
+    await kv('set/leads/' + encodeURIComponent(JSON.stringify(all).slice(0, 900000)));
+    return res.json({ ok: true, lead: clean });
+  }
+  if (b.action === 'lead-remove') {
+    const id = String(b.id || '').slice(0, 40);
+    let all = [];
+    try { all = JSON.parse((await kv('get/leads')) || '[]'); } catch (e) {}
+    all = all.filter((x) => x.id !== id);
+    await kv('set/leads/' + encodeURIComponent(JSON.stringify(all).slice(0, 900000)));
     return res.json({ ok: true });
   }
   return res.status(400).json({ error: 'unknown-action' });

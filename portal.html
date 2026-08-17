@@ -131,6 +131,25 @@
       </div>
     </sc-if>
 
+    <sc-if value="{{ ldShow }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid;gap:14px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
+      <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOUR ENQUIRIES</span>
+      <div style="font:400 26px/1.2 'Newsreader',serif;">{{ ldHead }}</div>
+      <div style="font:400 14px/1.55 'Newsreader',serif;color:#a2968a;">{{ ldSub }}</div>
+      <div style="display:grid;gap:10px;margin-top:4px;">
+        <sc-for list="{{ ldItems }}" as="ld" hint-placeholder-count="3">
+          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+            <span style="font:400 17px/1.4 'Newsreader',serif;">{{ ld.name }}</span>
+            <span style="font:400 13.5px/1.4 'Newsreader',serif;color:#8c8072;">{{ ld.detail }}</span>
+            <span style="flex:1;height:1px;background:linear-gradient(to right, rgba(239,231,214,.12), transparent 90%);"></span>
+            <span style="font:400 11px 'Space Mono',monospace;color:#6f6459;">{{ ld.when }}</span>
+            <span style="{{ ld.stateStyle }}">{{ ld.state }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
     <sc-if value="{{ obShow }}" hint-placeholder-val="{{ true }}">
     <div style="display:grid;gap:14px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
       <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOUR GOOGLE SETUP</span>
@@ -480,6 +499,12 @@ class Component extends DCLogic {
     // No sample data: the tour therefore does not show this panel. It renders
     // only for a client with a real record.
     const ob = (!full && Array.isArray(s.onboarding) && s.onboarding.length) ? s.onboarding[0] : null;
+    // Leads are the point of the whole engagement, so they lead the page for a
+    // client who has any. Newest first; the operator sets booked/won.
+    const leads = (!full && Array.isArray(s.onboarding)) ? (s.leads || []) : [];
+    const leadsSorted = leads.slice().sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+    const leadWon = leads.filter((l) => l.won === 'Yes').length;
+    const leadBooked = leads.filter((l) => l.booked === 'Yes').length;
     const obSteps = ob && Array.isArray(ob.steps) ? ob.steps : [];
     const obNext = obSteps.filter((x) => !x.done)[0] || null;
 
@@ -504,6 +529,21 @@ class Component extends DCLogic {
       isOwner: s.role === 'owner' && !s.previewMode,
 
       /* --- onboarding status, written by the owner console --- */
+      ldShow: leads.length > 0,
+      ldHead: leads.length + (leads.length === 1 ? ' enquiry' : ' enquiries'),
+      ldSub: leadBooked + ' booked an estimate, ' + leadWon
+        + (leadWon === 1 ? ' became a customer' : ' became customers') + '.',
+      ldItems: leadsSorted.map((l) => ({
+        name: l.name || 'Enquiry',
+        detail: [l.service, l.phone].filter(Boolean).join(' \u00b7 '),
+        when: String(l.at || '').slice(0, 10),
+        state: l.won === 'Yes' ? 'CUSTOMER'
+          : l.booked === 'Yes' ? 'ESTIMATE BOOKED'
+          : l.won === 'No' ? 'DID NOT PROCEED'
+          : 'NEW',
+        stateStyle: "font:700 10px/1 'Space Mono',monospace;letter-spacing:.12em;white-space:nowrap;color:"
+          + (l.won === 'Yes' ? '#9dbb7a' : l.booked === 'Yes' ? '#c9a15f' : l.won === 'No' ? '#6f6459' : '#efe7d6'),
+      })),
       obShow: !!ob,
       obStatus: !ob ? ''
         : !obNext ? 'Everything is set up.'
