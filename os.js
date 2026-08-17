@@ -629,6 +629,8 @@
         var st = c.phaseState[p[0]] = c.phaseState[p[0]] || {};
         var r = el('div', 'row' + (st.done ? ' done' : ''));
         var cb = el('input'); cb.type = 'checkbox'; cb.checked = !!st.done;
+        // A bare checkbox announces as "checkbox" with no name; give it the step.
+        cb.setAttribute('aria-label', p[1]);
         cb.onchange = function () {
           st.done = cb.checked;
           if (st.done && !st.date) st.date = today();
@@ -636,7 +638,11 @@
         };
         var t = el('div', 't');
         t.innerHTML = '<b>' + esc(p[1]) + '</b>' + (p[2] ? '<p>' + esc(p[2]) + '</p>' : '');
+        // The label text is the biggest target on the row; make it toggle too.
+        t.style.cursor = 'pointer';
+        t.onclick = function () { cb.checked = !cb.checked; cb.onchange(); };
         var dt = el('input'); dt.type = 'date'; dt.value = st.date || '';
+        dt.setAttribute('aria-label', 'Date completed: ' + p[1]);
         dt.onchange = function () { st.date = dt.value; persist(c, true); };
         r.appendChild(cb); r.appendChild(t); r.appendChild(dt);
         m.appendChild(r);
@@ -652,6 +658,7 @@
         var s = el('select');
         [['', '—'], ['Pass', 'Pass'], ['Fail', 'Fail'], ['N/A', 'N/A'], ['Not checked', 'Not checked']]
           .forEach(function (o) { var op = el('option'); op.value = o[0]; op.textContent = o[1]; s.appendChild(op); });
+        s.setAttribute('aria-label', 'Result: ' + a[1]);
         s.value = c.audit[a[0]] || '';
         s.onchange = function () { c.audit[a[0]] = s.value; persist(c, true); };
         r.appendChild(t); r.appendChild(s);
