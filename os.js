@@ -673,16 +673,39 @@
       var save = el('button', 'ghost', 'Save now');
       save.onclick = function () { persist(c); };
       bar.appendChild(save);
+      // Inline confirmation for the same reason the new-client prompt went:
+      // a native dialog blocks the page and cannot be styled or automated.
       var del = el('button', 'ghost', 'Remove client');
-      del.onclick = function () {
-        if (!confirm('Remove ' + (c.intake.businessName || c.email) + '? Their portal entry disappears too.')) return;
+      var confirmBox = el('div');
+      confirmBox.style.display = 'none';
+      confirmBox.style.cssText += 'margin-top:12px;padding:12px 14px;border-radius:3px;'
+        + 'background:var(--stop-bg);max-width:60ch;';
+      var msg = el('div');
+      msg.style.cssText = 'color:var(--stop);font-size:13.5px;margin-bottom:10px;';
+      msg.textContent = 'Remove ' + (c.intake.businessName || c.email)
+        + '? Their onboarding disappears from their portal too, and the intake is not recoverable.';
+      var cbar = el('div', 'bar');
+      cbar.style.marginTop = '0';
+      var yes = el('button', 'ghost', 'Yes, remove');
+      yes.style.cssText += 'border-color:var(--stop);color:var(--stop);';
+      yes.onclick = function () {
+        yes.disabled = true; yes.textContent = 'Removing…';
         api('POST', { action: 'onboarding-remove', email: c.email }).then(function () {
           S.clients = S.clients.filter(function (x) { return x.email !== c.email; });
           S.sel = null; toast('Removed'); render();
-        }).catch(function (e) { toast('Could not remove: ' + e.message); });
+        }).catch(function (e) {
+          yes.disabled = false; yes.textContent = 'Yes, remove';
+          toast('Could not remove: ' + e.message);
+        });
       };
+      var no = el('button', 'ghost', 'Keep it');
+      no.onclick = function () { confirmBox.style.display = 'none'; del.style.display = ''; };
+      cbar.appendChild(yes); cbar.appendChild(no);
+      confirmBox.appendChild(msg); confirmBox.appendChild(cbar);
+      del.onclick = function () { del.style.display = 'none'; confirmBox.style.display = 'block'; };
       bar.appendChild(del);
       m.appendChild(bar);
+      m.appendChild(confirmBox);
       m.appendChild(el('p', 'note', 'What the client currently sees in their portal:'));
       var pre = el('pre', 'mono');
       var steps = PHASES.map(function (p) {
