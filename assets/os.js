@@ -11,7 +11,8 @@
   'use strict';
 
   var S = { authed: false, email: '', token: '', clients: [], sel: null, tab: 'intake',
-            emailDraft: '', codeDraft: '', err: '', busy: false, saveError: '' };
+            emailDraft: '', codeDraft: '', err: '', busy: false, saveError: '',
+            adding: false, newEmail: '', newName: '' };
 
   /* ------------------------------------------------------------ helpers */
   function el(tag, cls, txt) {
@@ -354,22 +355,68 @@
       .catch(function () { S.busy = false; S.err = 'Could not reach the sign-in service.'; render(); });
   }
 
-  function newClient() {
-    var email = prompt("Client's email address (this is how their portal login is matched)");
-    if (!email) return;
-    email = email.trim().toLowerCase();
-    if (email.indexOf('@') < 0) { toast('That does not look like an email address'); return; }
-    var name = prompt('Business name') || email;
-    var c = { email: email, businessName: name, intake: { businessName: name, businessType: 'field_service', bookingTitle: 'Free Estimate' },
-              phaseState: {}, audit: {}, steps: [] };
-    // Only keep it locally once the server has it. Otherwise a storage outage
-    // leaves a client sitting in the rail that does not exist anywhere.
-    persist(c, true).then(function (ok) {
-      if (!ok) { render(); return; }
-      S.clients.push(c); S.sel = email; S.tab = 'intake';
-      render();
-    });
+  // An inline form rather than prompt(): a native dialog cannot be validated,
+  // cannot be styled, and blocks the whole page while it is open.
+  function addFormNode() {
+    var fs = el('fieldset');
+    fs.appendChild(el('legend', null, 'New client'));
+    var g = el('div', 'grid');
+
+    var le = el('label');
+    le.appendChild(el('span', null, "Client's email address"));
+    var ie = el('input'); ie.type = 'email';
+    ie.placeholder = 'How their portal login is matched';
+    ie.value = S.newEmail;
+    ie.oninput = function () { S.newEmail = ie.value; };
+    le.appendChild(ie);
+    le.appendChild(el('span', 'hint', 'Get this right — it is the key their portal signs in on.'));
+
+    var ln = el('label');
+    ln.appendChild(el('span', null, 'Business name'));
+    var inm = el('input'); inm.type = 'text';
+    inm.placeholder = 'What is on the truck';
+    inm.value = S.newName;
+    inm.oninput = function () { S.newName = inm.value; };
+    ln.appendChild(inm);
+
+    g.appendChild(le); g.appendChild(ln);
+    fs.appendChild(g);
+
+    var err = el('div'); err.style.cssText = 'color:var(--stop);font-size:13px;min-height:18px;margin-top:8px;';
+    fs.appendChild(err);
+
+    var bar = el('div', 'bar');
+    var add = el('button', 'newbtn', 'Add client');
+    add.onclick = function () {
+      var email = (S.newEmail || '').trim().toLowerCase();
+      var name = (S.newName || '').trim();
+      if (email.indexOf('@') < 1 || email.indexOf('.') < 0) { err.textContent = 'That does not look like an email address.'; return; }
+      if (!name) { err.textContent = 'Give the business a name.'; return; }
+      for (var i = 0; i < S.clients.length; i++) {
+        if (S.clients[i].email === email) { err.textContent = 'That client already exists.'; return; }
+      }
+      err.textContent = '';
+      add.disabled = true; add.textContent = 'Saving…';
+      var c = { email: email, businessName: name,
+                intake: { businessName: name, businessType: 'field_service', bookingTitle: 'Free Estimate' },
+                phaseState: {}, audit: {}, steps: [] };
+      // Only keep it locally once the server has it. Otherwise a storage outage
+      // leaves a client sitting in the rail that does not exist anywhere.
+      persist(c, true).then(function (ok) {
+        if (!ok) { add.disabled = false; add.textContent = 'Add client'; render(); return; }
+        S.clients.push(c); S.sel = email; S.tab = 'intake';
+        S.adding = false; S.newEmail = ''; S.newName = '';
+        render();
+      });
+    };
+    var cancel = el('button', 'ghost', 'Cancel');
+    cancel.onclick = function () { S.adding = false; S.newEmail = ''; S.newName = ''; render(); };
+    bar.appendChild(add); bar.appendChild(cancel);
+    fs.appendChild(bar);
+    return fs;
   }
+
+  function newClient() { S.adding = true; S.sel = null; render(); }
 
   function fieldNode(c, f) {
     var k = f[0], lab = f[1], type = f[2], hint = f[3];
@@ -444,6 +491,8 @@
       warn.appendChild(el('div', null, S.saveError));
       m.appendChild(warn);
     }
+
+    if (S.adding) { m.appendChild(addFormNode()); return; }
 
     var c = cur();
     if (!c) {
