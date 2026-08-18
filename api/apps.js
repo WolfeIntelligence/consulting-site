@@ -35,9 +35,17 @@ module.exports = async (req, res) => {
     if (kvReady()) { try { leads = JSON.parse((await kv('get/leads')) || '[]'); } catch (e) {} }
     // Site visits, last 30 days, per client, bucketed by source. Counts only.
     const visits = {};
+    // Whether each client has a portal access code set — so the console can
+    // say "portal access: not set" instead of leaving the owner to guess.
+    const access = {};
     if (kvReady()) {
       const who = ses.r === 'owner' ? onb.map((o) => o.email) : [ses.e];
-      for (const e of who) visits[e] = await loadVisits(e, 30);
+      for (const e of who) {
+        visits[e] = await loadVisits(e, 30);
+        if (ses.r === 'owner') {
+          try { access[e] = (await kv('exists/' + encodeURIComponent('client:' + e))) === 1; } catch (err) { access[e] = false; }
+        }
+      }
     }
     return res.json({
       role: ses.r,
@@ -51,6 +59,7 @@ module.exports = async (req, res) => {
       // A client sees their own leads; the owner sees every client's.
       leads: ses.r === 'owner' ? leads : leads.filter((l) => l.to === ses.e),
       visits,
+      access: ses.r === 'owner' ? access : undefined,
       // What the operator needs to know about the machinery itself.
       config: ses.r === 'owner' ? { notify: !!process.env.RESEND_API_KEY } : undefined,
     });

@@ -5,19 +5,20 @@
 <script src="assets/resources.js"></script>
 <script src="assets/runtime.js"></script>
 <title>Client Portal — Wolfe Intelligence</title>
-<meta name="description" content="Private client portal for Wolfe Intelligence — your agents, workflows, and everything they need from you.">
+<meta name="description" content="Private client portal for Wolfe Intelligence — your enquiries, your Google setup, and what needs you.">
 <link rel="canonical" href="https://www.wolfeintelligence.com/portal">
 <!-- A sign-in wall has nothing to rank for, and an indexed login page only
      dilutes the homepage. The guided tour is linked from the homepage instead. -->
 <meta name="robots" content="noindex,follow">
 <meta name="theme-color" content="#241e19">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/os.css">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Wolfe Intelligence">
 <meta property="og:url" content="https://www.wolfeintelligence.com/portal">
 <meta property="og:title" content="Wolfe OS — Client Portal">
-<meta property="og:description" content="Your agents, workflows, and everything they need from you.">
+<meta property="og:description" content="Your enquiries, your Google setup, and what needs you.">
 <meta property="og:image" content="https://www.wolfeintelligence.com/assets/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -39,11 +40,14 @@
   a:hover{color:#c9a15f}
   input,textarea{font-family:"Newsreader",Georgia,serif}
   input:focus,textarea:focus{outline:1px solid #c9a15f}
-  @keyframes wo-pulse{0%,100%{opacity:.25}50%{opacity:1}}
+  /* When the owner is signed in the console (#app, outside the runtime root)
+     takes the page; the runtime root must not hold a full viewport height. */
+  body[data-owner] #dc-root{height:auto!important}
+  body[data-owner] #dc-root>.sc-host{height:auto!important}
 </style>
 </helmet>
 
-<div style="min-height:100vh;display:flex;flex-direction:column;">
+<div style="{{ shellStyle }}">
   <!-- top bar -->
   <div style="display:flex;align-items:center;gap:22px;padding:20px 40px;border-bottom:1px solid rgba(239,231,214,.13);flex-wrap:wrap;">
     <a href="/" style="font:700 12px 'Space Mono',monospace;letter-spacing:.24em;color:#efe7d6;">WOLFE&nbsp;INTELLIGENCE</a>
@@ -51,16 +55,13 @@
     <span style="font:400 10px 'Space Mono',monospace;letter-spacing:.12em;color:#8c8072;">{{ sessionBadge }}</span>
     <sc-if value="{{ authed }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;gap:6px;">
-        <sc-for list="{{ navTabs }}" as="t" hint-placeholder-count="3">
+        <sc-for list="{{ navTabs }}" as="t" hint-placeholder-count="2">
           <button sc-camel-on-click="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}</button>
         </sc-for>
       </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:18px;">
         <span style="color:#8c8072;font:400 12px 'Space Mono',monospace;">{{ email }}</span>
-        <sc-if value="{{ isOwner }}" hint-placeholder-val="{{ false }}">
-          <a href="/os" style="border:1px solid rgba(201,161,95,.55);background:rgba(201,161,95,.12);color:#e9c98d;padding:8px 14px;border-radius:2px;font:400 13.5px 'Newsreader',serif;">Console →</a>
-        </sc-if>
-        <a href="#" sc-camel-on-click="{{ logout }}" style="border:1px solid rgba(239,231,214,.25);color:#cfc4b2;padding:8px 14px;border-radius:2px;font:400 13.5px 'Newsreader',serif;">Sign out</a>
+        <a href="#" sc-camel-on-click="{{ logout }}" style="border:1px solid rgba(239,231,214,.25);color:#cfc4b2;padding:8px 14px;border-radius:2px;font:400 13.5px 'Newsreader',serif;">{{ logoutLabel }}</a>
       </div>
     </sc-if>
   </div>
@@ -70,8 +71,8 @@
   <div data-screen-label="Login" style="flex:1;display:flex;align-items:center;justify-content:center;padding:60px 24px;">
     <div style="width:420px;max-width:100%;">
       <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:#c9a15f;margin-bottom:20px;text-align:center;">PRIVATE ACCESS</div>
-      <h1 style="font:400 38px/1.1 'Newsreader',serif;letter-spacing:-.01em;margin:0 0 12px;text-align:center;">Client login</h1>
-      <p style="font:400 16px/1.55 'Newsreader',serif;color:#8c8072;margin:0 0 34px;text-align:center;">Your agents, workflows, and everything they need from you.</p>
+      <h1 style="font:400 38px/1.1 'Newsreader',serif;letter-spacing:-.01em;margin:0 0 12px;text-align:center;">Sign in</h1>
+      <p style="font:400 16px/1.55 'Newsreader',serif;color:#8c8072;margin:0 0 34px;text-align:center;">Your enquiries, your Google setup, and what needs you.</p>
       <div style="display:flex;flex-direction:column;gap:14px;background:#2a2621;border:1px solid rgba(239,231,214,.14);padding:30px 28px;">
         <label style="display:flex;flex-direction:column;gap:7px;font:700 10px 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">EMAIL
           <input type="email" value="{{ emailDraft }}" sc-camel-on-change="{{ setEmail }}" placeholder="you@company.com" style="background:#241e19;border:1px solid rgba(239,231,214,.2);color:#efe7d6;padding:13px 14px;font-size:16px;">
@@ -83,52 +84,24 @@
           <div style="font:400 14px 'Newsreader',serif;color:#c98a6a;">{{ loginError }}</div>
         </sc-if>
         <a href="#" sc-camel-on-click="{{ login }}" style="display:block;text-align:center;background:#c9a15f;color:#241e19;padding:15px 0;font:600 15.5px 'Newsreader',serif;margin-top:6px;">{{ loginLabel }}</a>
-        <p style="margin:2px 0 0;font:400 12.5px/1.5 'Newsreader',serif;color:#8c8072;text-align:center;">Access codes are checked by the site's auth service. Client accounts are provisioned by the owner.</p>
+        <p style="margin:2px 0 0;font:400 12.5px/1.5 'Newsreader',serif;color:#8c8072;text-align:center;">Access codes are set by Wolfe Intelligence when your engagement starts. Lost yours? Write support@wolfeintelligence.com.</p>
       </div>
       <p style="font:400 14px/1.6 'Newsreader',serif;color:#8c8072;text-align:center;margin:22px 0 0;">Not a client yet? <a href="/#book">Book a free consult</a> or <a href="?tour=1">walk through a sample portal</a>.</p>
     </div>
   </div>
   </sc-if>
 
-  <!-- ============ HOME ============ -->
+  <!-- ============ CLIENT: HOME ============ -->
   <sc-if value="{{ showHome }}" hint-placeholder-val="{{ false }}">
   <div data-screen-label="Home" style="flex:1;width:100%;max-width:680px;margin:0 auto;padding:44px 32px 70px;box-sizing:border-box;display:grid;align-content:start;gap:30px;">
-    <div style="display:flex;align-items:baseline;gap:12px;">
-      <div style="font:400 32px/1.18 'Newsreader',serif;">{{ hHead }}</div>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+      <div style="{{ hHeadStyle }}">{{ hHead }}</div>
       <span style="margin-left:auto;font:400 11px 'Space Mono',monospace;letter-spacing:.08em;color:#8c8072;">{{ hBiz }}</span>
     </div>
+    <div style="font:400 16px/1.55 'Newsreader',serif;color:#a2968a;max-width:62ch;">{{ hSub }}</div>
 
-    <sc-for list="{{ hItems }}" as="it" hint-placeholder-count="2">
-      <div style="display:grid;gap:14px;">
-        <span style="font:400 19px/1.45 'Newsreader',serif;text-wrap:pretty;">{{ it.text }}</span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button sc-camel-on-click="{{ it.yes }}" style="padding:11px 17px;border:1px solid #c9a15f;background:#c9a15f;color:#241e19;font:600 14.5px/1 'Newsreader',serif;cursor:pointer;" style-hover="background:#d8b374;border-color:#d8b374">{{ it.a }}</button>
-          <button sc-camel-on-click="{{ it.no }}" style="padding:11px 13px;border:0;background:none;color:#8c8072;font:400 14.5px/1 'Newsreader',serif;cursor:pointer;" style-hover="color:#efe7d6">{{ it.b }}</button>
-        </div>
-      </div>
-    </sc-for>
-
-    <sc-for list="{{ hDone }}" as="d" hint-placeholder-count="0">
-      <div style="display:flex;align-items:baseline;gap:10px;">
-        <span style="font:400 13px/1.4 'Space Mono',monospace;color:#c9a15f;">✓</span>
-        <span style="font:400 16px/1.45 'Newsreader',serif;color:#8c8072;">{{ d }}</span>
-      </div>
-    </sc-for>
-
-    <sc-if value="{{ hUnread }}" hint-placeholder-val="{{ false }}">
-      <div style="display:grid;gap:12px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
-        <div style="display:flex;align-items:center;gap:9px;">
-          <span style="width:6px;height:6px;border-radius:50%;background:#c9a15f;"></span>
-          <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">NEW IN THIS BUILD</span>
-        </div>
-        <sc-for list="{{ hChanges }}" as="c" hint-placeholder-count="2">
-          <div style="display:grid;gap:4px;">
-            <span style="font:400 17px/1.4 'Newsreader',serif;">{{ c.title }}</span>
-            <span style="font:400 14.5px/1.5 'Newsreader',serif;color:#8c8072;text-wrap:pretty;">{{ c.body }}</span>
-          </div>
-        </sc-for>
-        <button sc-camel-on-click="{{ hRead }}" style="justify-self:start;padding:0;border:0;background:none;color:#c9a15f;font:400 15px/1 'Newsreader',serif;cursor:pointer;text-decoration:underline;text-underline-offset:4px;" style-hover="color:#d8b374">Mark as read</button>
-      </div>
+    <sc-if value="{{ tourNote }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:12px 14px;border:1px solid rgba(201,161,95,.4);background:rgba(201,161,95,.08);font:400 14px/1.5 'Newsreader',serif;color:#e9c98d;">{{ tourNote }}</div>
     </sc-if>
 
     <sc-if value="{{ ldShow }}" hint-placeholder-val="{{ false }}">
@@ -195,215 +168,89 @@
     </div>
     </sc-if>
 
-    <div style="display:grid;gap:14px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
-      <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOURS</span>
-      <sc-for list="{{ hApps }}" as="a" hint-placeholder-count="4">
-        <button sc-camel-on-click="{{ a.open }}" style="display:flex;align-items:baseline;gap:12px;width:100%;padding:0;border:0;background:none;color:#efe7d6;cursor:pointer;text-align:left;font:inherit;">
-          <span style="font:400 17.5px/1.4 'Newsreader',serif;">{{ a.name }}</span>
-          <span style="flex:1;height:1px;background:linear-gradient(to right, rgba(239,231,214,.16), transparent 90%);"></span>
-          <span style="{{ a.stateStyle }}">{{ a.state }}</span>
-        </button>
-      </sc-for>
+    <sc-if value="{{ emptyShow }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid;gap:10px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
+      <div style="font:400 20px/1.3 'Newsreader',serif;">Your engagement has not started yet.</div>
+      <div style="font:400 14.5px/1.55 'Newsreader',serif;color:#a2968a;max-width:60ch;">Once Wolfe Intelligence opens your file, your Google setup progress and every enquiry from your site will appear here. Nothing is needed from you right now.</div>
     </div>
+    </sc-if>
   </div>
   </sc-if>
 
-  <!-- ============ BUILD ============ -->
-  <sc-if value="{{ showBuild }}" hint-placeholder-val="{{ false }}">
-  <div data-screen-label="Build" style="flex:1;width:100%;max-width:1240px;margin:0 auto;box-sizing:border-box;">
-  <div style="display:grid;grid-template-columns:344px minmax(0,1fr);min-height:700px;">
+  <!-- ============ CLIENT: RESULTS ============ -->
+  <sc-if value="{{ showResults }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Results" style="flex:1;width:100%;max-width:680px;margin:0 auto;padding:44px 32px 70px;box-sizing:border-box;display:grid;align-content:start;gap:26px;">
+    <div style="font:400 32px/1.18 'Newsreader',serif;">{{ rsHead }}</div>
+    <div style="font:400 16px/1.55 'Newsreader',serif;color:#a2968a;max-width:62ch;">{{ rsSub }}</div>
+    <sc-if value="{{ tourNote }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:12px 14px;border:1px solid rgba(201,161,95,.4);background:rgba(201,161,95,.08);font:400 14px/1.5 'Newsreader',serif;color:#e9c98d;">{{ tourNote }}</div>
+    </sc-if>
 
-    <div style="padding:30px 26px 22px;border-right:1px solid rgba(239,231,214,.13);display:grid;align-content:start;gap:0;">
-      <div style="font:400 30px/1.15 'Newsreader',serif;letter-spacing:-.01em;">What should it<br><em style="color:#c9a15f;">do for you?</em></div>
-      <textarea value="{{ bReq }}" sc-camel-on-input="{{ bSetReq }}" placeholder="Chase unpaid invoices every Monday and send me a summary" style="margin-top:18px;width:100%;box-sizing:border-box;min-height:104px;padding:14px 15px;border:1px solid rgba(239,231,214,.18);background:#2a2621;color:#efe7d6;font:400 16px/1.5 'Newsreader',serif;resize:none;outline:none;"></textarea>
-      <div style="margin-top:14px;display:flex;align-items:center;gap:12px;">
-        <button sc-camel-on-click="{{ bPlan }}" style="{{ bPlanStyle }}">{{ bPlanLabel }}</button>
-        <span style="font:400 11.5px/1.4 'Space Mono',monospace;letter-spacing:.04em;color:#8c8072;">{{ bPlanner }}</span>
-      </div>
-
-      <sc-if value="{{ bAsked }}" hint-placeholder-val="{{ false }}">
-        <div style="margin-top:22px;padding-top:20px;border-top:1px solid rgba(239,231,214,.13);display:grid;gap:13px;">
-          <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#c9a15f;">WOLFE ASKED</span>
-          <span style="font:400 18px/1.45 'Newsreader',serif;text-wrap:pretty;">{{ bQuestion }}</span>
-          <span style="font:400 13.5px/1.5 'Newsreader',serif;color:#8c8072;text-wrap:pretty;">Your words are kept exactly as you wrote them. The answer is added underneath, not on top.</span>
-          <input value="{{ bAnswer }}" sc-camel-on-input="{{ bSetAnswer }}" placeholder="billing@wolfeintelligence.com" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid rgba(239,231,214,.18);background:#2a2621;color:#efe7d6;font:400 15px/1.3 'Newsreader',serif;outline:none;">
-          <button sc-camel-on-click="{{ bAnswerGo }}" style="{{ bAnswerStyle }}">Answer and plan again</button>
-        </div>
-      </sc-if>
-
-      <div style="margin-top:auto;padding-top:24px;display:grid;gap:9px;">
-        <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">SHOW ME</span>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">
-          <sc-for list="{{ bStates }}" as="st" hint-placeholder-count="3">
-            <button sc-camel-on-click="{{ st.pick }}" style="{{ st.style }}">{{ st.label }}</button>
-          </sc-for>
-        </div>
-      </div>
-    </div>
-
-    <div style="padding:30px 28px 24px;min-width:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:0;">
-      <div style="display:flex;align-items:flex-end;gap:20px;">
-        <div style="min-width:0;">
-          <div style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#c9a15f;">THE PLAN</div>
-          <div style="margin-top:11px;font:400 26px/1.2 'Newsreader',serif;">{{ bTitle }}</div>
-        </div>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex:none;">
-          <span style="font:400 12px/1 'Space Mono',monospace;letter-spacing:.06em;color:#8c8072;">{{ bCount }}</span>
-          <button sc-camel-on-click="{{ bAdd }}" style="{{ bAddStyle }}">Add a step</button>
-        </div>
-      </div>
-
-      <div style="margin-top:20px;min-width:0;overflow:auto;background:repeating-linear-gradient(135deg,#262218 0 6px,#241e19 6px 12px);border:1px solid rgba(239,231,214,.1);">
-        <div style="position:relative;width:800px;height:264px;">
-          <svg sc-camel-view-box="0 0 800 264" style="position:absolute;inset:0;width:800px;height:264px;overflow:visible;">
-            <defs><marker id="wo-arrow" sc-camel-marker-width="7" sc-camel-marker-height="7" sc-camel-ref-x="6" sc-camel-ref-y="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#c9a15f"></path></marker></defs>
-            <sc-for list="{{ bEdges }}" as="e" hint-placeholder-count="4">
-              <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" stroke="#6b563a" stroke-width="1" marker-end="url(#wo-arrow)"></line>
-            </sc-for>
-          </svg>
-          <sc-for list="{{ bEdges }}" as="e" hint-placeholder-count="4">
-            <button sc-camel-on-click="{{ e.drop }}" title="Delete this connection" style="{{ e.labelStyle }}">{{ e.label }}</button>
-          </sc-for>
-          <sc-for list="{{ bNodes }}" as="n" hint-placeholder-count="5">
-            <button sc-camel-on-click="{{ n.tap }}" style="{{ n.style }}">
-              <span style="display:flex;align-items:center;gap:7px;">
-                <span style="{{ n.kindStyle }}">{{ n.kind }}</span>
-                <span style="margin-left:auto;font:400 10.5px/1 'Space Mono',monospace;color:#6b563a;">{{ n.index }}</span>
-              </span>
-              <span style="{{ n.titleStyle }}">{{ n.title }}</span>
-            </button>
-          </sc-for>
-        </div>
-      </div>
-
-      <div style="margin-top:20px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:26px;align-items:start;">
-        <sc-if value="{{ bSelected }}" hint-placeholder-val="{{ true }}">
-          <div style="display:grid;gap:13px;min-width:0;">
-            <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">STEP {{ bSelIndex }}</span>
-            <input value="{{ bSelTitle }}" sc-camel-on-input="{{ bSetTitle }}" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid rgba(239,231,214,.18);background:#2a2621;color:#efe7d6;font:400 17px/1.3 'Newsreader',serif;outline:none;">
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              <sc-for list="{{ bKinds }}" as="k" hint-placeholder-count="5">
-                <button sc-camel-on-click="{{ k.pick }}" style="{{ k.style }}">{{ k.label }}</button>
-              </sc-for>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
-              <span style="font:400 12px/1 'Space Mono',monospace;letter-spacing:.06em;color:#8c8072;margin-right:4px;">Move</span>
-              <sc-for list="{{ bMoves }}" as="m" hint-placeholder-count="4">
-                <button sc-camel-on-click="{{ m.go }}" style="width:30px;height:30px;border:1px solid rgba(239,231,214,.18);background:transparent;color:#cfc4b2;font:400 13px/1 'Newsreader',serif;cursor:pointer;" style-hover="border-color:#c9a15f;color:#c9a15f">{{ m.glyph }}</button>
-              </sc-for>
-              <button sc-camel-on-click="{{ bConnect }}" style="{{ bConnectStyle }}">{{ bConnectLabel }}</button>
-              <button sc-camel-on-click="{{ bDrop }}" style="{{ bDropStyle }}">Delete step</button>
-            </div>
-            <span style="font:400 13.5px/1.5 'Newsreader',serif;color:#8c8072;text-wrap:pretty;">{{ bHint }}</span>
-          </div>
-        </sc-if>
-
-        <div style="border-left:1px solid rgba(239,231,214,.13);padding-left:22px;display:grid;gap:12px;">
-          <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#c9a15f;">HOW IT WILL LOOK</span>
-          <span style="font:400 20px/1.25 'Newsreader',serif;text-wrap:pretty;">{{ bPvHead }}</span>
-          <span style="font:400 14px/1.5 'Newsreader',serif;color:#cfc4b2;text-wrap:pretty;">{{ bPvBody }}</span>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
-            <span style="padding:9px 14px;border:1px solid #6b563a;font:400 13.5px/1 'Newsreader',serif;color:#c9a15f;">{{ bPvAction }}</span>
-          </div>
-          <button sc-camel-on-click="{{ bMake }}" style="{{ bMakeStyle }}">{{ bMakeLabel }}</button>
-          <span style="font:400 12.5px/1.5 'Newsreader',serif;color:#8c8072;text-wrap:pretty;">{{ bMakeNote }}</span>
-          <sc-if value="{{ showProvision }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-top:8px;padding-top:16px;border-top:1px solid rgba(239,231,214,.13);display:grid;gap:10px;">
-            <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#c9a15f;">DEPLOY TO A CUSTOMER</span>
-            <input value="{{ depEmail }}" sc-camel-on-change="{{ setDepEmail }}" placeholder="customer@company.com" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(239,231,214,.18);background:#2a2621;color:#efe7d6;font:400 14px/1.3 'Newsreader',serif;outline:none;">
-            <input value="{{ depCode }}" sc-camel-on-change="{{ setDepCode }}" placeholder="access code (6+ characters)" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(239,231,214,.18);background:#2a2621;color:#efe7d6;font:400 14px/1.3 'Newsreader',serif;outline:none;">
-            <button sc-camel-on-click="{{ doDeploy }}" style="{{ depBtnStyle }}">{{ depBtnLabel }}</button>
-            <sc-if value="{{ depStatus }}" hint-placeholder-val="{{ false }}">
-              <span style="font:400 13px/1.5 'Newsreader',serif;color:#cfc4b2;text-wrap:pretty;">{{ depStatus }}</span>
-            </sc-if>
-          </div>
-          </sc-if>
-        </div>
-      </div>
-    </div>
-  </div>
-  </div>
-  </sc-if>
-
-  <!-- ============ RUNNING ============ -->
-  <sc-if value="{{ showRun }}" hint-placeholder-val="{{ false }}">
-  <div data-screen-label="Running" style="flex:1;width:100%;max-width:640px;margin:0 auto;padding:36px 26px 60px;box-sizing:border-box;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:0;">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#c9a15f;">RUNNING</span>
-      <span style="margin-left:auto;font:400 11px/1 'Space Mono',monospace;letter-spacing:.06em;color:#8c8072;">{{ rMode }}</span>
-    </div>
-    <div style="margin-top:18px;display:grid;gap:10px;">
-      <span style="font:400 26px/1.2 'Newsreader',serif;">Daily Research Briefing</span>
-      <span style="font:400 16px/1.5 'Newsreader',serif;color:#cfc4b2;text-wrap:pretty;">{{ rSay }}</span>
-    </div>
-    <div style="margin-top:22px;display:grid;gap:0;align-content:start;">
-      <sc-for list="{{ rSteps }}" as="s" hint-placeholder-count="6">
-        <div style="{{ s.rowStyle }}">
-          <span style="{{ s.dotStyle }}"></span>
-          <span style="display:grid;gap:5px;min-width:0;">
-            <span style="{{ s.nameStyle }}">{{ s.name }}</span>
-            <span style="font:400 14px/1.45 'Newsreader',serif;color:#8c8072;text-wrap:pretty;">{{ s.detail }}</span>
-          </span>
-          <span style="{{ s.stateStyle }}">{{ s.state }}</span>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;">
+      <sc-for list="{{ rsTiles }}" as="tl" hint-placeholder-count="4">
+        <div style="padding:16px 16px 14px;border:1px solid rgba(239,231,214,.14);background:rgba(239,231,214,.03);display:grid;gap:6px;">
+          <span style="font:700 10px/1 'Space Mono',monospace;letter-spacing:.14em;color:#8c8072;">{{ tl.label }}</span>
+          <span style="font:400 30px/1.1 'Newsreader',serif;">{{ tl.value }}</span>
+          <span style="font:400 12.5px/1.4 'Newsreader',serif;color:#8c8072;">{{ tl.note }}</span>
         </div>
       </sc-for>
     </div>
-    <div style="margin-top:20px;padding-top:18px;border-top:1px solid rgba(239,231,214,.13);display:grid;gap:14px;">
-      <sc-if value="{{ rBanner }}" hint-placeholder-val="{{ false }}">
-        <div style="display:grid;gap:9px;padding-left:14px;border-left:2px solid #c9a15f;">
-          <span style="font:400 18px/1.35 'Newsreader',serif;text-wrap:pretty;">{{ rBannerHead }}</span>
-          <span style="font:400 14.5px/1.5 'Newsreader',serif;color:#8c8072;text-wrap:pretty;">{{ rBannerBody }}</span>
+
+    <div style="display:grid;gap:12px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
+      <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">LAST 30 DAYS, BY WHERE PEOPLE CAME FROM</span>
+      <div style="display:grid;grid-template-columns:minmax(0,1.6fr) repeat(4,minmax(0,1fr));gap:8px 12px;font:700 10px/1 'Space Mono',monospace;letter-spacing:.1em;color:#6f6459;padding-bottom:8px;border-bottom:1px solid rgba(239,231,214,.1);">
+        <span>SOURCE</span><span style="text-align:right;">VISITS</span><span style="text-align:right;">ENQUIRIES</span><span style="text-align:right;">BOOKED</span><span style="text-align:right;">CUSTOMERS</span>
+      </div>
+      <sc-for list="{{ rsRows }}" as="rw" hint-placeholder-count="3">
+        <div style="{{ rw.style }}">
+          <span>{{ rw.source }}</span><span style="text-align:right;">{{ rw.visits }}</span><span style="text-align:right;">{{ rw.leads }}</span><span style="text-align:right;">{{ rw.booked }}</span><span style="text-align:right;">{{ rw.won }}</span>
         </div>
+      </sc-for>
+      <sc-if value="{{ rsEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="font:400 14.5px/1.55 'Newsreader',serif;color:#8c8072;">Nothing counted yet. Visits start counting the day your site goes live; enquiries the moment the first one arrives.</div>
       </sc-if>
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
-        <sc-for list="{{ rActions }}" as="a" hint-placeholder-count="2">
-          <button sc-camel-on-click="{{ a.go }}" style="{{ a.style }}">{{ a.label }}</button>
-        </sc-for>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        <sc-for list="{{ rStates }}" as="st" hint-placeholder-count="3">
-          <button sc-camel-on-click="{{ st.pick }}" style="{{ st.style }}">{{ st.label }}</button>
-        </sc-for>
-      </div>
     </div>
+
+    <div style="font:400 13.5px/1.55 'Newsreader',serif;color:#8c8072;max-width:62ch;padding-top:20px;border-top:1px solid rgba(239,231,214,.13);">{{ rsFoot }}</div>
   </div>
   </sc-if>
-
-  <div style="border-top:1px solid rgba(239,231,214,.13);padding:16px 40px;display:flex;justify-content:space-between;align-items:center;font:400 12px 'Newsreader',serif;color:#8c8072;flex-wrap:wrap;gap:12px;">
-    <span style="font:700 10.5px/1 'Space Mono',monospace;letter-spacing:.14em;color:#8c8072;">LOCAL-FIRST · DATA STAYS ON YOUR MACHINE</span>
-    <a href="/" style="color:#8c8072;">← wolfeintelligence.com</a>
-    <span style="font:400 10.5px 'Space Mono',monospace;letter-spacing:.1em;color:#6b563a;">0.1.0</span>
-  </div>
 </div>
 
 </x-dc>
+<!-- The owner console. Outside the runtime root on purpose: the console
+     renders its own DOM and the runtime must never re-render over it. Shown
+     only once an owner is signed in; the portal hands the session over. -->
+<div id="app" data-embed hidden></div>
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240}}">
 class Component extends DCLogic {
   state = {
     authed: false, email: '', emailDraft: '', codeDraft: '', loginError: '', view: 'home',
-    bReq: 'Chase unpaid invoices every Monday and send me a summary',
-    bView: 'plan', bSel: 'n2', bConn: false, bMade: false, bAns: '',
-    bNodes: [
-      { id: 'n1', kind: 'intake', title: 'Pull the unpaid invoices', x: 8, y: 16 },
-      { id: 'n2', kind: 'build', title: 'Draft each chase email', x: 208, y: 16 },
-      { id: 'n3', kind: 'check', title: 'Independent check', x: 408, y: 16 },
-      { id: 'n4', kind: 'review', title: 'Your sign-off', x: 408, y: 150 },
-      { id: 'n5', kind: 'build', title: 'Send them and log it', x: 608, y: 84 },
-    ],
-    bEdges: [
-      { id: 'e1', from: 'n1', to: 'n2', label: 'Next' },
-      { id: 'e2', from: 'n2', to: 'n3', label: 'Next' },
-      { id: 'e3', from: 'n2', to: 'n4', label: 'Branch 2' },
-      { id: 'e4', from: 'n3', to: 'n5', label: 'Passed' },
-      { id: 'e5', from: 'n4', to: 'n5', label: 'Approved' },
-    ],
-    r6: 'running', hDoneIds: [], hRead: false,
     role: 'client', token: '', previewMode: false, loggingIn: false,
-    deployments: [], depEmail: '', depCode: '', depStatus: '',
     onboarding: [], leads: [], visits: {}, leadBusy: '', leadErr: '',
-    callOpen: false, callName: '', callPhone: '', callNote: '', callBusy: false,
+    callOpen: false, callName: '', callPhone: '', callNote: '',
   };
   set(patch) { this.setState(patch); }
+
+  // The owner console (os.js) lives outside the runtime root and takes the
+  // session from here. Body gets a marker so the runtime root stops holding a
+  // full viewport of empty space above the console.
+  handOff(ses) {
+    if (!ses || ses.role !== 'owner' || !ses.token) return;
+    window.__wolfeOs = { email: ses.email, token: ses.token };
+    document.body.setAttribute('data-owner', '');
+    try { window.dispatchEvent(new CustomEvent('wolfe-os-session', { detail: window.__wolfeOs })); } catch (e) {}
+  }
+  clearOs() {
+    window.__wolfeOs = null;
+    document.body.removeAttribute('data-owner');
+    try { window.dispatchEvent(new CustomEvent('wolfe-os-signout')); } catch (e) {}
+  }
+  signOut(message) {
+    try { sessionStorage.removeItem('wolfe-portal-auth'); } catch (err) {}
+    this.clearOs();
+    this.set({ authed: false, email: '', emailDraft: '', codeDraft: '', loginError: message || '', view: 'home', role: 'client', token: '', previewMode: false, onboarding: [], leads: [], visits: {} });
+  }
+
   // A client recording what became of an enquiry, or logging a call. The
   // server enforces that a client can only touch their own leads and only the
   // outcome fields; this just sends the change and keeps the list current.
@@ -414,6 +261,7 @@ class Component extends DCLogic {
     try {
       const r = await fetch('/api/apps', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + s.token }, body: JSON.stringify({ action, lead }) });
       let d = null; try { d = await r.json(); } catch (e) {}
+      if (r.status === 401) { this.signOut('Your sign-in expired. Sign in again.'); return false; }
       if (!r.ok || !d || !d.lead) throw new Error((d && d.error) || ('http-' + r.status));
       const rest = (this.state.leads || []).filter((l) => l.id !== d.lead.id);
       this.setState({ leads: rest.concat([d.lead]), leadBusy: '' });
@@ -423,10 +271,13 @@ class Component extends DCLogic {
       return false;
     }
   }
+
   componentDidMount() {
+    // The console asks for the gate back when its token has expired.
+    window.addEventListener('wolfe-os-expired', () => this.signOut('Your sign-in expired. Sign in again.'));
     // ?tour=1 is the one credential-free way in: an openly-labelled walkthrough
-    // of the sample data, shareable as a link with prospects. It never carries a
-    // token, so it can't reach /api/apps or any real client data.
+    // of a sample client's portal, shareable as a link with prospects. It never
+    // carries a token, so it can't reach /api/apps or any real client data.
     try {
       if (/[?&]tour=1\b/.test(window.location.search)) {
         this.setState({ authed: true, email: '', role: 'client', token: '', previewMode: true, view: 'home' });
@@ -442,6 +293,7 @@ class Component extends DCLogic {
       // from an older build, a hand-written one — is discarded, not honored.
       if (ses && ses.email && ses.token) {
         this.setState({ authed: true, email: ses.email, role: ses.role || 'client', token: ses.token, previewMode: false });
+        this.handOff(ses);
         this.loadApps(ses.token);
       } else {
         sessionStorage.removeItem('wolfe-portal-auth');
@@ -451,9 +303,9 @@ class Component extends DCLogic {
   async loadApps(token) {
     try {
       const r = await fetch('/api/apps', { headers: { authorization: 'Bearer ' + token } });
+      if (r.status === 401) return this.signOut('Your sign-in expired. Sign in again.');
       if (r.ok) {
         let d = null; try { d = await r.json(); } catch (e) {}
-        if (d && Array.isArray(d.deployments)) this.setState({ deployments: d.deployments });
         if (d && Array.isArray(d.onboarding)) this.setState({ onboarding: d.onboarding });
         if (d && Array.isArray(d.leads)) this.setState({ leads: d.leads });
         if (d && d.visits && typeof d.visits === 'object') this.setState({ visits: d.visits });
@@ -469,8 +321,8 @@ class Component extends DCLogic {
     this.setState({ loggingIn: true, loginError: '' });
     // Fails closed: only a signed token from /api/login opens the gate. An
     // outage or a misconfigured auth service locks everyone out rather than
-    // dropping the visitor into the sample-data portal. The tour below is the
-    // only way in without credentials, and it is entered deliberately.
+    // dropping the visitor into the sample portal. The tour is the only way in
+    // without credentials, and it is entered deliberately.
     let ses = null;
     try {
       const r = await fetch('/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, code }) });
@@ -483,76 +335,54 @@ class Component extends DCLogic {
       return this.setState({ loggingIn: false, loginError: 'Could not reach the sign-in service. Check your connection and try again.' });
     }
     try { sessionStorage.setItem('wolfe-portal-auth', JSON.stringify(ses)); } catch (e) {}
-    this.setState({ authed: true, email: ses.email, role: ses.role, token: ses.token || '', previewMode: !!ses.preview, loggingIn: false, view: 'home' });
+    this.setState({ authed: true, email: ses.email, role: ses.role, token: ses.token || '', previewMode: false, loggingIn: false, view: 'home', codeDraft: '' });
+    this.handOff(ses);
     if (ses.token) this.loadApps(ses.token);
   }
-  async doDeploy() {
-    const s = this.state;
-    const email = (s.depEmail || '').trim().toLowerCase();
-    const code = (s.depCode || '').trim();
-    const name = 'Weekly invoice chase';
-    if (!email.includes('@')) return this.set({ depStatus: 'Enter the customer email.' });
-    if (code.length < 6) return this.set({ depStatus: 'Access code needs at least 6 characters.' });
-    if (s.previewMode) {
-      return this.set({
-        deployments: [...s.deployments, { name, to: email, at: 'preview' }],
-        depStatus: 'Recorded in preview only. Set OWNER_CODE, SESSION_SECRET, and KV storage on Vercel to make deploys real.',
-        depEmail: '', depCode: '',
-      });
-    }
-    this.set({ depStatus: 'Deploying…' });
-    try {
-      const h = { 'content-type': 'application/json', authorization: 'Bearer ' + s.token };
-      const p = await fetch('/api/apps', { method: 'POST', headers: h, body: JSON.stringify({ action: 'provision', email, code }) });
-      if (p.status === 501) return this.set({ depStatus: 'Storage not configured — add KV_REST_API_URL and KV_REST_API_TOKEN (Upstash/Vercel KV) to the Vercel project.' });
-      if (!p.ok) return this.set({ depStatus: 'Provisioning failed (' + p.status + ').' });
-      const d = await fetch('/api/apps', { method: 'POST', headers: h, body: JSON.stringify({ action: 'deploy', to: email, name }) });
-      if (!d.ok) return this.set({ depStatus: 'Deploy failed (' + d.status + ').' });
-      this.set({
-        deployments: [...s.deployments, { name, to: email, at: new Date().toISOString() }],
-        depStatus: 'Deployed. ' + email + ' can now log in with that access code and will see “' + name + '”.',
-        depEmail: '', depCode: '',
-      });
-    } catch (e) { this.set({ depStatus: 'Network error — try again.' }); }
+
+  /* Sample data for the guided tour only. Never stored, never mixed with real
+     records: it exists in this function and nowhere else, and the tour is
+     labelled as a sample everywhere it shows. */
+  tourData() {
+    const day = (n) => new Date(Date.now() - n * 86400000).toISOString();
+    const hoursAgo = (h) => new Date(Date.now() - h * 3600000).toISOString();
+    return {
+      onboarding: [{
+        email: 'sample@client.example', businessName: 'Sample Lawn Care',
+        steps: [
+          { label: 'Google account ready', done: true, date: day(12).slice(0, 10), owner: 'you' },
+          { label: 'Business Profile created', done: true, date: day(11).slice(0, 10), owner: 'wolfe' },
+          { label: 'Verification video recorded', done: true, date: day(10).slice(0, 10), owner: 'you' },
+          { label: 'Google approves the listing', done: false, date: '', owner: 'google' },
+          { label: 'Reviews from your first customers', done: false, date: '', owner: 'you' },
+          { label: 'Website and estimate form live', done: false, date: '', owner: 'wolfe' },
+        ],
+      }],
+      leads: [
+        { id: 't1', name: 'Dana R.', phone: '(336) 555-0142', service: 'Weekly mowing', preferred: 'Weekday mornings', at: hoursAgo(1.5), source: 'google ads' },
+        { id: 't2', name: 'Marcus T.', phone: '(336) 555-0177', service: 'Spring cleanup', at: day(2), source: 'google business profile', contacted: 'Yes', booked: 'Yes' },
+        { id: 't3', name: 'Priya S.', phone: '(336) 555-0119', service: 'Biweekly mowing', at: day(6), source: 'google ads', contacted: 'Yes', booked: 'Yes', won: 'Yes', contract: 'Biweekly' },
+        { id: 't4', name: 'Owen K.', phone: '(336) 555-0163', service: 'One-off cut', at: day(9), source: 'phone', contacted: 'Yes', won: 'No' },
+      ],
+      visits: { paid: 61, gbp: 23, organic: 9, direct: 4 },
+    };
   }
+
   renderVals() {
     const s = this.state;
-    const ochre = '#c9a15f', cream = '#efe7d6', muted = '#8c8072', line = 'rgba(239,231,214,.18)';
-    const NODE_W = 164, NODE_H = 86, CANVAS_W = 800, CANVAS_H = 264, MAX = 8, MIN = 3;
-    const KINDS = [['intake', 'Intake'], ['design', 'Design'], ['build', 'Build'], ['check', 'Check'], ['review', 'Review']];
-    const primary = (on) => `padding:12px 18px;border:1px solid ${on ? ochre : line};background:${on ? ochre : 'transparent'};color:${on ? '#241e19' : muted};font:600 13.5px/1 'Newsreader',serif;cursor:${on ? 'pointer' : 'default'}`;
-    const ghost = `padding:11px 13px;border:0;background:none;color:${muted};font:400 13.5px/1 'Newsreader',serif;cursor:pointer`;
-    const outline = (on) => `padding:10px 14px;border:1px solid ${on ? ochre : line};background:transparent;color:${on ? ochre : '#cfc4b2'};font:${on ? '600' : '400'} 12.5px/1 'Newsreader',serif;cursor:pointer`;
+    const ochre = '#c9a15f', muted = '#8c8072', line = 'rgba(239,231,214,.18)';
     const chip = (on) => `padding:8px 12px;border:1px solid ${on ? ochre : line};background:${on ? 'rgba(201,161,95,.14)' : 'transparent'};color:${on ? ochre : muted};font:${on ? '700' : '400'} 11.5px/1 'Space Mono',monospace;letter-spacing:.06em;cursor:pointer`;
+    const isOwner = s.authed && s.role === 'owner' && !s.previewMode;
+    const isTour = s.authed && s.previewMode;
 
-    const view = s.bView;
-    const planned = view === 'plan';
-    const nodes = planned ? s.bNodes : [];
-    const edges = planned ? s.bEdges : [];
-    const sel = nodes.find((n) => n.id === s.bSel);
-    const branches = nodes.filter((n) => edges.filter((e) => e.from === n.id).length > 1).length;
-    const firstBuild = nodes.find((n) => n.kind === 'build') || nodes[0];
-    const updateNode = (id, patch) => this.set({ bNodes: s.bNodes.map((n) => (n.id === id ? { ...n, ...patch } : n)) });
-
-    const H_ITEMS = [
-      { id: 'h1', text: 'Your weekly invoice chase stopped. It needs the password for the bank website.', a: 'Give it the password', b: 'Later', done: 'The invoice chase is going again.' },
-      { id: 'h2', text: "Monday's briefing failed its independent check. It has been held back for you.", a: 'Show me why', b: 'Later', done: 'You read why the briefing was held.' },
-    ];
-    const liveItems = H_ITEMS.filter((i) => !s.hDoneIds.includes(i.id));
-    // Content gate: the owner and the guided tour both see the whole OS, so a
-    // prospect walking through gets the real thing rather than an empty shell.
-    // Provisioning is gated separately below — the tour must never see it.
-    const full = s.role === 'owner' || s.previewMode;
-    // A client has at most one onboarding record; the owner may hold many, and
-    // the panel is written for the client, so the owner view shows none.
-    // No sample data: the tour therefore does not show this panel. It renders
-    // only for a client with a real record.
-    const ob = (!full && Array.isArray(s.onboarding) && s.onboarding.length) ? s.onboarding[0] : null;
-    // Leads are the point of the whole engagement, so they lead the page for a
-    // client who has any. Newest first; the operator sets booked/won.
-    const leads = (!full && Array.isArray(s.onboarding) && s.onboarding.length) ? (s.leads || []) : [];
-    const canLog = !full && s.authed && !!s.token && Array.isArray(s.onboarding) && s.onboarding.length > 0;
+    // Real client data, or the labelled sample in the tour. The owner sees the
+    // console instead of any of this.
+    const data = isTour ? this.tourData() : { onboarding: s.onboarding || [], leads: s.leads || [], visits: (s.visits && s.visits[s.email]) || {} };
+    const ob = data.onboarding.length ? data.onboarding[0] : null;
+    const leads = ob ? data.leads : [];
+    const canLog = !isOwner && !isTour && s.authed && !!s.token && !!ob;
     const leadBtn = (on, tone) => `padding:7px 11px;border:1px solid ${on ? tone : 'rgba(239,231,214,.22)'};background:${on ? tone : 'transparent'};color:${on ? '#241e19' : '#cfc4b2'};font:${on ? '700' : '400'} 11px/1 'Space Mono',monospace;letter-spacing:.06em;cursor:pointer;white-space:nowrap;`;
+
     // Uncontacted first — those are the ones losing value by the minute —
     // then newest first.
     const untouched = (l) => !l.contacted && !l.booked && !l.won;
@@ -562,7 +392,7 @@ class Component extends DCLogic {
     const leadWon = real.filter((l) => l.won === 'Yes').length;
     const leadBooked = real.filter((l) => l.booked === 'Yes').length;
     const waiting = leads.filter(untouched).length;
-    const myVisits = (s.visits && s.visits[s.email]) || {};
+    const myVisits = data.visits || {};
     const visitTotal = Object.values(myVisits).reduce((t, n) => t + (n || 0), 0);
     const ageOf = (iso) => {
       const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -574,28 +404,77 @@ class Component extends DCLogic {
     const obSteps = ob && Array.isArray(ob.steps) ? ob.steps : [];
     const obNext = obSteps.filter((x) => !x.done)[0] || null;
 
+    // Results: last 30 days by source bucket.
+    const bucketOf = (source) => {
+      const b = String(source || '').toLowerCase();
+      if (b === 'google ads' || /\sads$/.test(b)) return 'paid';
+      if (b === 'google business profile') return 'gbp';
+      if (b === 'google search' || b === 'bing search') return 'organic';
+      if (b === 'phone' || b === 'lsa') return 'phone';
+      if (!b || b === 'website form' || b === 'direct') return 'direct';
+      return 'referral';
+    };
+    const LABEL = { paid: 'Google Ads', gbp: 'Google Business Profile', organic: 'Google search', referral: 'Other websites', direct: 'Direct / untagged', phone: 'Phone / Local Services' };
+    const since = Date.now() - 30 * 86400000;
+    const l30 = real.filter((l) => new Date(l.at).getTime() >= since);
+    const rsRows = ['paid', 'gbp', 'organic', 'referral', 'direct', 'phone'].map((b) => {
+      const ls = l30.filter((l) => bucketOf(l.source) === b);
+      const vis = b === 'phone' ? null : (myVisits[b] || 0);
+      if (!vis && !ls.length) return null;
+      return {
+        source: LABEL[b],
+        visits: vis === null ? '—' : String(vis),
+        leads: String(ls.length),
+        booked: String(ls.filter((l) => l.booked === 'Yes').length),
+        won: String(ls.filter((l) => l.won === 'Yes').length),
+        style: "display:grid;grid-template-columns:minmax(0,1.6fr) repeat(4,minmax(0,1fr));gap:8px 12px;font:400 15px/1.4 'Newsreader',serif;padding:4px 0;",
+      };
+    }).filter(Boolean);
+    const l30Booked = l30.filter((l) => l.booked === 'Yes').length;
+    const l30Won = l30.filter((l) => l.won === 'Yes').length;
+    const respTimes = real.map((l) => l.contactedAt ? (new Date(l.contactedAt) - new Date(l.at)) / 60000 : NaN).filter((m) => isFinite(m) && m >= 0);
+    const medResp = (() => { if (!respTimes.length) return NaN; const a = respTimes.slice().sort((x, y) => x - y); const m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; })();
+    const fmtMins = (m) => !isFinite(m) ? '—' : m < 60 ? Math.round(m) + ' min' : m < 2880 ? (m / 60).toFixed(1).replace(/\.0$/, '') + ' h' : Math.round(m / 1440) + ' days';
+
     return {
-      /* --- auth + nav --- */
+      /* --- shell + auth + nav --- */
+      shellStyle: 'display:flex;flex-direction:column;' + (isOwner ? '' : 'min-height:100vh;'),
       authed: s.authed,
       gateVisible: !s.authed,
-      email: s.email,
+      email: isTour ? 'sample portal' : s.email,
       emailDraft: s.emailDraft, codeDraft: s.codeDraft, loginError: s.loginError,
       setEmail: (e) => this.set({ emailDraft: e.target.value, loginError: '' }),
       setCode: (e) => this.set({ codeDraft: e.target.value, loginError: '' }),
       onKey: (e) => { if (e.key === 'Enter') this.doLogin(); },
       login: (e) => { e.preventDefault(); this.doLogin(); },
-      logout: (e) => {
-        e.preventDefault();
-        try { sessionStorage.removeItem('wolfe-portal-auth'); } catch (err) {}
-        this.set({ authed: false, email: '', emailDraft: '', codeDraft: '', view: 'home', role: 'client', token: '', previewMode: false, deployments: [], depStatus: '' });
-      },
+      logout: (e) => { e.preventDefault(); this.signOut(''); },
+      logoutLabel: isTour ? 'Leave the tour' : 'Sign out',
       loginLabel: s.loggingIn ? 'Checking…' : 'Enter portal →',
-      // Deliberately not `full`: that includes the guided tour, which any
-      // prospect can open, and the console is not theirs to know about.
-      isOwner: s.role === 'owner' && !s.previewMode,
+      sessionBadge: !s.authed ? 'CLIENT PORTAL'
+        : isTour ? 'GUIDED TOUR · SAMPLE DATA'
+        : isOwner ? 'OWNER · CONSOLE' : 'CLIENT',
+      navTabs: (isOwner ? [] : [['home', 'Home'], ['results', 'Results']]).map(([k, label]) => ({
+        label, pick: () => this.set({ view: k }), style: chip(s.view === k),
+      })),
+      showHome: s.authed && !isOwner && s.view === 'home',
+      showResults: s.authed && !isOwner && s.view === 'results',
+      tourNote: isTour ? 'This is a sample portal for a made-up business, so you can see what a client sees. Nothing here is real and nothing you tap is saved.' : '',
 
-      /* --- onboarding status, written by the owner console --- */
-      ldShow: leads.length > 0 || canLog,
+      /* --- Home --- */
+      hBiz: ob ? (ob.businessName || '') : '',
+      hHead: waiting > 0
+        ? (waiting === 1 ? 'One enquiry needs a call back.' : waiting + ' enquiries need a call back.')
+        : obNext && obNext.owner === 'you' ? 'One thing needs you.'
+        : 'Nothing needs you.',
+      hHeadStyle: 'font:400 32px/1.18 \'Newsreader\',serif;color:' + (waiting > 0 || (obNext && obNext.owner === 'you') ? '#e9c98d' : '#efe7d6') + ';',
+      hSub: waiting > 0
+        ? 'The first business to call back usually gets the job. They are at the top of the list below.'
+        : obNext && obNext.owner === 'you' ? 'Your Google setup is waiting on a step only you can do — it is marked below.'
+        : ob ? 'Enquiries from your site and your Google setup progress land here as they happen.' : '',
+      emptyShow: s.authed && !isOwner && !ob,
+
+      /* --- enquiries --- */
+      ldShow: !!ob && (leads.length > 0 || canLog),
       ldHead: waiting > 0
         ? (waiting === 1 ? '1 enquiry waiting for a call back' : waiting + ' enquiries waiting for a call back')
         : leads.length === 0 ? 'No enquiries yet' : leads.length + (leads.length === 1 ? ' enquiry' : ' enquiries'),
@@ -603,14 +482,14 @@ class Component extends DCLogic {
       ldSub: leads.length === 0
         ? (visitTotal ? visitTotal + (visitTotal === 1 ? ' visit' : ' visits') + ' to your site in the last 30 days, no enquiries yet. ' : '')
           + 'When someone asks for a quote through your site, or you log a call below, it shows up here.'
-        : (visitTotal ? visitTotal + ' site visits in the last 30 days \u00b7 ' : '')
+        : (visitTotal ? visitTotal + ' site visits in the last 30 days · ' : '')
           + real.length + (real.length === 1 ? ' enquiry, ' : ' enquiries, ') + leadBooked + ' booked an estimate, ' + leadWon
           + (leadWon === 1 ? ' became a customer' : ' became customers') + '.'
-          + (waiting > 0 ? ' The first business to call back usually gets the job.' : ' Tap what happened with each one \u2014 it keeps your numbers honest.'),
+          + (waiting > 0 ? '' : ' Tap what happened with each one — it keeps your numbers honest.'),
       ldErr: s.leadErr,
       ldItems: leadsSorted.map((l) => ({
         name: l.name || 'Enquiry',
-        detail: [l.service, l.phone, l.preferred ? 'prefers ' + l.preferred : '', l.smsOk === 'Yes' ? 'ok to text' : '', l.duplicateOf ? 'repeat' : ''].filter(Boolean).join(' \u00b7 '),
+        detail: [l.service, l.phone, l.preferred ? 'prefers ' + l.preferred : '', l.smsOk === 'Yes' ? 'ok to text' : '', l.duplicateOf ? 'repeat' : ''].filter(Boolean).join(' · '),
         when: untouched(l) ? 'waiting ' + ageOf(l.at) : String(l.at || '').slice(0, 10),
         whenStyle: "font:400 11px 'Space Mono',monospace;color:" + (untouched(l) ? '#e9c98d' : '#6f6459') + ';',
         state: l.won === 'Yes' ? 'CUSTOMER'
@@ -630,7 +509,6 @@ class Component extends DCLogic {
         setWon: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, contacted: 'Yes', won: l.won === 'Yes' ? '' : 'Yes', booked: 'Yes' }); },
         setLost: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, contacted: 'Yes', won: l.won === 'No' ? '' : 'No' }); },
       })),
-      /* --- log a phone call as an enquiry --- */
       callCan: canLog,
       callOpen: s.callOpen,
       callToggle: (e) => { e.preventDefault(); this.set({ callOpen: !s.callOpen, leadErr: '' }); },
@@ -639,7 +517,7 @@ class Component extends DCLogic {
       callSetName: (e) => this.set({ callName: e.target.value }),
       callSetPhone: (e) => this.set({ callPhone: e.target.value }),
       callSetNote: (e) => this.set({ callNote: e.target.value }),
-      callSaveLabel: s.leadBusy === 'new' ? 'Saving\u2026' : 'Save',
+      callSaveLabel: s.leadBusy === 'new' ? 'Saving…' : 'Save',
       callSave: async (e) => {
         e.preventDefault();
         if (!s.callName.trim()) return this.set({ leadErr: 'Their name, at least.' });
@@ -647,7 +525,9 @@ class Component extends DCLogic {
         const ok = await this.saveLead('lead-add', { name: s.callName.trim(), phone: s.callPhone.trim(), service: s.callNote.trim(), source: 'phone' });
         if (ok) this.set({ callOpen: false, callName: '', callPhone: '', callNote: '' });
       },
-      obShow: !!ob,
+
+      /* --- Google setup, written by the owner console --- */
+      obShow: !!ob && obSteps.length > 0,
       obStatus: !ob ? ''
         : !obNext ? 'Everything is set up.'
         : obNext.owner === 'you' ? 'Waiting on you'
@@ -661,213 +541,34 @@ class Component extends DCLogic {
         : obNext.owner === 'google' ? 'Google reviews new listings by hand. It usually takes a few days and sometimes a couple of weeks. Silence is normal and does not mean anything went wrong.'
         : obNext.label + '. Nothing needed from you.',
       obSteps: obSteps.map((x) => ({
-        label: x.label,
         mark: x.done ? '✓' : '○',
-        markStyle: 'font:400 15px/1.4 \'Newsreader\',serif;color:' + (x.done ? '#9dbb7a' : '#6f6459') + ';width:14px;',
-        labelStyle: 'font:400 16px/1.4 \'Newsreader\',serif;color:' + (x.done ? '#8c8072' : '#efe7d6') + ';',
+        markStyle: 'font:400 14px/1 \'Space Mono\',monospace;color:' + (x.done ? '#9dbb7a' : x === obNext ? '#c9a15f' : '#6f6459') + ';',
+        label: x.label,
+        labelStyle: 'font:400 16px/1.4 \'Newsreader\',serif;color:' + (x.done ? '#8c8072' : x === obNext ? '#efe7d6' : '#a2968a') + ';',
         tag: x.done ? (x.date || 'done') : x.owner === 'you' ? 'YOU' : x.owner === 'google' ? 'GOOGLE' : 'WOLFE',
         tagStyle: 'font:700 10px/1 \'Space Mono\',monospace;letter-spacing:.12em;white-space:nowrap;color:'
           + (x.done ? '#6f6459' : x.owner === 'you' ? '#c9a15f' : '#8c8072') + ';',
       })),
-      sessionBadge: !s.authed ? 'CLIENT PORTAL'
-        : s.previewMode ? 'GUIDED TOUR · SAMPLE DATA'
-        : s.role === 'owner' ? 'OWNER · BUILD ENABLED' : 'CLIENT',
-      navTabs: (full ? [['home', 'Home'], ['build', 'Build'], ['run', 'Running']] : [['home', 'Home'], ['run', 'Running']]).map(([k, label]) => ({
-        label, pick: () => this.set({ view: k }), style: chip(s.view === k),
-      })),
-      showHome: s.authed && s.view === 'home',
-      showBuild: s.authed && s.view === 'build' && full,
-      showProvision: s.role === 'owner' && !s.previewMode,
-      showRun: s.authed && s.view === 'run',
-      depEmail: s.depEmail, depCode: s.depCode, depStatus: s.depStatus,
-      setDepEmail: (e) => this.set({ depEmail: e.target.value, depStatus: '' }),
-      setDepCode: (e) => this.set({ depCode: e.target.value, depStatus: '' }),
-      doDeploy: () => this.doDeploy(),
-      depBtnLabel: 'Provision access & deploy',
-      depBtnStyle: `justify-self:start;${primary(!!(s.depEmail && s.depCode))}`,
 
-      /* --- Home --- */
-      hBiz: 'Wolfe Intelligence',
-      hHead: !full ? 'Nothing needs you.' : liveItems.length === 0 ? 'Nothing needs you.' : liveItems.length === 1 ? 'One thing needs you.' : 'Two things need you.',
-      hItems: (full ? liveItems : []).map((i) => ({
-        text: i.text, a: i.a, b: i.b,
-        yes: () => i.id === 'h2'
-          ? this.set({ hDoneIds: [...s.hDoneIds, i.id], view: 'run', r6: 'failed' })
-          : this.set({ hDoneIds: [...s.hDoneIds, i.id] }),
-        no: () => this.set({ hDoneIds: [...s.hDoneIds, i.id] }),
-      })),
-      hDone: s.hDoneIds.map((id) => (H_ITEMS.find((i) => i.id === id) || {}).done).filter(Boolean),
-      hUnread: !s.hRead,
-      hChanges: [
-        { title: 'It asks instead of stalling', body: 'When the planner needs one more thing from you, the question now reaches you.' },
-        { title: 'Plans open fitted to the window', body: 'A wide workflow used to run off the edge, so you could not judge it.' },
+      /* --- Results --- */
+      rsHead: !ob ? 'Nothing to measure yet.'
+        : visitTotal || l30.length ? 'What your site did in the last 30 days.' : 'Nothing counted yet.',
+      rsSub: !ob ? 'Once your engagement starts, this page shows visits to your site, the enquiries they turned into, and how many became customers — split by where people came from.'
+        : 'Visits are counted on your site without cookies or tracking anyone. Enquiries are the people who asked for an estimate; what happened next is whatever you tapped on the Home tab.',
+      rsTiles: [
+        { label: 'VISITS', value: String(visitTotal), note: 'to your site, 30 days' },
+        { label: 'ENQUIRIES', value: String(l30.length), note: visitTotal ? (100 * l30.length / visitTotal).toFixed(1) + '% of visits asked' : 'from all sources, 30 days' },
+        { label: 'ESTIMATES BOOKED', value: String(l30Booked), note: l30.length ? Math.round(100 * l30Booked / l30.length) + '% of enquiries' : '' },
+        { label: 'CUSTOMERS', value: String(l30Won), note: l30.length ? Math.round(100 * l30Won / l30.length) + '% of enquiries' : '' },
+        { label: 'TIME TO CALL BACK', value: fmtMins(medResp), note: respTimes.length ? 'median, all time' : 'tap “I called them” to start measuring' },
+        { label: 'ALL TIME', value: String(real.length), note: real.length === 1 ? 'enquiry, ' + leadWon + ' won' : 'enquiries, ' + leadWon + ' won' },
       ],
-      hRead: () => this.set({ hRead: true }),
-      hApps: (full
-        ? [
-            ['Site Guide', 'Live on this site', '#9dbb7a', null],
-            ['Daily Research Briefing', 'Ran 09:12', '#9fae94', 'run'],
-            ['Weekly invoice chase', 'Waiting on you', ochre, 'run'],
-            ['Build', 'Open', muted, 'build'],
-            ...s.deployments.map((d) => [d.name + ' → ' + d.to, d.at === 'preview' ? 'Preview deploy' : 'Deployed', muted, null]),
-          ]
-        : [
-            ['Site Guide', 'Live on this site', '#9dbb7a', null],
-            // Onboarding progress, written by the owner console. Shows the client
-            // where their setup actually stands instead of leaving them guessing
-            // through the verification wait.
-            ...s.onboarding.map((o) => {
-              const done = (o.steps || []).filter((x) => x.done).length;
-              const total = (o.steps || []).length;
-              return [
-                o.businessName || 'Your Google setup',
-                total ? done + ' of ' + total + ' done' : (o.phase || 'In progress'),
-                done && done === total ? '#9dbb7a' : ochre,
-                null,
-              ];
-            }),
-            ...s.deployments.map((d) => [d.name, 'Deployed to you', ochre, 'run']),
-          ]
-      ).map(([name, state, tone, dest]) => ({
-        name, state,
-        open: () => dest && this.set({ view: dest }),
-        stateStyle: `font:700 10.5px/1 'Space Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:${tone};white-space:nowrap`,
-      })),
-
-      /* --- Build --- */
-      bReq: s.bReq,
-      bSetReq: (e) => this.set({ bReq: e.target.value }),
-      bPlan: () => this.set({ bView: 'plan', bSel: s.bSel || 'n2' }),
-      bPlanLabel: planned ? 'Plan it again' : 'Plan it',
-      bPlanStyle: primary(!!s.bReq),
-      bPlanner: planned ? 'Qwen3 4B · here · 4.2s' : 'Qwen3 4B · on this machine',
-      bAsked: view === 'asked',
-      bQuestion: 'Which mailbox should the chase emails come from?',
-      bAnswer: s.bAns,
-      bSetAnswer: (e) => this.set({ bAns: e.target.value }),
-      bAnswerGo: () => this.set({ bView: 'plan', bSel: 'n2' }),
-      bAnswerStyle: `justify-self:start;${primary(!!s.bAns)}`,
-      bStates: [['plan', 'A plan'], ['asked', 'It asked me first'], ['empty', 'Not planned yet']].map(([k, label]) => ({
-        label, pick: () => this.set({ bView: k, bConn: false }), style: chip(view === k),
-      })),
-      bTitle: planned ? 'Weekly invoice chase' : view === 'asked' ? 'Waiting on your answer' : 'Nothing planned yet',
-      bCount: planned ? `${nodes.length} of ${MAX} steps` : 'no steps',
-      bAdd: () => {
-        if (s.bNodes.length >= MAX || !planned) return;
-        const i = s.bNodes.length, id = `n${Date.now()}`;
-        this.set({ bNodes: [...s.bNodes, { id, kind: 'build', title: 'New step', x: 8 + (i % 4) * 200, y: 16 + Math.floor(i / 4) * 134 }], bSel: id });
-      },
-      bAddStyle: outline(planned && nodes.length < MAX),
-      bNodes: nodes.map((n, i) => {
-        const on = n.id === s.bSel;
-        const target = s.bConn && !on;
-        return {
-          kind: (KINDS.find(([k]) => k === n.kind) || [])[1],
-          title: n.title,
-          index: String(i + 1).padStart(2, '0'),
-          tap: () => {
-            if (s.bConn && !on) {
-              const outgoing = s.bEdges.filter((e) => e.from === s.bSel).length;
-              const dupe = s.bEdges.some((e) => e.from === s.bSel && e.to === n.id);
-              this.set({ bConn: false, bEdges: dupe ? s.bEdges : [...s.bEdges, { id: `e${Date.now()}`, from: s.bSel, to: n.id, label: outgoing ? `Branch ${outgoing + 1}` : 'Next' }] });
-            } else this.set({ bSel: n.id, bConn: false });
-          },
-          style: `position:absolute;z-index:2;left:${n.x}px;top:${n.y}px;width:${NODE_W}px;height:${NODE_H}px;box-sizing:border-box;display:grid;align-content:start;gap:8px;padding:11px 12px;text-align:left;border:1px solid ${on ? ochre : target ? '#6b563a' : line};background:${on ? '#302a22' : '#2a2621'};color:${cream};cursor:pointer;box-shadow:${on ? '0 6px 22px rgba(0,0,0,.35)' : 'none'};font:inherit`,
-          kindStyle: `font:700 10px/1 'Space Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:${on ? ochre : muted}`,
-          titleStyle: `font:400 15.5px/1.3 'Newsreader',serif;color:${cream}`,
-        };
-      }),
-      bEdges: edges.map((e) => {
-        const a = nodes.find((n) => n.id === e.from), b = nodes.find((n) => n.id === e.to);
-        if (!a || !b) return { x1: 0, y1: 0, x2: 0, y2: 0, label: '', labelStyle: 'display:none', drop: () => {} };
-        const fwd = b.x >= a.x;
-        const x1 = a.x + (fwd ? NODE_W : 0), x2 = b.x + (fwd ? 0 : NODE_W);
-        const y1 = a.y + NODE_H / 2, y2 = b.y + NODE_H / 2;
-        return {
-          x1, y1, x2, y2, label: e.label,
-          drop: () => this.set({ bEdges: s.bEdges.filter((x) => x.id !== e.id) }),
-          labelStyle: `position:absolute;z-index:3;left:${(x1 + x2) / 2}px;top:${y1 === y2 ? y1 : (y1 + y2) / 2}px;transform:translate(-50%,-50%);padding:3px 7px;border:1px solid rgba(239,231,214,.14);background:#241e19;color:${muted};font:400 10.5px/1 'Space Mono',monospace;letter-spacing:.06em;cursor:pointer;white-space:nowrap`,
-        };
-      }),
-      bSelected: !!sel,
-      bSelIndex: sel ? String(nodes.indexOf(sel) + 1).padStart(2, '0') : '',
-      bSelTitle: sel ? sel.title : '',
-      bSetTitle: (e) => sel && updateNode(sel.id, { title: e.target.value }),
-      bKinds: KINDS.map(([k, label]) => ({ label, pick: () => sel && updateNode(sel.id, { kind: k }), style: chip(sel && sel.kind === k) })),
-      bMoves: [['←', -40, 0], ['→', 40, 0], ['↑', 0, -40], ['↓', 0, 40]].map(([glyph, dx, dy]) => ({
-        glyph,
-        go: () => sel && updateNode(sel.id, { x: Math.max(0, Math.min(CANVAS_W - NODE_W, sel.x + dx)), y: Math.max(0, Math.min(CANVAS_H - NODE_H, sel.y + dy)) }),
-      })),
-      bConnect: () => this.set({ bConn: !s.bConn }),
-      bConnectLabel: s.bConn ? 'Pick a step' : 'Point it at…',
-      bConnectStyle: outline(s.bConn),
-      bDrop: () => {
-        if (nodes.length <= MIN || !sel) return;
-        this.set({ bNodes: s.bNodes.filter((n) => n.id !== sel.id), bEdges: s.bEdges.filter((e) => e.from !== sel.id && e.to !== sel.id), bSel: null });
-      },
-      bDropStyle: `padding:10px 14px;border:1px solid ${nodes.length > MIN ? line : 'rgba(239,231,214,.08)'};background:transparent;color:${nodes.length > MIN ? '#cfc4b2' : '#5d554c'};font:400 12.5px/1 'Newsreader',serif;cursor:${nodes.length > MIN ? 'pointer' : 'default'}`,
-      bHint: s.bConn ? 'Now click the step it should point to. Two arrows out of one step makes a branch.'
-        : nodes.length >= MAX ? 'Eight steps is as many as one workflow holds.'
-        : nodes.length <= MIN ? 'Three steps is the fewest a workflow can have, so nothing here can be deleted yet.'
-        : 'Rename it, change what kind of step it is, move it, or point it at another step.',
-      bPvHead: planned ? 'Weekly invoice chase' : 'Nothing to show yet',
-      bPvBody: planned
-        ? `Chases anyone who has not paid and tells you what happened. ${nodes.length} connected steps${branches ? ` with ${branches} branch${branches === 1 ? '' : 'es'}` : ''}.`
-        : view === 'asked' ? "Wolfe won't guess at your answer. Answer the question and it plans again." : 'Say what you want done and press Plan it.',
-      bPvAction: planned && firstBuild ? `Start ${firstBuild.title}` : 'Start workflow',
-      bMake: () => planned && this.set({ bMade: true }),
-      bMakeLabel: s.bMade ? 'Made it' : 'Make it an app',
-      bMakeStyle: `justify-self:start;${primary(planned)}`,
-      bMakeNote: s.bMade ? "It's in Home now, owned by Wolfe Intelligence. Nothing runs until you start it." : 'It gets saved on this machine and does nothing until you start it.',
-
-      /* --- Running --- */
-      rMode: 'Live model · Qwen3 4B',
-      rSay: s.r6 === 'waiting' ? 'It stopped on its own. It wants to email the briefing out, and that is yours to say.'
-        : s.r6 === 'failed' ? 'It stopped on its own. The independent check did not pass, so nothing went out.'
-        : 'Four minutes in. It is reading the market signals now.',
-      rSteps: (() => {
-        const ROWS = [
-          ['Supervisor', 'Set the order and handed out the work.'],
-          ['Fundamental agent', 'Read the filings for AAPL, MSFT and XLF.'],
-          ['Market-signals agent', 'Price and volume for the same three.'],
-          ['Reconcile findings', 'Puts the two accounts of each name side by side.'],
-          ['Independent check', 'Checks every claim against the source it came from.'],
-          ['Owner briefing', 'Writes the briefing for you.'],
-        ];
-        const at = s.r6 === 'running' ? 2 : 4;
-        return ROWS.map(([name, detail], i) => {
-          let state = 'Queued', tone = muted;
-          if (i < at) { state = 'Completed'; tone = '#9fae94'; }
-          else if (i === at) {
-            if (s.r6 === 'running') { state = 'Running'; tone = ochre; }
-            else if (s.r6 === 'waiting') { state = 'Waiting on you'; tone = ochre; }
-            else { state = 'Failed'; tone = '#c98a6a'; }
-          }
-          const live = i === at && s.r6 === 'running';
-          return {
-            name, detail, state,
-            rowStyle: 'display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 0;border-bottom:1px solid rgba(239,231,214,.1)',
-            dotStyle: `margin-top:6px;width:9px;height:9px;border-radius:50%;background:${i <= at ? tone : 'transparent'};border:1px solid ${tone};${live ? 'animation:wo-pulse 1.3s ease-in-out infinite;' : ''}`,
-            nameStyle: `font:${i === at ? '500' : '400'} 16px/1.3 'Newsreader',serif;color:${cream}`,
-            stateStyle: `align-self:center;font:700 10.5px/1 'Space Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:${tone};white-space:nowrap`,
-          };
-        });
-      })(),
-      rBanner: s.r6 !== 'running',
-      rBannerHead: s.r6 === 'waiting' ? 'Send the briefing to your inbox?' : 'The check found two claims with no source.',
-      rBannerBody: s.r6 === 'waiting' ? 'You said emails need your word each time. Nothing leaves until you say so.' : 'It kept the whole briefing so you can read it, and sent nothing.',
-      rActions: (s.r6 === 'running'
-        ? [['Pause it', true], ['Stop', false]]
-        : s.r6 === 'waiting' ? [['Send it', true], ['Hold it here', false]] : [['Show me the two', true], ['Run it again', false]]
-      ).map(([label, isPrimary]) => ({ label, go: () => {}, style: isPrimary ? primary(true) : ghost })),
-      rStates: [['running', 'Working'], ['waiting', 'Waiting on you'], ['failed', 'A check failed']].map(([k, label]) => ({
-        label, pick: () => this.set({ r6: k }), style: chip(s.r6 === k),
-      })),
+      rsRows,
+      rsEmpty: rsRows.length === 0,
+      rsFoot: 'Google Ads counts a visit as a paid click; Google Business Profile is people who found your listing on Google Maps or Search and tapped through; direct is anyone who typed the address or came from a message. Phone enquiries have no visit to count.',
     };
   }
 }
-
 </script>
-
-
+<script src="/os.js"></script>
 </body></html>

@@ -300,6 +300,7 @@
     return api('GET').then(function (d) {
       S.leads = d.leads || [];
       S.visits = d.visits || {};
+      S.access = d.access || {};
       S.config = d.config || {};
       S.clients = (d.onboarding || []).map(function (o) {
         o.intake = o.intake || {};
@@ -361,20 +362,10 @@
   function render() {
     var app = document.getElementById('app');
     app.innerHTML = '';
-    if (!S.authed) return renderGate(app);
-
-    var top = el('div', 'top');
-    var h1 = el('h1', null, 'WOLFE OS'); top.appendChild(h1);
-    top.appendChild(el('span', 'sub', 'client engagement console'));
-    top.appendChild(el('span', 'spacer'));
-    top.appendChild(el('span', 'who', S.email));
-    var out = el('button', 'ghost', 'Sign out');
-    out.onclick = function () {
-      try { sessionStorage.removeItem('wolfe-os-auth'); } catch (e) {}
-      S.authed = false; S.token = ''; S.clients = []; S.sel = null; render();
-    };
-    top.appendChild(out);
-    app.appendChild(top);
+    // The portal owns sign-in and the top bar; the console only ever renders
+    // for an authenticated owner. Nothing to show otherwise.
+    if (!S.authed) { app.hidden = true; return; }
+    app.hidden = false;
 
     var shell = el('div', 'shell');
     var rail = el('div', 'rail');
@@ -406,50 +397,27 @@
     renderMain();
   }
 
-  function renderGate(app) {
-    var g = el('div', 'gate');
-    g.appendChild(el('h2', null, 'Wolfe OS'));
-    g.appendChild(el('p', null, 'Owner access only. Same credentials as the portal.'));
-    var e = el('label'); e.appendChild(el('span', null, 'Email'));
-    var ei = el('input'); ei.type = 'email'; ei.value = S.emailDraft;
-    ei.oninput = function () { S.emailDraft = ei.value; };
-    e.appendChild(ei); g.appendChild(e);
-    var c = el('label'); c.appendChild(el('span', null, 'Access code'));
-    var ci = el('input'); ci.type = 'password'; ci.value = S.codeDraft;
-    ci.oninput = function () { S.codeDraft = ci.value; };
-    ci.onkeydown = function (ev) { if (ev.key === 'Enter') doLogin(); };
-    c.appendChild(ci); g.appendChild(c);
-    var b = el('button', 'newbtn', S.busy ? 'Signing in…' : 'Sign in');
-    b.style.width = '100%'; b.style.marginTop = '6px';
-    b.onclick = doLogin;
-    g.appendChild(b);
-    g.appendChild(el('div', 'err', S.err));
-    app.appendChild(g);
-    ei.focus();
+  /* Session comes from the portal page that hosts this console. It hands the
+     owner's token over on sign-in (or on restoring a stored session) and tells
+     the console when the owner signs out. On an expired token the console
+     asks the portal to show its gate again. */
+  function adoptSession(ses) {
+    if (!ses || !ses.token || !ses.email) return;
+    S.authed = true; S.email = ses.email; S.token = ses.token;
+    render();
+    loadClients().catch(function (e) {
+      if (e && e.expired) return expire();
+      toast('Could not load clients: ' + e.message);
+      render();
+    });
   }
-
-  function doLogin() {
-    if (S.busy) return;
-    var email = (S.emailDraft || '').trim().toLowerCase(), code = (S.codeDraft || '').trim();
-    if (!email || !code) { S.err = 'Enter your email and access code.'; return render(); }
-    S.busy = true; S.err = ''; render();
-    fetch('/api/login', { method: 'POST', headers: { 'content-type': 'application/json' },
-                          body: JSON.stringify({ email: email, code: code }) })
-      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { r: r, d: d }; }); })
-      .then(function (x) {
-        S.busy = false;
-        if (!x.r.ok || !x.d.token) {
-          S.err = x.r.status === 401 ? 'Wrong email or access code.'
-                : x.r.status === 429 ? 'Too many attempts. Wait a few minutes.'
-                : 'Sign-in unavailable right now.';
-          return render();
-        }
-        if (x.d.role !== 'owner') { S.err = 'This console is owner-only.'; return render(); }
-        S.authed = true; S.email = x.d.email; S.token = x.d.token; S.codeDraft = '';
-        try { sessionStorage.setItem('wolfe-os-auth', JSON.stringify({ email: S.email, token: S.token })); } catch (e) {}
-        loadClients().catch(function (e) { toast('Could not load clients: ' + e.message); render(); });
-      })
-      .catch(function () { S.busy = false; S.err = 'Could not reach the sign-in service.'; render(); });
+  function dropSession() {
+    S.authed = false; S.token = ''; S.email = ''; S.clients = []; S.leads = []; S.sel = null; S.expired = false;
+    render();
+  }
+  function expire() {
+    dropSession();
+    try { window.dispatchEvent(new CustomEvent('wolfe-os-expired')); } catch (e) {}
   }
 
   // An inline form rather than prompt(): a native dialog cannot be validated,
@@ -735,12 +703,7 @@
       if (S.expired) {
         var again = el('button', 'ghost', 'Sign in again');
         again.style.cssText += 'margin-top:10px;border-color:var(--stop);color:var(--stop);';
-        again.onclick = function () {
-          try { sessionStorage.removeItem('wolfe-os-auth'); } catch (e) {}
-          S.authed = false; S.token = ''; S.clients = []; S.sel = null;
-          S.saveError = ''; S.expired = false;
-          render();
-        };
+        again.onclick = function () { S.saveError = ''; expire(); };
         warn.appendChild(again);
       }
       m.appendChild(warn);
@@ -769,7 +732,54 @@
     hd.innerHTML = '<h2>' + esc(c.intake.businessName || c.email) + '</h2>' +
                    '<span class="chip c-' + (v.kind === 'none' ? 'none' : v.kind) + '">' + esc(v.badge) + '</span>';
     m.appendChild(hd);
-    m.appendChild(el('p', 'sub', c.email + (c.updatedAt ? ' · updated ' + c.updatedAt.slice(0, 10) : '')));
+    var subLine = el('p', 'sub');
+    subLine.textContent = c.email + (c.updatedAt ? ' · updated ' + c.updatedAt.slice(0, 10) : '') + ' · ';
+    // Portal access: the access code the client signs in with. Set here, in
+    // the same place the engagement lives, rather than on a separate page.
+    var hasAccess = !!(S.access && S.access[c.email]);
+    var accLbl = el('span', 'mono', hasAccess ? 'PORTAL ACCESS SET' : 'NO PORTAL ACCESS YET');
+    accLbl.style.cssText = 'font-size:10px;letter-spacing:.1em;color:' + (hasAccess ? 'var(--ok)' : 'var(--warn)') + ';';
+    subLine.appendChild(accLbl);
+    var accBtn = el('button', 'ghost', hasAccess ? 'Reset code' : 'Give portal access');
+    accBtn.style.cssText = 'margin-left:10px;padding:3px 8px;font-size:11.5px;';
+    accBtn.onclick = function () { S.accessOpen = !S.accessOpen; S.accessCode = ''; S.accessMsg = ''; renderMain(); };
+    subLine.appendChild(accBtn);
+    m.appendChild(subLine);
+    if (S.accessOpen) {
+      var af = el('fieldset');
+      af.appendChild(el('legend', null, 'Portal access for ' + (c.intake.businessName || c.email)));
+      af.appendChild(el('p', 'note', 'They sign in at wolfeintelligence.com/portal with their email (' + c.email + ') and this code. '
+        + 'Six characters or more. Setting a new one replaces the old one. Tell them the code yourself — it is not emailed.'));
+      var ag = el('div', 'grid');
+      var al = el('label'); al.appendChild(el('span', null, 'Access code'));
+      var ai = el('input'); ai.type = 'text'; ai.autocomplete = 'off'; ai.value = S.accessCode || '';
+      ai.oninput = function () { S.accessCode = ai.value; };
+      al.appendChild(ai); ag.appendChild(al);
+      af.appendChild(ag);
+      var ab = el('div', 'bar');
+      var save = el('button', 'newbtn', 'Save access code');
+      save.onclick = function () {
+        var code = (S.accessCode || '').trim();
+        if (code.length < 6) { S.accessMsg = 'Six characters or more.'; return renderMain(); }
+        save.disabled = true; save.textContent = 'Saving…';
+        api('POST', { action: 'provision', email: c.email, code: code }).then(function () {
+          S.access = S.access || {}; S.access[c.email] = true;
+          S.accessOpen = false; S.accessCode = '';
+          toast('Portal access set for ' + c.email);
+          renderMain();
+        }).catch(function (e) {
+          save.disabled = false; save.textContent = 'Save access code';
+          S.accessMsg = 'Could not save: ' + e.message; renderMain();
+        });
+      };
+      ab.appendChild(save);
+      var cancel = el('button', 'ghost', 'Cancel');
+      cancel.onclick = function () { S.accessOpen = false; S.accessMsg = ''; renderMain(); };
+      ab.appendChild(cancel);
+      af.appendChild(ab);
+      if (S.accessMsg) af.appendChild(el('div', 'err', S.accessMsg));
+      m.appendChild(af);
+    }
 
     var tabs = el('div', 'tabs');
     [['intake', 'Intake'], ['route', 'Direction'], ['progress', 'Progress'], ['leads', 'Leads'], ['audit', 'Audit'], ['export', 'Export']]
@@ -1202,18 +1212,9 @@
   }
 
   /* ---------------------------------------------------------------- boot */
-  try {
-    var raw = sessionStorage.getItem('wolfe-os-auth');
-    if (raw) {
-      var ses = JSON.parse(raw);
-      if (ses && ses.token && ses.email) {
-        S.authed = true; S.email = ses.email; S.token = ses.token;
-        loadClients().catch(function () {
-          try { sessionStorage.removeItem('wolfe-os-auth'); } catch (e) {}
-          S.authed = false; S.token = ''; render();
-        });
-      }
-    }
-  } catch (e) {}
-  render();
+  // Hosted by the portal page. It sets window.__wolfeOs when an owner is
+  // signed in (possibly before this script ran) and fires events afterwards.
+  window.addEventListener('wolfe-os-session', function (e) { adoptSession(e.detail); });
+  window.addEventListener('wolfe-os-signout', dropSession);
+  if (window.__wolfeOs) adoptSession(window.__wolfeOs); else render();
 })();

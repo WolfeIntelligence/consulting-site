@@ -5,7 +5,11 @@ step, no bundler, no framework CLI. Edit a file, push, it deploys.
 
 ```
 index.html       landing page
-portal.html      client portal (Wolfe OS) — login gate + Home / Build / Running
+portal.html      the portal — one sign-in for everyone. Clients: Home (enquiries,
+                 Google setup) and Results (funnel by source). Owner: the console.
+os.js + os.css   the owner console (Wolfe OS), embedded in the portal page for an
+                 owner session; os.html only redirects to /portal
+lead-status.html one-tap outcome page opened from the new-enquiry email
 favicon.svg      the W mark
 robots.txt       crawl rules
 sitemap.xml      submitted to Search Console
@@ -97,8 +101,17 @@ adds an outage dependency, and leaks visitor IPs to unpkg.
 
 **The portal fails closed.** Any response from `/api/login` other than a signed
 token keeps the gate shut. `?tour=1` is the only credential-free way in; it
-shows sample data, is labelled `GUIDED TOUR · SAMPLE DATA`, carries no token,
-and cannot reach `/api/apps`. It is safe to send to a prospect.
+shows a labelled sample client (the data lives only in `tourData()` in
+portal.html), carries no token, and cannot reach `/api/apps`. It is safe to send
+to a prospect.
+
+**The console is the portal's owner view.** `os.js` renders into `#app`, which
+sits *outside* the runtime root on purpose — the page runtime re-renders its
+own tree and would wipe the console. The portal hands the owner session over
+via `window.__wolfeOs` and the `wolfe-os-session` / `wolfe-os-signout` events;
+the console fires `wolfe-os-expired` when its token dies. `os.css` is scoped to
+`#app` so it cannot touch the portal's own styles. Portal access codes for
+clients are set from the console (client header → "Give portal access").
 
 ## Rate limits
 

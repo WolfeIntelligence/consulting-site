@@ -35,6 +35,7 @@ global.fetch = async (url, opt) => {
     const h = store.get(parts[1]) instanceof Map ? store.get(parts[1]) : new Map();
     h.set(parts[2], (h.get(parts[2]) || 0) + parseInt(parts[3], 10)); store.set(parts[1], h); result = h.get(parts[2]);
   }
+  else if (cmd === 'exists') result = store.has(parts[1]) ? 1 : 0;
   else if (cmd === 'hgetall') { const h = store.get(parts[1]); result = h instanceof Map ? [].concat(...[...h.entries()].map(([k, v]) => [k, String(v)])) : []; }
   else if (cmd === 'expire') result = 1;
   else if (cmd === 'ttl') result = 600;
@@ -242,6 +243,13 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     r = res(); await apps(req('GET', null, auth(ownerTok)), r);
     assert.strictEqual(typeof r.body.config.notify, 'boolean');
     assert.ok(r.body.visits['lawn@client.test'] && r.body.visits['other@client.test'], 'owner sees every client');
+    assert.strictEqual(r.body.access['lawn@client.test'], false, 'no access code yet');
+    const p = res(); await apps(req('POST', { action: 'provision', email: 'lawn@client.test', code: 'secret-code' }, auth(ownerTok)), p);
+    assert.strictEqual(p.code, 200);
+    r = res(); await apps(req('GET', null, auth(ownerTok)), r);
+    assert.strictEqual(r.body.access['lawn@client.test'], true, 'access shows once provisioned');
+    r = res(); await apps(req('GET', null, auth(clientTok)), r);
+    assert.strictEqual(r.body.access, undefined, 'clients never see the access map');
   });
   await ok('client updates own outcome only; unsent fields and the click id survive', async () => {
     const before = leads().find((x) => x.id === tracked.id);
