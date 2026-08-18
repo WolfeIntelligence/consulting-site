@@ -108,13 +108,18 @@ module.exports = async (req, res) => {
       }),
     });
     const data = await r.json().catch(() => null);
-    if (!r.ok || !data) return res.status(502).json({ error: 'upstream' });
+    if (!r.ok || !data) {
+      // Enough to diagnose from the Vercel logs, never the visitor's text.
+      console.error('chat upstream', r.status, MODEL, data && data.error ? JSON.stringify(data.error).slice(0, 300) : 'no body');
+      return res.status(502).json({ error: 'upstream' });
+    }
     if (data.stop_reason === 'refusal') return res.json({ text: REFUSAL, live: true });
     const block = Array.isArray(data.content) ? data.content.find((b) => b && b.type === 'text') : null;
     const text = clean(block && block.text);
     if (!text) return res.json({ text: REFUSAL, live: true });
     return res.json({ text, live: true });
   } catch (e) {
+    console.error('chat upstream', e && e.name, String(e && e.message).slice(0, 200));
     return res.status(502).json({ error: 'upstream' });
   } finally {
     clearTimeout(timer);
