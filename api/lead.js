@@ -8,24 +8,18 @@
 //     endpoint cannot be used to create arbitrary keys in storage;
 //   - every field is length-capped and the stored list is bounded;
 //   - it is rate limited per IP, backed by the same Redis the rest of the
-//     site uses so the limit holds across serverless instances.
+//     site uses so the limit holds across serverless instances;
+//   - a honeypot field catches the bots that fill every input.
 //
 // It accepts cross-origin POSTs because the whole point is that it is called
 // from a client's domain, not ours.
+//
+// After the lead is stored the client (and the owner) are emailed, with
+// signed one-tap links to record what happened next. Mail is best-effort:
+// the lead is saved first and a mail failure never fails the request.
 
 const { limit } = require('../lib/ratelimit');
-
-const kvReady = () => process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN;
-
-async function kv(path) {
-  const r = await fetch(process.env.KV_REST_API_URL + '/' + path, {
-    headers: { Authorization: 'Bearer ' + process.env.KV_REST_API_TOKEN },
-  });
-  if (!r.ok) return null;
-  return (await r.json()).result;
-}
-
-const str = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+const L = require('../lib/leads');
 
 function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -38,7 +32,7 @@ module.exports = async (req, res) => {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
-  if (!kvReady()) return res.status(501).json({ error: 'storage-not-configured' });
+  if (!L.kvReady()) return res.status(501).json({ error: 'storage-not-configured' });
 
   // A quote form is not something one person submits twenty times a minute.
   const gate = await limit(req, 'lead', 20, 600);
@@ -48,6 +42,12 @@ module.exports = async (req, res) => {
   }
 
   const b = req.body || {};
+  const str = L.str;
+
+  // Honeypot: a field real visitors never see. Bots fill it. Answer as if it
+  // worked so they do not learn to skip it, and store nothing.
+  if (str(b.website, 200)) return res.json({ ok: true, id: 'l0' });
+
   const to = str(b.to, 120).toLowerCase();
   const name = str(b.name, 120);
   const phone = str(b.phone, 40);
@@ -58,9 +58,9 @@ module.exports = async (req, res) => {
   if (!phone && !email) return res.status(400).json({ error: 'contact-required' });
 
   // Only accept leads for a business we are actually running an engagement for.
-  let onb = [];
-  try { onb = JSON.parse((await kv('get/onboarding')) || '[]'); } catch (e) {}
-  if (!onb.some((o) => o.email === to)) return res.status(404).json({ error: 'unknown-client' });
+  const onb = await L.loadOnboarding();
+  const client = onb.find((o) => o.email === to);
+  if (!client) return res.status(404).json({ error: 'unknown-client' });
 
   const lead = {
     id: 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
@@ -71,13 +71,23 @@ module.exports = async (req, res) => {
     email,
     service: str(b.service, 200),
     address: str(b.address, 200),
+    preferred: str(b.preferred, 120),
     notes: str(b.notes, 1000),
     // Captured at the click and carried through the form. Without it a won
     // customer can never be matched back to the ad that produced them, and it
-    // cannot be recovered later.
+    // cannot be recovered later. gbraid/wbraid are the iOS-privacy variants.
     gclid: str(b.gclid, 200),
-    source: str(b.source, 60) || 'website form',
-    // Set by the operator afterwards.
+    gbraid: str(b.gbraid, 200),
+    wbraid: str(b.wbraid, 200),
+    utm: {
+      source: str(b.utm_source, 60),
+      medium: str(b.utm_medium, 60),
+      campaign: str(b.utm_campaign, 100),
+    },
+    landing: str(b.landing, 300),
+    referrer: str(b.referrer, 300),
+    source: L.deriveSource(b),
+    // Set by the operator or the client afterwards.
     booked: '',
     won: '',
     contract: '',
@@ -85,12 +95,11 @@ module.exports = async (req, res) => {
     visitsPerYear: '',
   };
 
-  let all = [];
-  try { all = JSON.parse((await kv('get/leads')) || '[]'); } catch (e) {}
+  const all = await L.loadLeads();
   all.push(lead);
-  // Newest kept if the list ever grows past what one key should hold.
-  if (all.length > 2000) all = all.slice(-2000);
-  await kv('set/leads/' + encodeURIComponent(JSON.stringify(all).slice(0, 900000)));
+  await L.saveLeads(all);
 
-  return res.json({ ok: true, id: lead.id });
+  const notified = await L.notifyNewLead(lead, client);
+
+  return res.json({ ok: true, id: lead.id, notified: notified === 'sent' });
 };

@@ -36,6 +36,26 @@ Vercel → Project → Settings → Environment Variables.
 | `ANTHROPIC_API_KEY` | Site Guide falls back to its scripted answer set. |
 | `CHAT_MODEL` | Defaults to `claude-haiku-4-5`. |
 | `KV_REST_API_URL` + `KV_REST_API_TOKEN` | Portal provisioning reports "storage not configured", and rate limits fall back to per-instance memory. Add Upstash Redis from the Vercel Marketplace to set both automatically. |
+| `RESEND_API_KEY` | New-enquiry emails are not sent (leads are still stored). The console's Leads tab shows a warning while this is unset. |
+| `LEAD_FROM` | Sender for those emails. Defaults to `Wolfe Intelligence <leads@wolfeintelligence.com>`; the domain must be verified in Resend. |
+| `PUBLIC_BASE` | Base URL used in email links. Defaults to `https://www.wolfeintelligence.com`. |
+
+## The lead pipeline
+
+```
+client's site  --POST-->  /api/lead   (public; client must exist; honeypot; rate limited)
+                              |  stores the lead with gclid/gbraid/wbraid, UTM, landing, referrer
+                              |  emails client + owner via Resend, with signed one-tap links
+                              v
+   /lead-status?t=…&set=booked|won|lost   ->  GET /api/lead-status shows it, POST records it
+   /portal        client sees enquiries, taps the outcome, logs phone calls (own leads only)
+   /os            owner works every lead; "Export for Google Ads" writes the offline-conversion CSV
+```
+
+Outcome timestamps (`bookedAt`, `wonAt`) are stamped once, server-side, and
+feed the export's Conversion Time. A client token can only change outcome
+fields on its own leads; capture fields are evidence and never editable by the
+client. `node tests/run.js` covers all of it against a mocked KV and Resend.
 
 ## Things that will bite you
 

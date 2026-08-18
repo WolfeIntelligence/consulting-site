@@ -136,14 +136,40 @@
       <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOUR ENQUIRIES</span>
       <div style="font:400 26px/1.2 'Newsreader',serif;">{{ ldHead }}</div>
       <div style="font:400 14px/1.55 'Newsreader',serif;color:#a2968a;">{{ ldSub }}</div>
-      <div style="display:grid;gap:10px;margin-top:4px;">
+      <sc-if value="{{ ldErr }}" hint-placeholder-val="{{ false }}">
+        <div style="font:400 14px/1.5 'Newsreader',serif;color:#e0a89f;">{{ ldErr }}</div>
+      </sc-if>
+      <sc-if value="{{ callCan }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;gap:10px;">
+          <button sc-camel-on-click="{{ callToggle }}" style="justify-self:start;padding:9px 14px;border:1px solid rgba(239,231,214,.25);background:transparent;color:#cfc4b2;font:400 13px/1 'Newsreader',serif;cursor:pointer;">{{ callToggleLabel }}</button>
+          <sc-if value="{{ callOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;gap:8px;padding:14px;border:1px solid rgba(239,231,214,.14);background:rgba(239,231,214,.03);">
+              <div style="font:400 13.5px/1.5 'Newsreader',serif;color:#a2968a;">Someone phoned or texted? Log them so they count.</div>
+              <input sc-camel-on-input="{{ callSetName }}" value="{{ callName }}" placeholder="Their name" style="padding:10px 12px;border:1px solid rgba(239,231,214,.2);background:#1e1814;color:#efe7d6;font:400 15px 'Newsreader',serif;">
+              <input sc-camel-on-input="{{ callSetPhone }}" value="{{ callPhone }}" placeholder="Their phone number" style="padding:10px 12px;border:1px solid rgba(239,231,214,.2);background:#1e1814;color:#efe7d6;font:400 15px 'Newsreader',serif;">
+              <input sc-camel-on-input="{{ callSetNote }}" value="{{ callNote }}" placeholder="What they want (optional)" style="padding:10px 12px;border:1px solid rgba(239,231,214,.2);background:#1e1814;color:#efe7d6;font:400 15px 'Newsreader',serif;">
+              <button sc-camel-on-click="{{ callSave }}" style="justify-self:start;padding:10px 16px;border:1px solid #c9a15f;background:#c9a15f;color:#241e19;font:600 14px/1 'Newsreader',serif;cursor:pointer;">{{ callSaveLabel }}</button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+      <div style="display:grid;gap:14px;margin-top:4px;">
         <sc-for list="{{ ldItems }}" as="ld" hint-placeholder-count="3">
-          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
-            <span style="font:400 17px/1.4 'Newsreader',serif;">{{ ld.name }}</span>
-            <span style="font:400 13.5px/1.4 'Newsreader',serif;color:#8c8072;">{{ ld.detail }}</span>
-            <span style="flex:1;height:1px;background:linear-gradient(to right, rgba(239,231,214,.12), transparent 90%);"></span>
-            <span style="font:400 11px 'Space Mono',monospace;color:#6f6459;">{{ ld.when }}</span>
-            <span style="{{ ld.stateStyle }}">{{ ld.state }}</span>
+          <div style="display:grid;gap:8px;">
+            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+              <span style="font:400 17px/1.4 'Newsreader',serif;">{{ ld.name }}</span>
+              <span style="font:400 13.5px/1.4 'Newsreader',serif;color:#8c8072;">{{ ld.detail }}</span>
+              <span style="flex:1;height:1px;background:linear-gradient(to right, rgba(239,231,214,.12), transparent 90%);"></span>
+              <span style="font:400 11px 'Space Mono',monospace;color:#6f6459;">{{ ld.when }}</span>
+              <span style="{{ ld.stateStyle }}">{{ ld.state }}</span>
+            </div>
+            <sc-if value="{{ ld.canAct }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button sc-camel-on-click="{{ ld.setBooked }}" style="{{ ld.bookedStyle }}">ESTIMATE BOOKED</button>
+                <button sc-camel-on-click="{{ ld.setWon }}" style="{{ ld.wonStyle }}">BECAME A CUSTOMER</button>
+                <button sc-camel-on-click="{{ ld.setLost }}" style="{{ ld.lostStyle }}">DID NOT GO AHEAD</button>
+              </div>
+            </sc-if>
           </div>
         </sc-for>
       </div>
@@ -373,9 +399,29 @@ class Component extends DCLogic {
     r6: 'running', hDoneIds: [], hRead: false,
     role: 'client', token: '', previewMode: false, loggingIn: false,
     deployments: [], depEmail: '', depCode: '', depStatus: '',
-    onboarding: [],
+    onboarding: [], leads: [], leadBusy: '', leadErr: '',
+    callOpen: false, callName: '', callPhone: '', callNote: '', callBusy: false,
   };
   set(patch) { this.setState(patch); }
+  // A client recording what became of an enquiry, or logging a call. The
+  // server enforces that a client can only touch their own leads and only the
+  // outcome fields; this just sends the change and keeps the list current.
+  async saveLead(action, lead) {
+    const s = this.state;
+    if (!s.token || s.previewMode) return;
+    this.setState({ leadBusy: lead.id || 'new', leadErr: '' });
+    try {
+      const r = await fetch('/api/apps', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + s.token }, body: JSON.stringify({ action, lead }) });
+      let d = null; try { d = await r.json(); } catch (e) {}
+      if (!r.ok || !d || !d.lead) throw new Error((d && d.error) || ('http-' + r.status));
+      const rest = (this.state.leads || []).filter((l) => l.id !== d.lead.id);
+      this.setState({ leads: rest.concat([d.lead]), leadBusy: '' });
+      return true;
+    } catch (e) {
+      this.setState({ leadBusy: '', leadErr: 'That did not save (' + e.message + '). Try again in a moment.' });
+      return false;
+    }
+  }
   componentDidMount() {
     // ?tour=1 is the one credential-free way in: an openly-labelled walkthrough
     // of the sample data, shareable as a link with prospects. It never carries a
@@ -408,6 +454,7 @@ class Component extends DCLogic {
         let d = null; try { d = await r.json(); } catch (e) {}
         if (d && Array.isArray(d.deployments)) this.setState({ deployments: d.deployments });
         if (d && Array.isArray(d.onboarding)) this.setState({ onboarding: d.onboarding });
+        if (d && Array.isArray(d.leads)) this.setState({ leads: d.leads });
       }
     } catch (e) {}
   }
@@ -501,7 +548,9 @@ class Component extends DCLogic {
     const ob = (!full && Array.isArray(s.onboarding) && s.onboarding.length) ? s.onboarding[0] : null;
     // Leads are the point of the whole engagement, so they lead the page for a
     // client who has any. Newest first; the operator sets booked/won.
-    const leads = (!full && Array.isArray(s.onboarding)) ? (s.leads || []) : [];
+    const leads = (!full && Array.isArray(s.onboarding) && s.onboarding.length) ? (s.leads || []) : [];
+    const canLog = !full && s.authed && !!s.token && Array.isArray(s.onboarding) && s.onboarding.length > 0;
+    const leadBtn = (on, tone) => `padding:7px 11px;border:1px solid ${on ? tone : 'rgba(239,231,214,.22)'};background:${on ? tone : 'transparent'};color:${on ? '#241e19' : '#cfc4b2'};font:${on ? '700' : '400'} 11px/1 'Space Mono',monospace;letter-spacing:.06em;cursor:pointer;white-space:nowrap;`;
     const leadsSorted = leads.slice().sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
     const leadWon = leads.filter((l) => l.won === 'Yes').length;
     const leadBooked = leads.filter((l) => l.booked === 'Yes').length;
@@ -529,13 +578,16 @@ class Component extends DCLogic {
       isOwner: s.role === 'owner' && !s.previewMode,
 
       /* --- onboarding status, written by the owner console --- */
-      ldShow: leads.length > 0,
-      ldHead: leads.length + (leads.length === 1 ? ' enquiry' : ' enquiries'),
-      ldSub: leadBooked + ' booked an estimate, ' + leadWon
-        + (leadWon === 1 ? ' became a customer' : ' became customers') + '.',
+      ldShow: leads.length > 0 || canLog,
+      ldHead: leads.length === 0 ? 'No enquiries yet' : leads.length + (leads.length === 1 ? ' enquiry' : ' enquiries'),
+      ldSub: leads.length === 0
+        ? 'When someone asks for a quote through your site, or you log a call below, it shows up here.'
+        : leadBooked + ' booked an estimate, ' + leadWon
+          + (leadWon === 1 ? ' became a customer' : ' became customers') + '. Tap what happened with each one \u2014 it keeps your numbers honest.',
+      ldErr: s.leadErr,
       ldItems: leadsSorted.map((l) => ({
         name: l.name || 'Enquiry',
-        detail: [l.service, l.phone].filter(Boolean).join(' \u00b7 '),
+        detail: [l.service, l.phone, l.preferred ? 'prefers ' + l.preferred : ''].filter(Boolean).join(' \u00b7 '),
         when: String(l.at || '').slice(0, 10),
         state: l.won === 'Yes' ? 'CUSTOMER'
           : l.booked === 'Yes' ? 'ESTIMATE BOOKED'
@@ -543,7 +595,31 @@ class Component extends DCLogic {
           : 'NEW',
         stateStyle: "font:700 10px/1 'Space Mono',monospace;letter-spacing:.12em;white-space:nowrap;color:"
           + (l.won === 'Yes' ? '#9dbb7a' : l.booked === 'Yes' ? '#c9a15f' : l.won === 'No' ? '#6f6459' : '#efe7d6'),
+        canAct: canLog && s.leadBusy !== l.id,
+        bookedStyle: leadBtn(l.booked === 'Yes', '#e9c98d'),
+        wonStyle: leadBtn(l.won === 'Yes', '#9dbb7a'),
+        lostStyle: leadBtn(l.won === 'No', '#a2968a'),
+        setBooked: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, booked: l.booked === 'Yes' ? '' : 'Yes', won: l.won === 'No' ? '' : l.won }); },
+        setWon: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, won: l.won === 'Yes' ? '' : 'Yes', booked: 'Yes' }); },
+        setLost: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, won: l.won === 'No' ? '' : 'No' }); },
       })),
+      /* --- log a phone call as an enquiry --- */
+      callCan: canLog,
+      callOpen: s.callOpen,
+      callToggle: (e) => { e.preventDefault(); this.set({ callOpen: !s.callOpen, leadErr: '' }); },
+      callToggleLabel: s.callOpen ? 'Cancel' : '+ Log a call',
+      callName: s.callName, callPhone: s.callPhone, callNote: s.callNote,
+      callSetName: (e) => this.set({ callName: e.target.value }),
+      callSetPhone: (e) => this.set({ callPhone: e.target.value }),
+      callSetNote: (e) => this.set({ callNote: e.target.value }),
+      callSaveLabel: s.leadBusy === 'new' ? 'Saving\u2026' : 'Save',
+      callSave: async (e) => {
+        e.preventDefault();
+        if (!s.callName.trim()) return this.set({ leadErr: 'Their name, at least.' });
+        if (!s.callPhone.trim()) return this.set({ leadErr: 'Their phone number, so you can call back.' });
+        const ok = await this.saveLead('lead-add', { name: s.callName.trim(), phone: s.callPhone.trim(), service: s.callNote.trim(), source: 'phone' });
+        if (ok) this.set({ callOpen: false, callName: '', callPhone: '', callNote: '' });
+      },
       obShow: !!ob,
       obStatus: !ob ? ''
         : !obNext ? 'Everything is set up.'

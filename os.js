@@ -13,7 +13,9 @@
   var S = { authed: false, email: '', token: '', clients: [], sel: null, tab: 'intake',
             emailDraft: '', codeDraft: '', err: '', busy: false, saveError: '',
             adding: false, newEmail: '', newName: '', expired: false,
-            leads: [], addingLead: false, newLead: {} };
+            leads: [], addingLead: false, newLead: {}, config: {},
+            exportOpen: false, exportTz: 'America/New_York',
+            exportBookedName: 'Estimate booked', exportWonName: 'Customer won' };
 
   /* ------------------------------------------------------------ helpers */
   function el(tag, cls, txt) {
@@ -207,9 +209,50 @@
     });
   }
 
+  /* Google Ads offline conversion file. Format per Google's own template:
+     a first row declaring the time zone, then the column headers, then one
+     row per conversion. Times are rendered in the declared zone as
+     yyyy-MM-dd HH:mm:ss. Only leads with a gclid qualify; the value of a
+     won recurring customer is their annual value, a one-off their price. */
+  function offlineRows(leads) {
+    var rows = [];
+    leads.forEach(function (l) {
+      if (!l.gclid) return;
+      if (l.booked === 'Yes') rows.push({ gclid: l.gclid, name: S.exportBookedName, at: l.bookedAt || l.at, value: '', cur: '' });
+      if (l.won === 'Yes') {
+        var v = parseFloat(l.perVisit);
+        if (l.contract && l.contract !== 'One-off') v = v * parseFloat(l.visitsPerYear);
+        rows.push({ gclid: l.gclid, name: S.exportWonName, at: l.wonAt || l.at,
+                    value: isFinite(v) && v > 0 ? String(Math.round(v)) : '', cur: isFinite(v) && v > 0 ? 'USD' : '' });
+      }
+    });
+    return rows;
+  }
+  function tzStamp(iso, tz) {
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    try {
+      var p = {};
+      new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+                                          hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        .formatToParts(d).forEach(function (x) { p[x.type] = x.value; });
+      return p.year + '-' + p.month + '-' + p.day + ' ' + (p.hour === '24' ? '00' : p.hour) + ':' + p.minute + ':' + p.second;
+    } catch (e) { return d.toISOString().slice(0, 19).replace('T', ' '); }
+  }
+  function offlineCsv(rows) {
+    var q = function (s) { return '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"'; };
+    var out = ['Parameters:TimeZone=' + (S.exportTz || 'America/New_York') + ',,,,',
+               'Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency'];
+    rows.forEach(function (r) {
+      out.push([r.gclid, r.name, tzStamp(r.at, S.exportTz), r.value, r.cur].map(q).join(','));
+    });
+    return out.join('\r\n') + '\r\n';
+  }
+
   function loadClients() {
     return api('GET').then(function (d) {
       S.leads = d.leads || [];
+      S.config = d.config || {};
       S.clients = (d.onboarding || []).map(function (o) {
         o.intake = o.intake || {};
         o.phaseState = o.phaseState || {};
@@ -760,11 +803,66 @@
         annual.toLocaleString(undefined, { maximumFractionDigits: 0 }) + '</div>';
       m.appendChild(sum);
 
+      if (S.config && S.config.notify === false) {
+        var nb = el('div', 'verdict');
+        nb.style.borderLeftColor = 'var(--warn)';
+        nb.innerHTML = '<h3>Lead emails are off</h3><p>New enquiries are stored and shown here, but nobody is emailed. '
+          + 'Set <span class="mono">RESEND_API_KEY</span> (and <span class="mono">LEAD_FROM</span>) in Vercel to turn on the '
+          + 'new-enquiry email with its one-tap outcome links.</p>';
+        m.appendChild(nb);
+      }
+
       var addBar = el('div', 'bar');
       var addBtn = el('button', 'newbtn', S.addingLead ? 'Cancel' : '+ Log a lead');
       addBtn.onclick = function () { S.addingLead = !S.addingLead; S.newLead = {}; renderMain(); };
       addBar.appendChild(addBtn);
+      var tracked = mine.filter(function (l) { return l.gclid; });
+      var expBtn = el('button', 'newbtn', S.exportOpen ? 'Close export' : 'Export for Google Ads');
+      expBtn.disabled = !tracked.length;
+      expBtn.title = tracked.length ? '' : 'Nothing to export until a lead arrives carrying a Google click id.';
+      expBtn.onclick = function () { S.exportOpen = !S.exportOpen; renderMain(); };
+      addBar.appendChild(expBtn);
       m.appendChild(addBar);
+
+      if (S.exportOpen) {
+        var xf = el('fieldset');
+        xf.appendChild(el('legend', null, 'Offline conversions for Google Ads'));
+        xf.appendChild(el('p', 'note',
+          'One row per outcome on a lead that carried a Google click id: an estimate booked, a customer won. '
+          + 'Upload it in the client’s Google Ads account under Goals → Conversions → Uploads (Data Manager). '
+          + 'The conversion names must match conversion actions that already exist there, character for character.'));
+        var xg = el('div', 'grid');
+        [['exportBookedName', 'Conversion name: estimate booked'], ['exportWonName', 'Conversion name: customer won'],
+         ['exportTz', 'Time zone of the Ads account (IANA)']].forEach(function (f) {
+          var lw = el('label'); lw.appendChild(el('span', null, f[1]));
+          var inp = el('input'); inp.type = 'text'; inp.value = S[f[0]];
+          inp.oninput = function () { S[f[0]] = inp.value; };
+          lw.appendChild(inp); xg.appendChild(lw);
+        });
+        xf.appendChild(xg);
+        var xrows = offlineRows(tracked);
+        var xb = el('div', 'bar');
+        var dl = el('button', 'newbtn', 'Download ' + xrows.length + ' row' + (xrows.length === 1 ? '' : 's') + ' (.csv)');
+        dl.disabled = !xrows.length;
+        dl.onclick = function () {
+          var csv = offlineCsv(offlineRows(tracked));
+          var blob = new Blob([csv], { type: 'text/csv' });
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'offline-conversions-' + (c.intake.businessName || c.email).replace(/[^a-z0-9]+/gi, '-').toLowerCase()
+            + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+        };
+        xb.appendChild(dl);
+        xf.appendChild(xb);
+        var braidOnly = mine.filter(function (l) { return !l.gclid && (l.gbraid || l.wbraid); }).length;
+        xf.appendChild(el('p', 'note',
+          (xrows.length ? '' : 'No booked or won outcomes on tracked leads yet, so the file would be empty. ')
+          + tracked.length + ' tracked lead' + (tracked.length === 1 ? '' : 's') + ' in total'
+          + (braidOnly ? '; ' + braidOnly + ' more carried only an iOS click id (gbraid/wbraid), which this file format does not carry.' : '.')));
+        m.appendChild(xf);
+      }
 
       if (S.addingLead) {
         var fs = el('fieldset');
@@ -835,11 +933,31 @@
           + esc((l.at || '').slice(0, 10)) + '</span>';
         r.appendChild(top);
 
-        if (l.service || l.address) {
+        var bits = [l.service, l.address, l.preferred ? 'prefers ' + l.preferred : ''].filter(Boolean);
+        if (bits.length) {
           var d2 = el('div');
           d2.style.cssText = 'font-size:13px;color:var(--muted);';
-          d2.textContent = [l.service, l.address].filter(Boolean).join(' · ');
+          d2.textContent = bits.join(' · ');
           r.appendChild(d2);
+        }
+        if (l.notes) {
+          var d3 = el('div');
+          d3.style.cssText = 'font-size:13px;color:var(--muted);white-space:pre-wrap;';
+          d3.textContent = '“' + l.notes + '”';
+          r.appendChild(d3);
+        }
+        var prov = [];
+        if (l.utm && (l.utm.campaign || l.utm.source)) prov.push([l.utm.source, l.utm.medium, l.utm.campaign].filter(Boolean).join(' / '));
+        if (l.gclid) prov.push('gclid ' + l.gclid.slice(0, 10) + '…');
+        else if (l.gbraid || l.wbraid) prov.push('iOS click id');
+        if (l.landing) { try { prov.push(new URL(l.landing).pathname); } catch (e) {} }
+        if (l.bookedAt) prov.push('booked ' + l.bookedAt.slice(0, 10));
+        if (l.wonAt) prov.push('won ' + l.wonAt.slice(0, 10));
+        if (prov.length) {
+          var d4 = el('div', 'mono');
+          d4.style.cssText = 'font-size:10.5px;color:var(--faint);';
+          d4.textContent = prov.join('  ·  ');
+          r.appendChild(d4);
         }
 
         var saveLead = function () {
@@ -892,8 +1010,8 @@
 
       m.appendChild(el('p', 'note',
         'Cost per recurring customer needs ad spend, which lives in the lead tracker spreadsheet. '
-        + 'A lead marked TRACKED carried a Google click id, so it can be uploaded back to Google Ads '
-        + 'as an offline conversion once volume justifies it.'));
+        + 'A lead marked TRACKED carried a Google click id; “Export for Google Ads” turns its booked and won '
+        + 'outcomes into the offline-conversion upload file, worth doing once there is volume for Google to learn from.'));
     }
 
     if (S.tab === 'audit') {

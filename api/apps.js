@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { stampOutcomes } = require('../lib/leads');
 const sha = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
 function verify(token, secret) {
   const i = String(token).lastIndexOf('.');
@@ -43,12 +44,17 @@ module.exports = async (req, res) => {
         : onb.filter((o) => o.email === ses.e).map(({ intake, ...safe }) => safe),
       // A client sees their own leads; the owner sees every client's.
       leads: ses.r === 'owner' ? leads : leads.filter((l) => l.to === ses.e),
+      // What the operator needs to know about the machinery itself.
+      config: ses.r === 'owner' ? { notify: !!process.env.RESEND_API_KEY } : undefined,
     });
   }
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
-  if (ses.r !== 'owner') return res.status(403).json({ error: 'owner-only' });
-  if (!kvReady()) return res.status(501).json({ error: 'storage-not-configured' });
   const b = req.body || {};
+  // Clients may only touch leads, and only their own: log one that came in by
+  // phone, and record what became of one. Everything else is owner-only.
+  const CLIENT_ACTIONS = ['lead-add', 'lead-update'];
+  if (ses.r !== 'owner' && !CLIENT_ACTIONS.includes(b.action)) return res.status(403).json({ error: 'owner-only' });
+  if (!kvReady()) return res.status(501).json({ error: 'storage-not-configured' });
   if (b.action === 'provision') {
     const email = String(b.email || '').trim().toLowerCase(), code = String(b.code || '').trim();
     if (!email.includes('@') || code.length < 6) return res.status(400).json({ error: 'bad-input' });
@@ -110,34 +116,68 @@ module.exports = async (req, res) => {
     return res.json({ ok: true });
   }
   if (b.action === 'lead-add' || b.action === 'lead-update') {
-    // The operator's own entry point: a lead that arrived by phone, by text, or
-    // through the Local Services Ads inbox, plus the booked/won outcome that
-    // only they can know.
+    // A lead that arrived by phone, by text, or through the Local Services
+    // Ads inbox, plus the booked/won outcome. The owner may write anything;
+    // a client may only log leads for their own business and only change
+    // the outcome fields on them — the capture fields (click id, source,
+    // timestamp) are evidence and stay as recorded.
     const l = b.lead || {};
     const id = String(l.id || '').slice(0, 40);
-    const to = String(l.to || '').trim().toLowerCase();
+    const isOwner = ses.r === 'owner';
+    const to = isOwner ? String(l.to || '').trim().toLowerCase() : ses.e;
     if (!to.includes('@')) return res.status(400).json({ error: 'bad-target' });
     let all = [];
     try { all = JSON.parse((await kv('get/leads')) || '[]'); } catch (e) {}
     const str = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
-    const clean = {
-      id: id || 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-      to,
-      at: str(l.at, 40) || new Date().toISOString(),
-      name: str(l.name, 120),
-      phone: str(l.phone, 40),
-      email: str(l.email, 160),
-      service: str(l.service, 200),
-      address: str(l.address, 200),
-      notes: str(l.notes, 1000),
-      gclid: str(l.gclid, 200),
-      source: str(l.source, 60),
+    const existing = id ? all.find((x) => x.id === id) : null;
+    if (existing && existing.to !== to) return res.status(403).json({ error: 'not-yours' });
+    if (!isOwner && b.action === 'lead-update' && !existing) return res.status(404).json({ error: 'not-found' });
+
+    const outcome = {
       booked: str(l.booked, 20),
       won: str(l.won, 20),
       contract: str(l.contract, 30),
       perVisit: str(l.perVisit, 20),
       visitsPerYear: str(l.visitsPerYear, 20),
     };
+    let clean;
+    if (existing && !isOwner) {
+      clean = Object.assign({}, existing);
+      Object.keys(outcome).forEach((k) => { if (Object.prototype.hasOwnProperty.call(l, k)) clean[k] = outcome[k]; });
+    } else {
+      const utm = l.utm && typeof l.utm === 'object' ? l.utm : {};
+      const captured = {
+        name: str(l.name, 120),
+        phone: str(l.phone, 40),
+        email: str(l.email, 160),
+        service: str(l.service, 200),
+        address: str(l.address, 200),
+        preferred: str(l.preferred, 120),
+        notes: str(l.notes, 1000),
+        gclid: str(l.gclid, 200),
+        gbraid: str(l.gbraid, 200),
+        wbraid: str(l.wbraid, 200),
+        utm: { source: str(utm.source, 60), medium: str(utm.medium, 60), campaign: str(utm.campaign, 100) },
+        landing: str(l.landing, 300),
+        referrer: str(l.referrer, 300),
+        // A client logging a lead is recording a call; the source is not theirs to invent.
+        source: isOwner ? str(l.source, 60) : (str(l.source, 60) || 'phone'),
+      };
+      // On an update only the keys actually sent are changed, so a console
+      // that predates a field cannot blank it by round-tripping the record.
+      const fresh = !existing;
+      const has = (k) => fresh || Object.prototype.hasOwnProperty.call(l, k);
+      clean = Object.assign({}, existing || {
+        id: id || 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        to,
+        at: str(l.at, 40) || new Date().toISOString(),
+      });
+      Object.keys(captured).forEach((k) => { if (has(k)) clean[k] = captured[k]; });
+      Object.keys(outcome).forEach((k) => { if (has(k)) clean[k] = outcome[k]; });
+      if (!isOwner) { clean.gclid = ''; clean.gbraid = ''; clean.wbraid = ''; }
+    }
+    if (!clean.name) return res.status(400).json({ error: 'name-required' });
+    stampOutcomes(clean);
     all = all.filter((x) => x.id !== clean.id);
     all.push(clean);
     if (all.length > 2000) all = all.slice(-2000);

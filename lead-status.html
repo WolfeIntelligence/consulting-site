@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Update an enquiry — Wolfe Intelligence</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#241e19">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  :root{
+    --ground:#191410; --panel:#211a15; --ink:#F3EDE4; --muted:#A79684; --faint:#7C6C5C;
+    --rule:#3A2F26; --gold:#C9A15F; --gold-lt:#E9C98D; --ok:#7FB88A; --stop:#D9736B;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ground);color:var(--ink);
+    font-family:"Instrument Sans",-apple-system,BlinkMacSystemFont,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+    font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:440px;margin:10vh auto;padding:0 20px;}
+  .brand{font-size:12px;letter-spacing:.18em;font-weight:700;color:var(--gold-lt);margin-bottom:26px;}
+  h1{font-size:22px;margin:0 0 6px;font-weight:600;}
+  p{color:var(--muted);margin:0 0 14px;}
+  .card{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:16px 18px;margin:18px 0 22px;}
+  .card b{font-size:17px;}
+  .card .sub{color:var(--muted);font-size:14px;margin-top:4px;}
+  .card .state{font-family:"Space Mono",ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.12em;color:var(--gold-lt);margin-top:10px;}
+  button{font:inherit;cursor:pointer;width:100%;padding:14px 16px;border:0;border-radius:3px;
+    background:var(--gold);color:#241e19;font-weight:600;font-size:16px;}
+  button[disabled]{opacity:.6;cursor:default;}
+  button:focus-visible{outline:2px solid var(--gold-lt);outline-offset:2px;}
+  .done{color:var(--ok);font-weight:600;}
+  .err{color:var(--stop);}
+  a{color:var(--gold-lt);}
+  .foot{font-size:13px;color:var(--faint);margin-top:28px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">WOLFE INTELLIGENCE</div>
+  <div id="app"><p>Loading the enquiry…</p></div>
+  <div class="foot">Every enquiry, and what became of it, is in <a href="/portal">your portal</a>.</div>
+</div>
+<script src="/lead-status.js"></script>
+</body></html>
