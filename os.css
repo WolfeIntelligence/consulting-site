@@ -83,11 +83,12 @@
 #app .lbl{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.12em;
      text-transform:uppercase;color:var(--faint);margin:14px 0 6px;}
 #app .v-stop{border-left-color:var(--stop);} #app .v-found{border-left-color:var(--warn);}
-#app .v-lsa{border-left-color:var(--ok);} #app .v-site{border-left-color:var(--info);}
+#app .v-lsa,#app .v-go{border-left-color:var(--ok);} #app .v-site,#app .v-pilot{border-left-color:var(--info);} #app .v-fix{border-left-color:var(--warn);}
 #app .c-stop{background:var(--stop-bg);color:var(--stop);}
 #app .c-found{background:var(--warn-bg);color:var(--warn);}
-#app .c-lsa{background:var(--ok-bg);color:var(--ok);}
-#app .c-site{background:var(--info-bg);color:var(--info);}
+#app .c-lsa,#app .c-go{background:var(--ok-bg);color:var(--ok);}
+#app .c-fix{background:var(--warn-bg);color:var(--warn);}
+#app .c-site,#app .c-pilot{background:var(--info-bg);color:var(--info);}
 #app .c-none{background:var(--panel-2);color:var(--faint);}
 #app .blk{background:var(--stop-bg);border-radius:3px;padding:10px 12px;margin:0 0 12px;}
 #app .blk b{display:block;color:var(--stop);font-size:11px;letter-spacing:.1em;text-transform:uppercase;

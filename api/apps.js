@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
       // trusting the front end to hide it.
       onboarding: ses.r === 'owner'
         ? onb
-        : onb.filter((o) => o.email === ses.e).map(({ intake, ...safe }) => safe),
+        : onb.filter((o) => o.email === ses.e).map(({ intake, audit, ...safe }) => safe),
       // A client sees their own leads; the owner sees every client's.
       leads: ses.r === 'owner' ? leads : leads.filter((l) => l.to === ses.e),
       visits,
@@ -95,6 +95,8 @@ module.exports = async (req, res) => {
     const clean = {
       email,
       businessName: String(rec.businessName || '').slice(0, 120),
+      // Which kind of engagement this is; decides the intake and steps in the console.
+      engagement: ['google', 'ai', 'automation'].includes(rec.engagement) ? rec.engagement : 'google',
       route: String(rec.route || '').slice(0, 120),
       phase: String(rec.phase || '').slice(0, 120),
       nextAction: String(rec.nextAction || '').slice(0, 240),
@@ -114,6 +116,12 @@ module.exports = async (req, res) => {
         trimmed[String(k).slice(0, 40)] = String(rec.intake[k] == null ? '' : rec.intake[k]).slice(0, 2000);
       }
       clean.intake = trimmed;
+    }
+    // Launch-check marks: owner-only, like the intake. Small and bounded.
+    if (rec.audit && typeof rec.audit === 'object' && !Array.isArray(rec.audit)) {
+      const marks = {};
+      for (const k of Object.keys(rec.audit).slice(0, 40)) marks[String(k).slice(0, 40)] = String(rec.audit[k] == null ? '' : rec.audit[k]).slice(0, 20);
+      clean.audit = marks;
     }
     let all = [];
     try { all = JSON.parse((await kv('get/onboarding')) || '[]'); } catch (e) {}

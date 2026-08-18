@@ -300,5 +300,26 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     assert.strictEqual(r.code, 200); assert.strictEqual(r.body.lead.source, 'lsa'); assert.ok(r.body.lead.id);
   });
 
+  console.log('api/apps (engagement records)');
+  await ok('engagement type and launch-check marks persist; unknown type falls back; clients never see marks or intake', async () => {
+    let r = res();
+    await apps(req('POST', { action: 'onboarding', record: { email: 'lawn@client.test', businessName: 'Lawn', engagement: 'automation',
+      steps: [{ label: 'Intake complete', done: true, date: '2026-08-18', owner: 'wolfe' }],
+      intake: { processName: 'Invoice chase' }, audit: { ownerCan: 'Pass', humanPath: 'Not checked' } } }, auth(ownerTok)), r);
+    assert.strictEqual(r.code, 200, JSON.stringify(r.body));
+    assert.strictEqual(r.body.record.engagement, 'automation');
+    assert.deepStrictEqual(r.body.record.audit, { ownerCan: 'Pass', humanPath: 'Not checked' });
+    r = res(); await apps(req('GET', null, auth(ownerTok)), r);
+    const mine = r.body.onboarding.find((o) => o.email === 'lawn@client.test');
+    assert.strictEqual(mine.engagement, 'automation'); assert.strictEqual(mine.audit.ownerCan, 'Pass'); assert.strictEqual(mine.intake.processName, 'Invoice chase');
+    r = res(); await apps(req('GET', null, auth(clientTok)), r);
+    const seen = r.body.onboarding.find((o) => o.email === 'lawn@client.test');
+    assert.strictEqual(seen.engagement, 'automation', 'the type itself is fine to show');
+    assert.ok(!('audit' in seen) && !('intake' in seen), 'client gets neither the intake nor the launch-check marks');
+    r = res();
+    await apps(req('POST', { action: 'onboarding', record: { email: 'lawn@client.test', businessName: 'Lawn', engagement: 'nonsense', steps: [] } }, auth(ownerTok)), r);
+    assert.strictEqual(r.body.record.engagement, 'google', 'unknown type falls back to google');
+  });
+
   console.log('\n' + pass + ' passed' + (process.exitCode ? ', with failures' : ''));
 })();

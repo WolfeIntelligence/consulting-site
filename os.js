@@ -111,7 +111,7 @@
   ];
 
   /* ------------------------------------------------- routing (the gates) */
-  function blockers(a) {
+  function blockers_google(a) {
     var b = [];
     if (a.verified === 'no' && a.signage === 'no')
       b.push('No permanent signage — verification will fail until they get a truck sign or similar.');
@@ -126,7 +126,7 @@
     return b;
   }
 
-  function decide(a) {
+  function decide_google(a) {
     var answered = ['capacity', 'verified', 'reviewsCount', 'insurance', 'budget'].some(function (k) { return a[k]; });
     if (!answered) return { kind: 'none', badge: 'Awaiting intake', title: 'Start with capacity',
       lead: 'The first gate can end the conversation, so answer it before anything else.', deliver: [], next: [] };
@@ -186,6 +186,308 @@
                 '<strong>Lead log</strong> reconciling spend against customers won'],
       next: ['Make the form the main call to action. A booking link straight to Google Calendar cannot be tracked.',
              'Hold off on uploading offline conversions until volume justifies it. Capture the GCLIDs now regardless.'] };
+  }
+
+  /* ------------------------------------------------- engagement types */
+  // One console, three kinds of engagement. Each type carries its own intake
+  // fields, its own routing gates, its own step list (what the client's portal
+  // renders) and its own launch checks. Everything above this comment is the
+  // Google engagement; the two below come from the same discipline applied to
+  // private-AI and automation work.
+  //
+  // The AI and automation intakes lean on published readiness practice rather
+  // than invention: process-automation suitability is scored on rule clarity,
+  // volume, input structure, stability, error cost and system access (the
+  // RPA-selection literature and the Forge/NextPage scorecards all converge on
+  // those six); AI readiness asks for a describable workflow, accessible data,
+  // a named human owner, and one metric with a baseline before anything is
+  // built. Neither of those is a Wolfe opinion — they are what the field has
+  // learned the hard way. Sources are listed in the README.
+
+  var PHASES_AI = [
+    ['intake', 'Intake complete', 'Facts gathered by conversation, not a form', 'wolfe'],
+    ['metric', 'Success number and today’s baseline written down', 'If nobody can say what moved, nobody can say it worked', 'wolfe'],
+    ['sources', 'Knowledge sources handed over', 'Price sheets, FAQs, past replies, the documents they already trust', 'you'],
+    ['machine', 'Machine or account confirmed and ready', 'Where it runs, and that it can', 'you'],
+    ['evalset', 'Acceptance test written from their real questions', 'Twenty real questions with the answers they would give', 'wolfe'],
+    ['kb', 'Knowledge base built and indexed', '', 'wolfe'],
+    ['assistant', 'Assistant set up where agreed', 'Their machine or their account — keys stay with them', 'wolfe'],
+    ['guardrails', 'Guardrails encoded', 'What it must never say or do, and what it hands to a human', 'wolfe'],
+    ['evalpass', 'Acceptance test passed', 'Answers checked against theirs, not eyeballed', 'wolfe'],
+    ['trained', 'Owner trained — first coaching session', '', 'you'],
+    ['twoweeks', 'Two weeks of real use, then a review', 'The questions it got wrong go into the test set', 'you'],
+    ['upkeep', 'Update routine agreed', 'Who refreshes the knowledge, and when', 'you'],
+    ['handoff', 'Handoff sent', '', 'wolfe']
+  ];
+
+  var AUDIT_AI = [
+    ['where', 'Runs where agreed', 'On their machine or in their account; provider keys are theirs'],
+    ['residue', 'Nothing of theirs left on Wolfe machines', 'Documents, exports, test transcripts'],
+    ['guard', 'Guardrails hold', 'Tried the forbidden asks; it refused or handed off'],
+    ['eval', 'Acceptance test at the agreed pass rate', 'Scored, not eyeballed'],
+    ['restart', 'Owner can restart it unaided', 'Watched them do it'],
+    ['upkeepOwner', 'Knowledge update has a named owner and a cadence', ''],
+    ['metricMoved', 'Success number re-measured against the baseline', 'Two weeks in']
+  ];
+
+  var FIELDS_AI = [
+    ['Business', [
+      ['businessName', 'Business name', 'text', ''],
+      ['phone', 'Phone', 'text', ''],
+      ['website', 'Website', 'text', 'Leave blank if none'],
+      ['whatTheyDo', 'What they actually do', 'textarea', 'In their words']
+    ]],
+    ['The job', [
+      ['topTasks', 'The five things they want it to do', 'textarea', 'In their words, most valuable first'],
+      ['users', 'Who will use it', 'text', 'Owner only, or the crew too'],
+      ['champion', 'Who owns it and checks its answers', 'text', 'One named person'],
+      ['successMetric', 'The one number this should move', 'text', 'Minutes a day, quotes a week, replies answered'],
+      ['baseline', 'That number today', 'text', 'Measured, not guessed']
+    ]],
+    ['Knowledge', [
+      ['knowledgeSources', 'Where the answers live today', 'textarea', 'Price sheet, FAQ, old emails, a binder, someone’s head'],
+      ['knowledgeShape', 'Shape of that knowledge', 'select:=—|digital=Digital and organized|scattered=Digital but scattered|heads=Mostly on paper or in heads', 'Decides whether the first weeks are building or capturing'],
+      ['updateOwner', 'Who keeps it current', 'text', 'Prices change; someone has to tell it'],
+      ['evalSet', 'Real questions with known answers', 'select:=—|have=Have 20 or more|can=Can assemble them|no=Not really', 'The acceptance test is built from these']
+    ]],
+    ['Where it runs', [
+      ['runWhere', 'Where it should run', 'select:=—|local=Their own machine|cloud=Their own cloud account|unsure=Not decided', 'Local keeps data home; an account is simpler to keep running'],
+      ['machine', 'The machine', 'text', 'OS, RAM, graphics card and its memory'],
+      ['dataSensitivity', 'What the data contains', 'select:=—|none=Nothing sensitive|pii=Customer names and contact details|regulated=Health, financial or legal records', 'Regulated data stays local unless their own account is cleared for it'],
+      ['mustNever', 'What it must never do or say', 'textarea', 'Quote a price, promise a date, give legal or medical advice, email anyone'],
+      ['humanReview', 'Human review', 'select:=—|always=Someone reads every answer|customer=Only customer-facing answers reviewed|none=Runs on its own', 'Start reviewed; loosen once the test set says so']
+    ]],
+    ['Time', [
+      ['learnTime', 'Hours a week the owner will give it', 'select:=—|low=Under one|mid=One or two|high=Three or more', 'Below one, coaching stalls']
+    ]]
+  ];
+
+  function blockersAi(a) {
+    var b = [];
+    if (a.dataSensitivity === 'regulated' && a.runWhere === 'cloud')
+      b.push('Regulated records in a cloud account: confirm the account’s terms cover it, or run it locally.');
+    if (a.runWhere === 'local' && !(a.machine || '').trim())
+      b.push('Machine unknown. A responsive local assistant wants a recent machine with a proper graphics card; a thin laptop will disappoint. Get the specs before promising local.');
+    if (!(a.champion || '').trim() && (a.topTasks || a.knowledgeSources))
+      b.push('No named owner. Without one person checking answers, nobody notices when it drifts.');
+    if (a.humanReview === 'none' && a.mustNever)
+      b.push('Runs unreviewed but has things it must never do — keep a review step until the acceptance test proves the guardrails.');
+    return b;
+  }
+
+  function decideAi(a) {
+    var answered = ['topTasks', 'knowledgeShape', 'runWhere', 'successMetric', 'evalSet'].some(function (k) { return a[k]; });
+    if (!answered) return { kind: 'none', badge: 'Awaiting intake', title: 'Start with the job',
+      lead: 'What are the five things they want it to do, in their words? Everything else follows from that.', deliver: [], next: [] };
+
+    if (a.knowledgeShape === 'heads') return { kind: 'fix', badge: 'Capture first', title: 'Knowledge capture, then the assistant',
+      lead: 'The answers live in someone’s head or a binder. An assistant built on that has nothing to stand on — the first weeks are capture, and that is the deliverable, not a delay.',
+      deliver: ['<strong>Capture sessions</strong> — the price sheet, the standard answers, the way they actually quote',
+                '<strong>A written knowledge base</strong> they own regardless of what happens next',
+                '<strong>The assistant</strong> once there is something real to ground it in'],
+      next: ['Write the success number down anyway; capture is measured too.'] };
+
+    if (!(a.successMetric || '').trim()) return { kind: 'fix', badge: 'Name the number', title: 'One metric before anything is built',
+      lead: 'The commonest way an AI setup fails is quietly: nobody can say whether it worked, so nobody knows whether to keep it. Name the number and measure today’s value first.',
+      deliver: ['<strong>One metric and its baseline</strong> — minutes a day, quotes a week, whatever they feel',
+                '<strong>Then</strong> the build'],
+      next: ['Ask what they would stop doing if it worked. That is usually the number.'] };
+
+    var local = a.runWhere === 'local';
+    return { kind: 'go', badge: 'Recommended', title: local ? 'Private assistant on their own machine' : 'Private assistant in their own account',
+      lead: (local ? 'Their data stays on their machine and the keys are theirs. ' : 'Simpler to keep running, still their account and their keys. ')
+          + 'Built from their own knowledge, tested against their own questions, reviewed by a named owner until the test set says it can run alone.',
+      deliver: ['<strong>Knowledge base</strong> from ' + (a.knowledgeShape === 'scattered' ? 'their scattered sources, gathered and organized' : 'their existing documents'),
+                '<strong>The assistant</strong> ' + (local ? 'on their machine' : 'in their account') + ', working from that knowledge and nothing else',
+                '<strong>Guardrails</strong> for what it must never do, and a hand-off to a human when it should not answer',
+                '<strong>Acceptance test</strong> — ' + (a.evalSet === 'have' ? 'their 20 real questions' : 'twenty real questions assembled with them') + ', scored before go-live',
+                '<strong>Coaching</strong> until the owner runs and updates it unaided'],
+      next: [a.evalSet === 'no' ? 'No test set yet — build it in the first session from real questions; nothing ships until it passes.' : 'Score the acceptance test; do not eyeball it.',
+             a.humanReview === 'none' ? 'They want it unreviewed. Start reviewed anyway and loosen once the test set earns it.' : 'Keep the review step until the test set says otherwise.',
+             a.learnTime === 'low' ? 'Under an hour a week from the owner — coaching will stall. Say so now.' : 'Book the two-week review before handoff, not after.'] };
+  }
+
+  var PHASES_AUTO = [
+    ['intake', 'Intake complete', 'One process, walked step by step', 'wolfe'],
+    ['baseline', 'Baseline measured', 'Minutes per run, runs per week, mistakes per month — today', 'wolfe'],
+    ['owner', 'Owner named', 'One person who checks the output and can switch it off', 'you'],
+    ['access', 'Access granted to the tools it touches', 'Email, calendar, forms, invoicing — their accounts, their consent', 'you'],
+    ['design', 'Flow written and agreed', 'Trigger, steps, exceptions, what goes to a human', 'wolfe'],
+    ['built', 'Automation built', '', 'wolfe'],
+    ['reviewed', 'Runs with the owner approving each result', 'Two weeks minimum, longer if customer-facing', 'you'],
+    ['exceptions', 'Exceptions reviewed and the flow tightened', 'The ones a human had to catch', 'wolfe'],
+    ['unattended', 'Switched to unattended, if earned', 'Only when the review period says so', 'wolfe'],
+    ['remeasured', 'Re-measured against the baseline', 'Same three numbers', 'wolfe'],
+    ['handoff', 'Handoff sent — how to pause it, how to change it', '', 'wolfe']
+  ];
+
+  var AUDIT_AUTO = [
+    ['ownerCan', 'Owner can pause it and see what it did', 'Watched them do it'],
+    ['humanPath', 'Exceptions reach a human', 'Tried one; it did not vanish'],
+    ['consent', 'Only touches accounts the owner authorized', 'Their accounts, their consent, revocable'],
+    ['baselineKept', 'Baseline and re-measure recorded', 'Same numbers, same method'],
+    ['customerSafe', 'Customer-facing output was reviewed before it went unattended', ''],
+    ['noResidue', 'No client data left on Wolfe systems', '']
+  ];
+
+  var FIELDS_AUTO = [
+    ['Business', [
+      ['businessName', 'Business name', 'text', ''],
+      ['phone', 'Phone', 'text', ''],
+      ['website', 'Website', 'text', 'Leave blank if none'],
+      ['whatTheyDo', 'What they actually do', 'textarea', 'In their words']
+    ]],
+    ['The one process', [
+      ['processName', 'The process to automate first', 'text', 'One. The next one comes after this one works'],
+      ['trigger', 'What starts it', 'text', 'A call, a form, a Friday, an invoice going overdue'],
+      ['stepsToday', 'The steps today, in order', 'textarea', 'As they actually happen, not as the manual says'],
+      ['whoDoes', 'Who does it now', 'text', ''],
+      ['systems', 'Tools it touches', 'text', 'Email, calendar, forms, invoicing app, spreadsheets'],
+      ['customerFacing', 'Does the output reach a customer', 'select:=—|no=No, internal only|yes=Yes, customers see it', 'Customer-facing runs stay reviewed longer']
+    ]],
+    ['Suitability', [
+      ['frequency', 'How often it runs', 'select:=—|5=Many times a day|4=Daily|3=A few times a week|2=Weekly|1=Monthly or rarer', 'Rare processes rarely pay back'],
+      ['rules', 'How rule-based it is', 'select:=—|5=Fully rule-based|4=Mostly, a few judgment calls|2=Mostly judgment|1=Pure judgment', 'The heaviest weight. Judgment calls need a human or an AI-assist, not an automation'],
+      ['inputs', 'What the inputs look like', 'select:=—|5=Digital and structured (forms, fields)|3=Digital but messy (free-text emails)|1=Paper, photos, voicemail', 'Messy inputs may mean a form is the real fix'],
+      ['stability', 'How often the steps change', 'select:=—|5=Unchanged for a year or more|3=Changes now and then|1=Changes constantly', ''],
+      ['errorCost', 'What a mistake costs', 'select:=—|5=Costly — money, a customer, a deadline|3=Annoying|1=Harmless', 'High-cost errors are the best reason to automate, and the best reason to keep review'],
+      ['access', 'How the tools can be reached', 'select:=—|5=They have integrations or an API|3=Web app only|1=Locked down or desktop-only', 'Web-only means brittle; ask about exports'],
+      ['exceptions', 'How often a human has to step in', 'select:=—|5=Under one run in ten|3=One to three in ten|1=More than three in ten', 'Over three in ten, narrow the scope to the common path']
+    ]],
+    ['Ownership and measure', [
+      ['owner', 'Who owns it and checks the output', 'text', 'One named person'],
+      ['review', 'Review to start with', 'select:=—|each=Owner approves each run|spot=Owner spot-checks|none=Unattended from day one', 'Start with approval; earn unattended'],
+      ['minutesPer', 'Minutes per run today', 'text', 'Timed, not guessed'],
+      ['perWeek', 'Runs per week today', 'text', ''],
+      ['successMetric', 'The number this should move', 'text', 'Hours a week back, invoices paid sooner, no missed follow-ups']
+    ]]
+  ];
+
+  // The six-criteria suitability score used across the process-automation
+  // literature: each 1 to 5, averaged. Above 4 automate now; 3 to 4 pilot it;
+  // 2 to 3 fix the process first; under 2 do not build.
+  function autoScore(a) {
+    var keys = ['frequency', 'rules', 'inputs', 'stability', 'errorCost', 'access', 'exceptions'];
+    var vals = keys.map(function (k) { return parseInt(a[k], 10); }).filter(function (n) { return isFinite(n); });
+    if (vals.length < 4) return null;
+    return vals.reduce(function (t, n) { return t + n; }, 0) / vals.length;
+  }
+
+  function blockersAuto(a) {
+    var b = [];
+    if (a.rules === '1' || a.rules === '2')
+      b.push('Mostly judgment. That is not an automation — it is either an AI-assist with a human deciding, or a different process to start with.');
+    if (a.exceptions === '1')
+      b.push('More than three runs in ten need a human. Narrow the scope to the common path, or the exceptions become the job.');
+    if (a.inputs === '1')
+      b.push('Inputs are paper, photos or voicemail. Put a form in front of it first — that step alone may be the win.');
+    if (a.access === '1')
+      b.push('Tools are locked down or desktop-only. Ask about exports or an integration before promising anything; screen-driving breaks.');
+    if (a.customerFacing === 'yes' && a.review === 'none')
+      b.push('Customer-facing and unattended from day one. Not on the first process — the owner approves each run until the exceptions are known.');
+    if ((a.processName || a.stepsToday) && !(a.owner || '').trim())
+      b.push('No named owner. Name one before anything is built.');
+    return b;
+  }
+
+  function decideAuto(a) {
+    var s = autoScore(a);
+    var answered = ['processName', 'trigger', 'frequency', 'rules'].some(function (k) { return a[k]; });
+    if (!answered) return { kind: 'none', badge: 'Awaiting intake', title: 'Start with one process',
+      lead: 'Not the flashiest one — the one with a clear trigger, digital inputs, a human owner and a number that moves.', deliver: [], next: [] };
+    if (s == null) return { kind: 'none', badge: 'Score incomplete', title: 'Answer the suitability questions',
+      lead: 'Frequency, rules, inputs, stability, error cost, access and exceptions. The score decides the route.', deliver: [], next: [] };
+
+    var sc = s.toFixed(1);
+    if (s < 2) return { kind: 'stop', badge: 'Do not build · ' + sc, title: 'Redesign the process, or pick another',
+      lead: 'Scores under 2 mean the process is unstable, judgment-heavy, or unreachable. Automating it hard-codes the mess.',
+      deliver: ['<strong>Process review</strong> — what would have to be true for this to be automatable',
+                '<strong>A different first process</strong> from the same conversation'],
+      next: ['The next candidate should score above 3 before anything is promised.'] };
+
+    if (s < 3) return { kind: 'fix', badge: 'Fix first · ' + sc, title: 'Straighten the process, then automate it',
+      lead: 'Between 2 and 3 the process is nearly there but something — messy inputs, shifting steps, too many exceptions — will keep breaking the automation. Fix that first; it is usually a form or a rule.',
+      deliver: ['<strong>Process fix</strong> — the one change that makes it automatable',
+                '<strong>Baseline</strong> measured while it is still manual',
+                '<strong>The automation</strong> once the score clears 3'],
+      next: ['Re-score after the fix; do not build on the old answers.'] };
+
+    if (s < 4) return { kind: 'pilot', badge: 'Pilot · ' + sc, title: 'Build it, run it reviewed for 30 days',
+      lead: 'A good candidate with a soft spot somewhere. Build it, have the owner approve each run for a month, tighten the exceptions, then decide about unattended.',
+      deliver: ['<strong>Baseline</strong> — minutes per run, runs per week, mistakes per month',
+                '<strong>The automation</strong>, with every exception routed to the owner',
+                '<strong>30 reviewed days</strong> and a written list of what it got wrong',
+                '<strong>Re-measure</strong>, then unattended if earned'],
+      next: [a.customerFacing === 'yes' ? 'Customer-facing: the review period is not negotiable.' : 'Internal only, so the review period can be shorter if the exceptions are quiet.',
+             'The exception list is the deliverable that makes the second month better than the first.'] };
+
+    return { kind: 'go', badge: 'Automate now · ' + sc, title: 'Strong candidate — build it',
+      lead: 'Frequent, rule-based, digital, stable and reachable. This is what automation is for. Still starts reviewed — unattended is earned, not assumed.',
+      deliver: ['<strong>Baseline</strong> measured first',
+                '<strong>The automation</strong> across ' + (a.systems ? esc(a.systems) : 'the tools it touches'),
+                '<strong>Exception path</strong> to the owner, with a pause switch they control',
+                '<strong>Two reviewed weeks</strong>, then unattended, then re-measure'],
+      next: ['Ask for the second process now; a strong first one usually has siblings.',
+             a.errorCost === '5' ? 'Costly mistakes: keep spot-checks even after unattended.' : 'Log what it did somewhere the owner actually looks.'] };
+  }
+
+  var ENGAGEMENTS = {
+    google: { label: 'Get found and measured', short: 'Google', fields: FIELDS, phases: PHASES, audit: AUDIT,
+              decide: decide_google, blockers: blockers_google, packet: packetGoogle },
+    ai: { label: 'Private AI assistant', short: 'Private AI', fields: FIELDS_AI, phases: PHASES_AI, audit: AUDIT_AI,
+          decide: decideAi, blockers: blockersAi, packet: packetAi },
+    automation: { label: 'Automation', short: 'Automation', fields: FIELDS_AUTO, phases: PHASES_AUTO, audit: AUDIT_AUTO,
+                  decide: decideAuto, blockers: blockersAuto, packet: packetAuto }
+  };
+  function E(c) { return ENGAGEMENTS[(c && c.engagement) || 'google'] || ENGAGEMENTS.google; }
+  function decide(c) { return E(c).decide((c && c.intake) || {}); }
+  function blockers(c) { return E(c).blockers((c && c.intake) || {}); }
+
+  // Engagement-specific packet sections (the settled decisions and readiness).
+  function packetGoogle(c, L) {
+    var a = c.intake;
+    var g = function (k, lab) { L.push('- **' + lab + ':** ' + (a[k] || '_______')); };
+    L.push(''); L.push('## Decisions (settled — do not re-open in front of the client)'); L.push('');
+    g('businessName', 'Business name'); g('category', 'Primary category');
+    g('secondary', 'Secondary categories'); g('businessType', 'Business shape');
+    g('serviceArea', 'Service area'); g('hours', 'Hours'); g('phone', 'Phone'); g('website', 'Website');
+    L.push(''); L.push('**Description**'); L.push('');
+    L.push('> ' + (a.description || '[write before the session]'));
+    L.push(''); L.push('## Verification readiness'); L.push('');
+    L.push('- Permanent signage: ' + (a.signage === 'yes' ? 'confirmed'
+      : '**NOT CONFIRMED — the commonest cause of failure**'));
+    L.push('- Film at: ' + (a.baseAddress || '_______'));
+    L.push('- Route: signage → equipment → vehicle → sign into the account. '
+      + 'One live take, 30+ seconds, no edits.');
+  }
+  function packetAi(c, L) {
+    var a = c.intake;
+    var g = function (k, lab) { L.push('- **' + lab + ':** ' + (a[k] || '_______')); };
+    L.push(''); L.push('## The job'); L.push('');
+    L.push(a.topTasks || '_______');
+    L.push('');
+    g('users', 'Who uses it'); g('champion', 'Owner who checks answers');
+    g('successMetric', 'Success number'); g('baseline', 'Baseline today');
+    L.push(''); L.push('## Knowledge and where it runs'); L.push('');
+    g('knowledgeShape', 'Knowledge shape'); g('updateOwner', 'Keeps it current'); g('evalSet', 'Test questions');
+    g('runWhere', 'Runs'); g('machine', 'Machine'); g('dataSensitivity', 'Data'); g('humanReview', 'Review');
+    L.push(''); L.push('**Sources**'); L.push(''); L.push('> ' + (a.knowledgeSources || '_______'));
+    L.push(''); L.push('**Must never**'); L.push(''); L.push('> ' + (a.mustNever || '_______'));
+  }
+  function packetAuto(c, L) {
+    var a = c.intake, s = autoScore(a);
+    var g = function (k, lab) { L.push('- **' + lab + ':** ' + (a[k] || '_______')); };
+    L.push(''); L.push('## The process'); L.push('');
+    g('processName', 'Process'); g('trigger', 'Trigger'); g('whoDoes', 'Done today by'); g('systems', 'Tools');
+    g('customerFacing', 'Customer-facing');
+    L.push(''); L.push('**Steps today**'); L.push(''); L.push('> ' + (a.stepsToday || '_______'));
+    L.push(''); L.push('## Suitability score: ' + (s == null ? 'incomplete' : s.toFixed(1) + ' / 5')); L.push('');
+    [['frequency', 'Frequency'], ['rules', 'Rule-based'], ['inputs', 'Inputs'], ['stability', 'Stability'],
+     ['errorCost', 'Error cost'], ['access', 'Access'], ['exceptions', 'Exceptions']].forEach(function (p) {
+      L.push('- ' + p[1] + ': ' + (a[p[0]] || '—') + '/5');
+    });
+    L.push(''); L.push('## Ownership and baseline'); L.push('');
+    g('owner', 'Owner'); g('review', 'Review'); g('minutesPer', 'Minutes per run'); g('perWeek', 'Runs per week'); g('successMetric', 'Number to move');
   }
 
   /* ----------------------------------------------------------- transport */
@@ -299,8 +601,9 @@
         o.phaseState = o.phaseState || {};
         o.audit = o.audit || {};
         // Steps are the client-facing projection; rebuild local state from them.
+        var ph = E(o).phases;
         (o.steps || []).forEach(function (s, i) {
-          var key = PHASES[i] && PHASES[i][0];
+          var key = ph[i] && ph[i][0];
           if (key) o.phaseState[key] = { done: !!s.done, date: s.date || '' };
         });
         return o;
@@ -342,8 +645,8 @@
   /* Persist a client. `steps` is what the client's portal renders, so it is
      built here from the same phase list rather than stored twice. */
   function persist(c, quiet) {
-    var v = decide(c.intake);
-    var steps = PHASES.map(function (p) {
+    var v = decide(c);
+    var steps = E(c).phases.map(function (p) {
       var st = (c.phaseState || {})[p[0]] || {};
       return { label: p[1], done: !!st.done, date: st.date || '', owner: p[3] };
     });
@@ -351,6 +654,7 @@
     var rec = {
       email: c.email,
       businessName: c.intake.businessName || c.businessName || '',
+      engagement: c.engagement || 'google',
       route: v.title,
       phase: doneCount === steps.length ? 'Complete' : (v.badge || 'In progress'),
       nextAction: (steps.filter(function (s) { return !s.done; })[0] || {}).label || 'Nothing outstanding',
@@ -395,11 +699,11 @@
     var list = el('div');
     if (!S.clients.length) list.appendChild(el('div', 'note', 'No clients yet.'));
     S.clients.forEach(function (c) {
-      var v = decide(c.intake);
-      var done = PHASES.filter(function (p) { return ((c.phaseState || {})[p[0]] || {}).done; }).length;
+      var v = decide(c), ph = E(c).phases;
+      var done = ph.filter(function (p) { return ((c.phaseState || {})[p[0]] || {}).done; }).length;
       var b = el('button', 'cbtn' + (c.email === S.sel ? ' sel' : ''));
       b.innerHTML = '<b>' + esc(c.intake.businessName || c.businessName || c.email) + '</b>' +
-                    '<span>' + esc(v.badge) + ' · ' + done + '/' + PHASES.length + ' steps</span>';
+                    '<span>' + esc(E(c).short) + ' · ' + esc(v.badge) + ' · ' + done + '/' + ph.length + ' steps</span>';
       b.onclick = function () { S.sel = c.email; render(); };
       list.appendChild(b);
     });
@@ -466,7 +770,18 @@
     inm.oninput = function () { S.newName = inm.value; };
     ln.appendChild(inm);
 
-    g.appendChild(le); g.appendChild(ln);
+    var lt = el('label');
+    lt.appendChild(el('span', null, 'Engagement'));
+    var st = el('select');
+    Object.keys(ENGAGEMENTS).forEach(function (k) {
+      var op = el('option'); op.value = k; op.textContent = ENGAGEMENTS[k].label; st.appendChild(op);
+    });
+    st.value = S.newType || 'google';
+    st.onchange = function () { S.newType = st.value; };
+    lt.appendChild(st);
+    lt.appendChild(el('span', 'hint', 'Decides the intake, the steps the client sees, and the launch checks. One engagement per client record; add a second record for a second engagement.'));
+
+    g.appendChild(le); g.appendChild(ln); g.appendChild(lt);
     fs.appendChild(g);
 
     var err = el('div'); err.style.cssText = 'color:var(--stop);font-size:13px;min-height:18px;margin-top:8px;';
@@ -484,7 +799,7 @@
       }
       err.textContent = '';
       add.disabled = true; add.textContent = 'Saving…';
-      var c = { email: email, businessName: name,
+      var c = { email: email, businessName: name, engagement: S.newType || 'google',
                 intake: { businessName: name, businessType: 'field_service' },
                 phaseState: {}, audit: {}, steps: [] };
       // Only keep it locally once the server has it. Otherwise a storage outage
@@ -492,7 +807,7 @@
       persist(c, true).then(function (ok) {
         if (!ok) { add.disabled = false; add.textContent = 'Add client'; render(); return; }
         S.clients.push(c); S.sel = email; S.tab = 'client';
-        S.adding = false; S.newEmail = ''; S.newName = '';
+        S.adding = false; S.newEmail = ''; S.newName = ''; S.newType = 'google';
         render();
       });
     };
@@ -504,6 +819,33 @@
   }
 
   function newClient() { S.adding = true; S.sel = null; render(); }
+
+  // The engagement type on an existing record. Changing it swaps the intake,
+  // the steps and the checks; ticks already made on the old step list are kept
+  // in phaseState under their old keys and simply stop showing.
+  function engagementNode(c) {
+    var fs = el('fieldset');
+    fs.appendChild(el('legend', null, 'Engagement'));
+    var g = el('div', 'grid');
+    var w = el('label');
+    w.appendChild(el('span', null, 'Type'));
+    var sel = el('select');
+    Object.keys(ENGAGEMENTS).forEach(function (k) {
+      var op = el('option'); op.value = k; op.textContent = ENGAGEMENTS[k].label; sel.appendChild(op);
+    });
+    sel.value = c.engagement || 'google';
+    sel.setAttribute('aria-label', 'Engagement type');
+    sel.onchange = function () { c.engagement = sel.value; persist(c, true).then(function () { render(); }); };
+    w.appendChild(sel);
+    w.appendChild(el('span', 'hint', {
+      google: 'Business Profile, the landing page with the estimate form, and every inquiry tracked from click to customer.',
+      ai: 'A private assistant on their machine or in their account, built from their own knowledge and tested against their own questions.',
+      automation: 'One process at a time: scored for suitability, built, run reviewed, then unattended once earned.'
+    }[c.engagement || 'google']));
+    g.appendChild(w);
+    fs.appendChild(g);
+    return fs;
+  }
 
   function fieldNode(c, f) {
     var k = f[0], lab = f[1], type = f[2], hint = f[3];
@@ -536,15 +878,15 @@
     var btns = document.querySelectorAll('.rail .cbtn');
     var i = S.clients.indexOf(c);
     if (btns[i]) {
-      var v = decide(c.intake);
-      var done = PHASES.filter(function (p) { return ((c.phaseState || {})[p[0]] || {}).done; }).length;
+      var v = decide(c), ph = E(c).phases;
+      var done = ph.filter(function (p) { return ((c.phaseState || {})[p[0]] || {}).done; }).length;
       btns[i].innerHTML = '<b>' + esc(c.intake.businessName || c.email) + '</b>' +
-                          '<span>' + esc(v.badge) + ' · ' + done + '/' + PHASES.length + ' steps</span>';
+                          '<span>' + esc(v.badge) + ' · ' + done + '/' + ph.length + ' steps</span>';
     }
   }
 
   function verdictNode(c) {
-    var v = decide(c.intake), b = blockers(c.intake);
+    var v = decide(c), b = blockers(c);
     var d = el('div', 'verdict v-' + (v.kind === 'none' ? '' : v.kind));
     var h = '<span class="chip c-' + (v.kind === 'none' ? 'none' : v.kind) + '">' + esc(v.badge) + '</span>' +
             '<h3>' + esc(v.title) + '</h3><p>' + v.lead + '</p>';
@@ -570,9 +912,8 @@
   // The document the operator actually works from during a live session: the
   // decisions already settled, the blockers, and the verification route.
   function packetMd(c) {
-    var a = c.intake, v = decide(a), b = blockers(a), L = [];
-    var g = function (k, lab) { L.push('- **' + lab + ':** ' + (a[k] || '_______')); };
-    L.push('# Onboarding packet — ' + (a.businessName || c.email));
+    var a = c.intake, v = decide(c), b = blockers(c), L = [];
+    L.push('# ' + E(c).label + ' packet — ' + (a.businessName || c.email));
     L.push('Prepared ' + today());
     L.push('');
     L.push('## Recommended direction');
@@ -592,26 +933,15 @@
       L.push(''); L.push('## Resolve first'); L.push('');
       b.forEach(function (x) { L.push('- [ ] ' + x); });
     }
-    L.push(''); L.push('## Decisions (settled — do not re-open in front of the client)'); L.push('');
-    g('businessName', 'Business name'); g('category', 'Primary category');
-    g('secondary', 'Secondary categories'); g('businessType', 'Business shape');
-    g('serviceArea', 'Service area'); g('hours', 'Hours'); g('phone', 'Phone'); g('website', 'Website');
-    L.push(''); L.push('**Description**'); L.push('');
-    L.push('> ' + (a.description || '[write before the session]'));
-    L.push(''); L.push('## Verification readiness'); L.push('');
-    L.push('- Permanent signage: ' + (a.signage === 'yes' ? 'confirmed'
-      : '**NOT CONFIRMED — the commonest cause of failure**'));
-    L.push('- Film at: ' + (a.baseAddress || '_______'));
-    L.push('- Route: signage → equipment → vehicle → sign into the account. '
-      + 'One live take, 30+ seconds, no edits.');
+    E(c).packet(c, L);
     L.push(''); L.push('## Progress'); L.push('');
-    PHASES.forEach(function (p) {
+    E(c).phases.forEach(function (p) {
       var st = (c.phaseState || {})[p[0]] || {};
       L.push('- [' + (st.done ? 'x' : ' ') + '] ' + p[1] + (st.date ? '  (' + st.date + ')' : '')
         + (st.done ? '' : '  — ' + (p[3] === 'you' ? 'client' : p[3])));
     });
-    L.push(''); L.push('## Audit'); L.push('');
-    AUDIT.forEach(function (x) {
+    L.push(''); L.push('## Launch checks'); L.push('');
+    E(c).audit.forEach(function (x) {
       L.push('- ' + x[1] + ': ' + ((c.audit || {})[x[0]] || '—'));
     });
     return L.join('\n') + '\n';
@@ -664,11 +994,11 @@
 
     var flagged = 0;
     S.clients.forEach(function (c) {
-      var v = decide(c.intake);
-      var steps = PHASES.filter(function (p) { return ((c.phaseState || {})[p[0]] || {}).done; });
+      var v = decide(c), ph = E(c).phases;
+      var steps = ph.filter(function (p) { return ((c.phaseState || {})[p[0]] || {}).done; });
       var next = null;
-      for (var i = 0; i < PHASES.length; i++) {
-        if (!((c.phaseState || {})[PHASES[i][0]] || {}).done) { next = PHASES[i]; break; }
+      for (var i = 0; i < ph.length; i++) {
+        if (!((c.phaseState || {})[ph[i][0]] || {}).done) { next = ph[i]; break; }
       }
       var st = stall(c);
       if (st) flagged++;
@@ -682,10 +1012,11 @@
       var top = el('div');
       top.style.cssText = 'display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;width:100%;';
       top.innerHTML = '<b style="font-size:15px;">' + esc(c.intake.businessName || c.email) + '</b>'
+        + '<span class="mono" style="font-size:10px;letter-spacing:.1em;color:var(--faint);">' + esc(E(c).short.toUpperCase()) + '</span>'
         + '<span class="chip c-' + (v.kind === 'none' ? 'none' : v.kind) + '">' + esc(v.badge) + '</span>'
         + '<span style="flex:1"></span>'
         + '<span style="font-family:\'Space Mono\',monospace;font-size:11px;color:var(--faint);">'
-        + steps.length + '/' + PHASES.length + '</span>';
+        + steps.length + '/' + ph.length + '</span>';
       r.appendChild(top);
 
       var line = el('div');
@@ -740,8 +1071,8 @@
     if (!c) {
       var e = el('div', 'empty');
       e.innerHTML = '<h2>No client selected</h2>' +
-        '<p>Add one to start an engagement. The console holds the intake, works out which package fits, ' +
-        'tracks the onboarding through the verification wait, and writes progress straight into the ' +
+        '<p>Add one to start an engagement — Google presence, a private AI assistant, or an automation. The console holds the intake, ' +
+        'works out which route fits, tracks the steps, and writes progress straight into the ' +
         "client's portal.</p>" +
         '<p>Everything here is deterministic — the same gates the checklists use. Nothing calls a model, ' +
         'so nothing is billed per click and nothing can be confidently wrong.</p>';
@@ -749,10 +1080,11 @@
       return;
     }
 
-    var v = decide(c.intake);
+    var v = decide(c);
     var hd = el('div', 'hd');
     hd.innerHTML = '<h2>' + esc(c.intake.businessName || c.email) + '</h2>' +
-                   '<span class="chip c-' + (v.kind === 'none' ? 'none' : v.kind) + '">' + esc(v.badge) + '</span>';
+                   '<span class="chip c-' + (v.kind === 'none' ? 'none' : v.kind) + '">' + esc(v.badge) + '</span>' +
+                   '<span class="mono" style="font-size:10px;letter-spacing:.12em;color:var(--faint);margin-left:8px;">' + esc(E(c).label.toUpperCase()) + '</span>';
     m.appendChild(hd);
     var subLine = el('p', 'sub');
     subLine.textContent = c.email + (c.updatedAt ? ' · updated ' + c.updatedAt.slice(0, 10) : '') + ' · ';
@@ -813,7 +1145,8 @@
     m.appendChild(tabs);
 
     if (S.tab === 'client') {
-      FIELDS.forEach(function (grp) {
+      m.appendChild(engagementNode(c));
+      E(c).fields.forEach(function (grp) {
         var fs = el('fieldset');
         fs.appendChild(el('legend', null, grp[0]));
         var g = el('div', 'grid');
@@ -865,7 +1198,7 @@
     }
 
     if (S.tab === 'progress') {
-      PHASES.forEach(function (p) {
+      E(c).phases.forEach(function (p) {
         var st = c.phaseState[p[0]] = c.phaseState[p[0]] || {};
         var r = el('div', 'row' + (st.done ? ' done' : ''));
         var cb = el('input'); cb.type = 'checkbox'; cb.checked = !!st.done;
@@ -893,7 +1226,7 @@
       // to the steps it verifies instead of on a tab of its own.
       var lc = el('fieldset');
       lc.appendChild(el('legend', null, 'Launch checks'));
-      AUDIT.forEach(function (a) {
+      E(c).audit.forEach(function (a) {
         var r = el('div', 'row');
         var t = el('div', 't');
         t.innerHTML = '<b>' + esc(a[1]) + '</b>' + (a[2] ? '<p>' + esc(a[2]) + '</p>' : '');

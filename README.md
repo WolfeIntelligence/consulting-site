@@ -44,6 +44,39 @@ Vercel → Project → Settings → Environment Variables.
 | `LEAD_FROM` | Sender for those emails. Defaults to `Wolfe Intelligence <leads@wolfeintelligence.com>`; the domain must be verified in Resend. |
 | `PUBLIC_BASE` | Base URL used in email links. Defaults to `https://www.wolfeintelligence.com`. |
 
+## Engagement types (the console)
+
+One client record carries one engagement. The type — set when the client is
+added, changeable on the Client tab — decides the intake fields, the routing
+gates, the step list the client's portal renders, and the launch checks. All
+three are deterministic; nothing calls a model.
+
+| Type | Intake asks | Route decided by | Steps |
+| --- | --- | --- | --- |
+| `google` — Get found and measured | shape, coverage, the five gates (capacity, verified, signage, reviews, insurance), budget, site | the gates, in order; LSA vs. website+search ads | 15, incl. the Google-owned verification wait |
+| `ai` — Private AI assistant | the five jobs, owner who checks answers, one metric + baseline, where the knowledge lives and its shape, where it runs, data sensitivity, must-nevers, review level, owner's hours | knowledge in heads → capture first; no metric → name it first; else build local or in-account | 13, ending in a scored acceptance test and a two-week review |
+| `automation` — one process | trigger, steps today, tools, customer-facing?, seven suitability scores (frequency, rules, inputs, stability, error cost, access, exceptions), owner, review level, baseline | average score: ≥4 build now, 3–4 pilot reviewed 30 days, 2–3 fix the process first, <2 do not build | 11, reviewed before unattended, re-measured at the end |
+
+The AI and automation intakes follow published readiness practice rather than
+house opinion. Automation suitability scoring on rule clarity, volume, input
+structure, stability, error cost and system access is the common core of the
+RPA-selection literature and the practitioner scorecards
+([Forge RPA](https://forgerpa.com/blog/automation-assessment-framework/),
+[NextPage](https://nextpageit.com/blog/rpa-readiness-assessment),
+[Nordflux](https://nordflux.de/en/guides/rpa-process-selection-criteria-catalog-for-automatable-processes),
+[Bédard 2024](https://onlinelibrary.wiley.com/doi/10.1002/smr.2709)); the
+thresholds are Forge's. AI readiness — a describable workflow, accessible
+data, one named human owner, and a metric with a baseline before anything is
+built, starting with a narrow pilot — is the shared shape of the small-business
+readiness checklists ([Infinity Sky](https://infinitysky.ai/blog/ai-readiness-assessment-small-business-2026),
+[Progressive Robot](https://www.progressiverobot.com/2026/05/10/ai-readiness-assessment/),
+[200OK](https://www.200oksolutions.com/blog/ai-readiness-assessment-framework-2026/)).
+The acceptance-test step for private assistants — real questions with known
+answers, scored not eyeballed — is standard RAG evaluation practice
+([Evidently](https://www.evidentlyai.com/llm-guide/rag-evaluation)). Local
+hardware guidance in the AI blocker (a recent machine with a proper graphics
+card; roughly 16 GB RAM minimum) follows the 2026 local-LLM hardware guides.
+
 ## The lead pipeline
 
 ```
