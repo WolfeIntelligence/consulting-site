@@ -134,7 +134,7 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     assert.strictEqual(auto.reply_to, 'lawn@client.test');
     assert.ok(auto.text.includes('Green Lawns') && auto.text.includes('336-555-0100'));
   });
-  await ok('hashes: normalised email/phone SHA-256 stored; plaintext untouched', async () => {
+  await ok('hashes: normalized email/phone SHA-256 stored; plaintext untouched', async () => {
     assert.strictEqual(tracked.emailHash, crypto.createHash('sha256').update('jane@x.test').digest('hex'));
     assert.strictEqual(tracked.phoneHash, crypto.createHash('sha256').update('+13365550100').digest('hex'));
     assert.strictEqual(L.normEmail('  Jo.Hn.Doe@Gmail.com '), 'johndoe@gmail.com');
@@ -142,13 +142,13 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     assert.strictEqual(L.normPhone('1 336 555 0100'), '+13365550100');
     assert.strictEqual(L.normPhone('12345'), '');
   });
-  await ok('repeat enquiry within 30 days is flagged, not double-counted; mail says so', async () => {
+  await ok('repeat inquiry within 30 days is flagged, not double-counted; mail says so', async () => {
     const r = res();
     await lead(req('POST', { to: 'lawn@client.test', name: 'Jane Again', phone: '(336) 555 0100' }), r);
     assert.strictEqual(r.code, 200);
     const dup = leads().find((l) => l.name === 'Jane Again');
     assert.strictEqual(dup.duplicateOf, tracked.id);
-    assert.ok(mails[mails.length - 1].subject.startsWith('Repeat enquiry:'));
+    assert.ok(mails[mails.length - 1].subject.startsWith('Repeat inquiry:'));
     const other = res();
     await lead(req('POST', { to: 'other@client.test', name: 'Jane Elsewhere', phone: '(336) 555 0100' }), other);
     assert.strictEqual(leads().find((l) => l.name === 'Jane Elsewhere').duplicateOf, '', 'another client is not a repeat');
@@ -203,7 +203,7 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     let r = res(); await leadStatus(req('GET', null, { query: { t: 'nope' } }), r); assert.strictEqual(r.code, 401);
     r = res(); await leadStatus(req('GET', null, { query: {} }), r); assert.strictEqual(r.code, 401);
   });
-  await ok('GET shows the enquiry, nothing more', async () => {
+  await ok('GET shows the inquiry, nothing more', async () => {
     const r = res(); await leadStatus(req('GET', null, { query: { t: good } }), r);
     assert.strictEqual(r.code, 200); assert.strictEqual(r.body.lead.name, 'Jane Doe'); assert.strictEqual(r.body.lead.business, 'Green Lawns');
     assert.strictEqual(r.body.lead.gclid, undefined); assert.strictEqual(r.body.lead.to, undefined);

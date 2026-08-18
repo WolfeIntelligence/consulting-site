@@ -55,7 +55,7 @@
     ['manager', 'Wolfe added as Manager', 'Never Owner', 'you'],
     ['reviews', 'Review drive started', 'Free, and usually beats early ad spend', 'you'],
     ['photos', 'Real photos added', '', 'you'],
-    ['booking', 'Website and estimate form live', 'The page ads land on; every enquiry lands here', 'wolfe'],
+    ['booking', 'Website and estimate form live', 'The page ads land on; every inquiry lands here', 'wolfe'],
     ['bookLink', 'Website link added to the profile', 'Only possible after verification', 'wolfe'],
     ['adsAcct', 'Advertising account set up', 'Route decided first', 'wolfe'],
     ['testLead', 'Test lead booked end to end, then deleted', 'The only step that proves the funnel works', 'wolfe'],
@@ -135,14 +135,14 @@
       lead: 'A full route means paid leads get turned away or stretch their drive time. Advertising here damages the engagement.',
       deliver: ['<strong>Profile and reviews</strong> so the leads they do get are better',
                 '<strong>Pricing and route review</strong> — replacing low-value customers beats adding volume',
-                '<strong>Estimate form on their page</strong> so enquiries stop getting lost while they work'],
+                '<strong>Estimate form on their page</strong> so inquiries stop getting lost while they work'],
       next: ['Revisit advertising when they add capacity or raise prices enough to free some.'] };
 
     if (a.verified === 'no' || a.verified === 'exists') return { kind: 'found', badge: 'Phase zero', title: 'Get verified first',
       lead: 'Nothing paid starts before the listing is approved. Verification takes days and sometimes weeks.',
       deliver: ['<strong>Profile ' + (a.verified === 'exists' ? 'claim' : 'creation') + '</strong> and verification, video prep included',
                 '<strong>Their page with the estimate form</strong>, and the link on the profile once approved',
-                '<strong>Lead log</strong> from the first enquiry, to build a pre-spend baseline'],
+                '<strong>Lead log</strong> from the first inquiry, to build a pre-spend baseline'],
       next: ['Re-check this once Google approves — the channel answer may change.'] };
 
     if (a.reviewsCount === 'none') return { kind: 'found', badge: 'Foundation first', title: 'Reviews before advertising',
@@ -166,7 +166,7 @@
             (wantsSite ? " A simple site is worth adding — LSA doesn't need one, but it is where tracking becomes possible later." : ''),
       deliver: ['<strong>LSA setup</strong> — background check, insurance, license verification',
                 '<strong>Lead management</strong> in the LSA inbox, marking booked and won',
-                wantsSite ? '<strong>Simple site</strong> with an enquiry form, capturing the GCLID from day one'
+                wantsSite ? '<strong>Simple site</strong> with an inquiry form, capturing the GCLID from day one'
                           : '<strong>Tracking on their existing site</strong>, capturing the GCLID from day one',
                 '<strong>Lead log</strong> as the source of truth for cost per recurring customer'],
       next: ['Capture the GCLID from day one — it cannot be recovered retroactively.',
@@ -180,7 +180,7 @@
           ? 'Without insurance or a background check LSA is off the table, so search ads are the route. '
           : 'Until the insurance answer is confirmed, plan for search ads. ') +
         'That makes the site mandatory rather than optional — it is the only place a conversion can be measured.',
-      deliver: ['<strong>Site build</strong> with an enquiry form as the primary call to action',
+      deliver: ['<strong>Site build</strong> with an inquiry form as the primary call to action',
                 '<strong>Conversion tracking</strong> on form submission, plus GCLID capture',
                 '<strong>Search campaigns</strong> geo-fenced tightly around their existing route',
                 '<strong>Lead log</strong> reconciling spend against customers won'],
@@ -211,7 +211,7 @@
      enhanced conversions for leads: every outcome goes, with the hashed
      email and phone as match keys, so a customer whose click id was lost
      (iOS, cleared storage, phoned first) can still be matched. Google asks
-     for all outcomes, attributed or not. Repeat enquiries are skipped so a
+     for all outcomes, attributed or not. Repeat inquiries are skipped so a
      person is not counted twice. */
   function offlineRows(leads, format) {
     var rows = [];
@@ -272,7 +272,7 @@
     var out;
     if (format === 'enhanced') {
       // Data Manager maps columns by name on upload. Email and Phone Number are
-      // SHA-256 of the normalised values, as Google specifies for hashed data.
+      // SHA-256 of the normalized values, as Google specifies for hashed data.
       out = ['Parameters:TimeZone=' + (S.exportTz || 'America/New_York') + ',,,,,,,',
              'Google Click ID,Email,Phone Number,Conversion Name,Conversion Time,Conversion Value,Conversion Currency,Order ID'];
       rows.forEach(function (r) {
@@ -897,7 +897,7 @@
         var v = parseFloat(l.perVisit) * parseFloat(l.visitsPerYear);
         return t + (isFinite(v) ? v : 0);
       }, 0);
-      // Speed to lead: minutes from enquiry to the first call back, on the
+      // Speed to lead: minutes from inquiry to the first call back, on the
       // leads that have one; and how many are still waiting right now.
       var untouched = function (l) { return !l.contacted && !l.booked && !l.won; };
       var waiting = real.filter(untouched);
@@ -939,7 +939,7 @@
         t.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
         var th = function (s, right) { return '<th style="text-align:' + (right ? 'right' : 'left') + ';padding:6px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--rule);">' + s + '</th>'; };
         var td = function (s, right, dim) { return '<td style="text-align:' + (right ? 'right' : 'left') + ';padding:6px 8px;border-bottom:1px solid var(--rule);' + (dim ? 'color:var(--faint);' : '') + '">' + s + '</td>'; };
-        var html = '<tr>' + th('Source') + th('Visits', 1) + th('Enquiries', 1) + th('Enquiry rate', 1) + th('Booked', 1) + th('Won', 1) + '</tr>';
+        var html = '<tr>' + th('Source') + th('Visits', 1) + th('Inquiries', 1) + th('Inquiry rate', 1) + th('Booked', 1) + th('Won', 1) + '</tr>';
         var tv = 0, tl = 0, tb = 0, tw = 0;
         buckets.forEach(function (b) {
           var ls = l30.filter(function (l) { return bucketOf(l.source) === b; });
@@ -960,9 +960,9 @@
       if (S.config && S.config.notify === false) {
         var nb = el('div', 'verdict');
         nb.style.borderLeftColor = 'var(--warn)';
-        nb.innerHTML = '<h3>Lead emails are off</h3><p>New enquiries are stored and shown here, but nobody is emailed. '
+        nb.innerHTML = '<h3>Lead emails are off</h3><p>New inquiries are stored and shown here, but nobody is emailed. '
           + 'Set <span class="mono">RESEND_API_KEY</span> (and <span class="mono">LEAD_FROM</span>) in Vercel to turn on the '
-          + 'new-enquiry email with its one-tap outcome links.</p>';
+          + 'new-inquiry email with its one-tap outcome links.</p>';
         m.appendChild(nb);
       }
 
@@ -985,7 +985,7 @@
         xf.appendChild(el('p', 'note',
           'One row per outcome — an estimate booked, a customer won — uploaded in the client’s Google Ads account '
           + 'under Goals → Conversions → Uploads (Data Manager). The conversion names must match conversion actions that '
-          + 'already exist there, character for character. Repeat enquiries are left out.'));
+          + 'already exist there, character for character. Repeat inquiries are left out.'));
         var xg = el('div', 'grid');
         var fw = el('label'); fw.appendChild(el('span', null, 'Format'));
         var fsel = el('select');

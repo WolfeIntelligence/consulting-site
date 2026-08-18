@@ -1,11 +1,11 @@
 // One-tap outcome recording from the new-lead email.
 //
 // The email carries links to /lead-status?t=<signed token>&set=<outcome>.
-// That page calls GET here to show which enquiry it is about, and POST when
+// That page calls GET here to show which inquiry it is about, and POST when
 // the person taps confirm. The token names one lead and one client and
 // expires; nothing else can be reached with it. The confirmation step exists
 // because mail scanners prefetch links — a bare GET that changed state would
-// mark enquiries booked before anyone read the email.
+// mark inquiries booked before anyone read the email.
 
 const { limit } = require('../lib/ratelimit');
 const L = require('../lib/leads');

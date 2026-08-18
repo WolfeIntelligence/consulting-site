@@ -5,7 +5,7 @@
 <script src="assets/resources.js"></script>
 <script src="assets/runtime.js"></script>
 <title>Client Portal — Wolfe Intelligence</title>
-<meta name="description" content="Private client portal for Wolfe Intelligence — your enquiries, your Google setup, and what needs you.">
+<meta name="description" content="Private client portal for Wolfe Intelligence — your inquiries, your Google setup, and what needs you.">
 <link rel="canonical" href="https://www.wolfeintelligence.com/portal">
 <!-- A sign-in wall has nothing to rank for, and an indexed login page only
      dilutes the homepage. The guided tour is linked from the homepage instead. -->
@@ -18,7 +18,7 @@
 <meta property="og:site_name" content="Wolfe Intelligence">
 <meta property="og:url" content="https://www.wolfeintelligence.com/portal">
 <meta property="og:title" content="Wolfe OS — Client Portal">
-<meta property="og:description" content="Your enquiries, your Google setup, and what needs you.">
+<meta property="og:description" content="Your inquiries, your Google setup, and what needs you.">
 <meta property="og:image" content="https://www.wolfeintelligence.com/assets/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -72,7 +72,7 @@
     <div style="width:420px;max-width:100%;">
       <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:#c9a15f;margin-bottom:20px;text-align:center;">PRIVATE ACCESS</div>
       <h1 style="font:400 38px/1.1 'Newsreader',serif;letter-spacing:-.01em;margin:0 0 12px;text-align:center;">Sign in</h1>
-      <p style="font:400 16px/1.55 'Newsreader',serif;color:#8c8072;margin:0 0 34px;text-align:center;">Your enquiries, your Google setup, and what needs you.</p>
+      <p style="font:400 16px/1.55 'Newsreader',serif;color:#8c8072;margin:0 0 34px;text-align:center;">Your inquiries, your Google setup, and what needs you.</p>
       <div style="display:flex;flex-direction:column;gap:14px;background:#2a2621;border:1px solid rgba(239,231,214,.14);padding:30px 28px;">
         <label style="display:flex;flex-direction:column;gap:7px;font:700 10px 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">EMAIL
           <input type="email" value="{{ emailDraft }}" sc-camel-on-change="{{ setEmail }}" placeholder="you@company.com" style="background:#241e19;border:1px solid rgba(239,231,214,.2);color:#efe7d6;padding:13px 14px;font-size:16px;">
@@ -106,7 +106,7 @@
 
     <sc-if value="{{ ldShow }}" hint-placeholder-val="{{ false }}">
     <div style="display:grid;gap:14px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
-      <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOUR ENQUIRIES</span>
+      <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOUR INQUIRIES</span>
       <div style="{{ ldHeadStyle }}">{{ ldHead }}</div>
       <div style="font:400 14px/1.55 'Newsreader',serif;color:#a2968a;">{{ ldSub }}</div>
       <sc-if value="{{ ldErr }}" hint-placeholder-val="{{ false }}">
@@ -171,7 +171,7 @@
     <sc-if value="{{ emptyShow }}" hint-placeholder-val="{{ false }}">
     <div style="display:grid;gap:10px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
       <div style="font:400 20px/1.3 'Newsreader',serif;">Your engagement has not started yet.</div>
-      <div style="font:400 14.5px/1.55 'Newsreader',serif;color:#a2968a;max-width:60ch;">Once Wolfe Intelligence opens your file, your Google setup progress and every enquiry from your site will appear here. Nothing is needed from you right now.</div>
+      <div style="font:400 14.5px/1.55 'Newsreader',serif;color:#a2968a;max-width:60ch;">Once Wolfe Intelligence opens your file, your Google setup progress and every inquiry from your site will appear here. Nothing is needed from you right now.</div>
     </div>
     </sc-if>
   </div>
@@ -199,7 +199,7 @@
     <div style="display:grid;gap:12px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
       <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">LAST 30 DAYS, BY WHERE PEOPLE CAME FROM</span>
       <div style="display:grid;grid-template-columns:minmax(0,1.6fr) repeat(4,minmax(0,1fr));gap:8px 12px;font:700 10px/1 'Space Mono',monospace;letter-spacing:.1em;color:#6f6459;padding-bottom:8px;border-bottom:1px solid rgba(239,231,214,.1);">
-        <span>SOURCE</span><span style="text-align:right;">VISITS</span><span style="text-align:right;">ENQUIRIES</span><span style="text-align:right;">BOOKED</span><span style="text-align:right;">CUSTOMERS</span>
+        <span>SOURCE</span><span style="text-align:right;">VISITS</span><span style="text-align:right;">INQUIRIES</span><span style="text-align:right;">BOOKED</span><span style="text-align:right;">CUSTOMERS</span>
       </div>
       <sc-for list="{{ rsRows }}" as="rw" hint-placeholder-count="3">
         <div style="{{ rw.style }}">
@@ -207,7 +207,7 @@
         </div>
       </sc-for>
       <sc-if value="{{ rsEmpty }}" hint-placeholder-val="{{ false }}">
-        <div style="font:400 14.5px/1.55 'Newsreader',serif;color:#8c8072;">Nothing counted yet. Visits start counting the day your site goes live; enquiries the moment the first one arrives.</div>
+        <div style="font:400 14.5px/1.55 'Newsreader',serif;color:#8c8072;">Nothing counted yet. Visits start counting the day your site goes live; inquiries the moment the first one arrives.</div>
       </sc-if>
     </div>
 
@@ -251,7 +251,7 @@ class Component extends DCLogic {
     this.set({ authed: false, email: '', emailDraft: '', codeDraft: '', loginError: message || '', view: 'home', role: 'client', token: '', previewMode: false, onboarding: [], leads: [], visits: {} });
   }
 
-  // A client recording what became of an enquiry, or logging a call. The
+  // A client recording what became of an inquiry, or logging a call. The
   // server enforces that a client can only touch their own leads and only the
   // outcome fields; this just sends the change and keeps the list current.
   async saveLead(action, lead) {
@@ -463,32 +463,32 @@ class Component extends DCLogic {
       /* --- Home --- */
       hBiz: ob ? (ob.businessName || '') : '',
       hHead: waiting > 0
-        ? (waiting === 1 ? 'One enquiry needs a call back.' : waiting + ' enquiries need a call back.')
+        ? (waiting === 1 ? 'One inquiry needs a call back.' : waiting + ' inquiries need a call back.')
         : obNext && obNext.owner === 'you' ? 'One thing needs you.'
         : 'Nothing needs you.',
       hHeadStyle: 'font:400 32px/1.18 \'Newsreader\',serif;color:' + (waiting > 0 || (obNext && obNext.owner === 'you') ? '#e9c98d' : '#efe7d6') + ';',
       hSub: waiting > 0
         ? 'The first business to call back usually gets the job. They are at the top of the list below.'
         : obNext && obNext.owner === 'you' ? 'Your Google setup is waiting on a step only you can do — it is marked below.'
-        : ob ? 'Enquiries from your site and your Google setup progress land here as they happen.' : '',
+        : ob ? 'Inquiries from your site and your Google setup progress land here as they happen.' : '',
       emptyShow: s.authed && !isOwner && !ob,
 
-      /* --- enquiries --- */
+      /* --- inquiries --- */
       ldShow: !!ob && (leads.length > 0 || canLog),
       ldHead: waiting > 0
-        ? (waiting === 1 ? '1 enquiry waiting for a call back' : waiting + ' enquiries waiting for a call back')
-        : leads.length === 0 ? 'No enquiries yet' : leads.length + (leads.length === 1 ? ' enquiry' : ' enquiries'),
+        ? (waiting === 1 ? '1 inquiry waiting for a call back' : waiting + ' inquiries waiting for a call back')
+        : leads.length === 0 ? 'No inquiries yet' : leads.length + (leads.length === 1 ? ' inquiry' : ' inquiries'),
       ldHeadStyle: 'font:400 26px/1.2 \'Newsreader\',serif;color:' + (waiting > 0 ? '#e9c98d' : '#efe7d6') + ';',
       ldSub: leads.length === 0
-        ? (visitTotal ? visitTotal + (visitTotal === 1 ? ' visit' : ' visits') + ' to your site in the last 30 days, no enquiries yet. ' : '')
+        ? (visitTotal ? visitTotal + (visitTotal === 1 ? ' visit' : ' visits') + ' to your site in the last 30 days, no inquiries yet. ' : '')
           + 'When someone asks for a quote through your site, or you log a call below, it shows up here.'
         : (visitTotal ? visitTotal + ' site visits in the last 30 days · ' : '')
-          + real.length + (real.length === 1 ? ' enquiry, ' : ' enquiries, ') + leadBooked + ' booked an estimate, ' + leadWon
+          + real.length + (real.length === 1 ? ' inquiry, ' : ' inquiries, ') + leadBooked + ' booked an estimate, ' + leadWon
           + (leadWon === 1 ? ' became a customer' : ' became customers') + '.'
           + (waiting > 0 ? '' : ' Tap what happened with each one — it keeps your numbers honest.'),
       ldErr: s.leadErr,
       ldItems: leadsSorted.map((l) => ({
-        name: l.name || 'Enquiry',
+        name: l.name || 'Inquiry',
         detail: [l.service, l.phone, l.preferred ? 'prefers ' + l.preferred : '', l.smsOk === 'Yes' ? 'ok to text' : '', l.duplicateOf ? 'repeat' : ''].filter(Boolean).join(' · '),
         when: untouched(l) ? 'waiting ' + ageOf(l.at) : String(l.at || '').slice(0, 10),
         whenStyle: "font:400 11px 'Space Mono',monospace;color:" + (untouched(l) ? '#e9c98d' : '#6f6459') + ';',
@@ -553,19 +553,19 @@ class Component extends DCLogic {
       /* --- Results --- */
       rsHead: !ob ? 'Nothing to measure yet.'
         : visitTotal || l30.length ? 'What your site did in the last 30 days.' : 'Nothing counted yet.',
-      rsSub: !ob ? 'Once your engagement starts, this page shows visits to your site, the enquiries they turned into, and how many became customers — split by where people came from.'
-        : 'Visits are counted on your site without cookies or tracking anyone. Enquiries are the people who asked for an estimate; what happened next is whatever you tapped on the Home tab.',
+      rsSub: !ob ? 'Once your engagement starts, this page shows visits to your site, the inquiries they turned into, and how many became customers — split by where people came from.'
+        : 'Visits are counted on your site without cookies or tracking anyone. Inquiries are the people who asked for an estimate; what happened next is whatever you tapped on the Home tab.',
       rsTiles: [
         { label: 'VISITS', value: String(visitTotal), note: 'to your site, 30 days' },
-        { label: 'ENQUIRIES', value: String(l30.length), note: visitTotal ? (100 * l30.length / visitTotal).toFixed(1) + '% of visits asked' : 'from all sources, 30 days' },
-        { label: 'ESTIMATES BOOKED', value: String(l30Booked), note: l30.length ? Math.round(100 * l30Booked / l30.length) + '% of enquiries' : '' },
-        { label: 'CUSTOMERS', value: String(l30Won), note: l30.length ? Math.round(100 * l30Won / l30.length) + '% of enquiries' : '' },
+        { label: 'INQUIRIES', value: String(l30.length), note: visitTotal ? (100 * l30.length / visitTotal).toFixed(1) + '% of visits asked' : 'from all sources, 30 days' },
+        { label: 'ESTIMATES BOOKED', value: String(l30Booked), note: l30.length ? Math.round(100 * l30Booked / l30.length) + '% of inquiries' : '' },
+        { label: 'CUSTOMERS', value: String(l30Won), note: l30.length ? Math.round(100 * l30Won / l30.length) + '% of inquiries' : '' },
         { label: 'TIME TO CALL BACK', value: fmtMins(medResp), note: respTimes.length ? 'median, all time' : 'tap “I called them” to start measuring' },
-        { label: 'ALL TIME', value: String(real.length), note: real.length === 1 ? 'enquiry, ' + leadWon + ' won' : 'enquiries, ' + leadWon + ' won' },
+        { label: 'ALL TIME', value: String(real.length), note: real.length === 1 ? 'inquiry, ' + leadWon + ' won' : 'inquiries, ' + leadWon + ' won' },
       ],
       rsRows,
       rsEmpty: rsRows.length === 0,
-      rsFoot: 'Google Ads counts a visit as a paid click; Google Business Profile is people who found your listing on Google Maps or Search and tapped through; direct is anyone who typed the address or came from a message. Phone enquiries have no visit to count.',
+      rsFoot: 'Google Ads counts a visit as a paid click; Google Business Profile is people who found your listing on Google Maps or Search and tapped through; direct is anyone who typed the address or came from a message. Phone inquiries have no visit to count.',
     };
   }
 }

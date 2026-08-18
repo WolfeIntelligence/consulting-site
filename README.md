@@ -5,11 +5,11 @@ step, no bundler, no framework CLI. Edit a file, push, it deploys.
 
 ```
 index.html       landing page
-portal.html      the portal — one sign-in for everyone. Clients: Home (enquiries,
+portal.html      the portal — one sign-in for everyone. Clients: Home (inquiries,
                  Google setup) and Results (funnel by source). Owner: the console.
 os.js + os.css   the owner console (Wolfe OS), embedded in the portal page for an
                  owner session; os.html only redirects to /portal
-lead-status.html one-tap outcome page opened from the new-enquiry email
+lead-status.html one-tap outcome page opened from the new-inquiry email
 favicon.svg      the W mark
 robots.txt       crawl rules
 sitemap.xml      submitted to Search Console
@@ -40,7 +40,7 @@ Vercel → Project → Settings → Environment Variables.
 | `ANTHROPIC_API_KEY` | Site Guide falls back to its scripted answer set. |
 | `CHAT_MODEL` | Defaults to `claude-haiku-4-5`. |
 | `KV_REST_API_URL` + `KV_REST_API_TOKEN` | Portal provisioning reports "storage not configured", and rate limits fall back to per-instance memory. Add Upstash Redis from the Vercel Marketplace to set both automatically. |
-| `RESEND_API_KEY` | New-enquiry emails are not sent (leads are still stored). The console's Leads tab shows a warning while this is unset. |
+| `RESEND_API_KEY` | New-inquiry emails are not sent (leads are still stored). The console's Leads tab shows a warning while this is unset. |
 | `LEAD_FROM` | Sender for those emails. Defaults to `Wolfe Intelligence <leads@wolfeintelligence.com>`; the domain must be verified in Resend. |
 | `PUBLIC_BASE` | Base URL used in email links. Defaults to `https://www.wolfeintelligence.com`. |
 
@@ -55,7 +55,7 @@ client's site  --POST-->    /api/lead   (public; client must exist; honeypot + d
                               |  auto-replies to the lead if they left an email
                               v
    /lead-status?t=…&set=contacted|booked|won|lost  ->  GET shows it, POST records it
-   /portal   client sees enquiries (uncontacted first, with age), taps outcomes, logs calls
+   /portal   client sees inquiries (uncontacted first, with age), taps outcomes, logs calls
    /portal   owner: the console — Client (intake facts, routing verdict, packet, remove),
              Progress (the 15 steps the client sees + launch checks), Leads (funnel by
              source, median time to call back, per-lead controls, Ads export)
@@ -67,7 +67,7 @@ feed the export's Conversion Time. A client token can only change outcome
 fields on its own leads; capture fields are evidence and never editable by the
 client. `node tests/run.js` covers all of it against a mocked KV and Resend.
 
-Phone normalisation assumes US numbers (+1). Make it per-client the day a
+Phone normalization assumes US numbers (+1). Make it per-client the day a
 client is not.
 
 ## Things that will bite you

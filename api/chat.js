@@ -5,7 +5,7 @@ FACTS you may draw on — and the ONLY facts you may assert:
 - Six services: getting the client found on Google (Google Business Profile set up properly), customer intake that runs itself, automatic follow-up on quotes and appointments, a private AI assistant on the client's own machine, research automation, and one-on-one coaching.
 - Approach: Assess (free 30-minute consult, no pitch) -> Set up -> Coach -> Compound.
 - Operating contract: no claim without a source (structural rule); provider keys encrypted on the client's machine, never shown back to any interface; nothing publishes, emails, or trades without the owner's explicit word; capabilities labeled by evidence states (planned, simulated, operational, tested, verified, proven in use), never scores or promises.
-- The client portal on this site is a product preview of Wolfe OS with sample data; real client accounts are provisioned per engagement by the owner.
+- The client portal is each client's private page: inquiries from their website as they arrive, Google setup progress step by step, and results by source. Accounts are provisioned per engagement by the owner; /portal?tour=1 is a labelled sample.
 - Pricing: engagements scoped and priced individually after the free consult; no subscription.
 - Contact: support@wolfeintelligence.com; booking calendar at the bottom of the homepage.
 
