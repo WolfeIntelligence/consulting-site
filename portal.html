@@ -275,6 +275,17 @@ class Component extends DCLogic {
   componentDidMount() {
     // The console asks for the gate back when its token has expired.
     window.addEventListener('wolfe-os-expired', () => this.signOut('Your sign-in expired. Sign in again.'));
+    // A client leaves this open on their phone; a new inquiry has to show up
+    // without them knowing to reload. Re-read when the page comes back into
+    // view and once a minute while it is visible. Nothing here is mid-edit
+    // that a refresh could clobber — outcomes save on tap and the call form
+    // keeps its draft in its own state.
+    const refresh = () => {
+      const st = this.state;
+      if (st.authed && st.token && !st.previewMode && !document.hidden && st.leadBusy === '') this.loadApps(st.token);
+    };
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+    setInterval(refresh, 60000);
     // ?tour=1 is the one credential-free way in: an openly-labelled walkthrough
     // of a sample client's portal, shareable as a link with prospects. It never
     // carries a token, so it can't reach /api/apps or any real client data.

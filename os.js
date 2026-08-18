@@ -309,6 +309,36 @@
     });
   }
 
+  /* Leads arrive while the console is open — that is exactly when the owner
+     is watching for them — so the live parts (leads, visits, access, mail
+     config) are re-read when the Leads tab opens, when the window comes back
+     into view, and once a minute while it is visible. Onboarding records are
+     deliberately left alone: the intake form may be mid-edit, and only this
+     console writes those anyway. Skipped while any console control has focus
+     so a half-typed value is not replaced under the cursor. */
+  var refreshing = false;
+  function refreshLive(force) {
+    if (!S.authed || refreshing) return;
+    if (document.hidden && !force) return;
+    var a = document.activeElement;
+    if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName) && a.closest && a.closest('#app')) return;
+    refreshing = true;
+    api('GET').then(function (d) {
+      refreshing = false;
+      var before = JSON.stringify([S.leads, S.visits, S.access, S.config]);
+      S.leads = d.leads || [];
+      S.visits = d.visits || {};
+      S.access = d.access || {};
+      S.config = d.config || {};
+      if (JSON.stringify([S.leads, S.visits, S.access, S.config]) !== before) renderMain();
+    }).catch(function (e) {
+      refreshing = false;
+      if (e && e.expired) expire();
+    });
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshLive(); });
+  setInterval(function () { refreshLive(); }, 60000);
+
   /* Persist a client. `steps` is what the client's portal renders, so it is
      built here from the same phase list rather than stored twice. */
   function persist(c, quiet) {
@@ -777,7 +807,7 @@
     [['client', 'Client'], ['progress', 'Progress'], ['leads', 'Leads']]
       .forEach(function (t) {
         var b = el('button', S.tab === t[0] ? 'on' : null, t[1]);
-        b.onclick = function () { S.tab = t[0]; renderMain(); };
+        b.onclick = function () { S.tab = t[0]; renderMain(); if (t[0] === 'leads') refreshLive(); };
         tabs.appendChild(b);
       });
     m.appendChild(tabs);
