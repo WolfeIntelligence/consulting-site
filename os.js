@@ -1088,7 +1088,9 @@
 
         var saveLead = function () {
           api('POST', { action: 'lead-update', lead: l })
-            .then(function () { renderMain(); })
+            // The server stamps contactedAt / bookedAt / wonAt; take its copy
+            // back so the timings show without a reload.
+            .then(function (d) { if (d && d.lead) Object.assign(l, d.lead); renderMain(); })
             .catch(function (e) { toast('Could not save: ' + e.message); });
         };
 

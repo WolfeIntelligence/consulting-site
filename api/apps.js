@@ -129,6 +129,10 @@ module.exports = async (req, res) => {
     try { all = JSON.parse((await kv('get/onboarding')) || '[]'); } catch (e) {}
     all = all.filter((o) => o.email !== email);
     await kv('set/onboarding/' + encodeURIComponent(JSON.stringify(all).slice(0, 200000)));
+    // Removing the engagement revokes the portal login and drops the visit
+    // counts; the leads stay, they are the record of what happened.
+    await kv('del/' + encodeURIComponent('client:' + email));
+    await kv('del/' + encodeURIComponent('visits:' + email));
     return res.json({ ok: true });
   }
   if (b.action === 'lead-add' || b.action === 'lead-update') {

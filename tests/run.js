@@ -36,6 +36,7 @@ global.fetch = async (url, opt) => {
     h.set(parts[2], (h.get(parts[2]) || 0) + parseInt(parts[3], 10)); store.set(parts[1], h); result = h.get(parts[2]);
   }
   else if (cmd === 'exists') result = store.has(parts[1]) ? 1 : 0;
+  else if (cmd === 'del') { result = store.delete(parts[1]) ? 1 : 0; }
   else if (cmd === 'hgetall') { const h = store.get(parts[1]); result = h instanceof Map ? [].concat(...[...h.entries()].map(([k, v]) => [k, String(v)])) : []; }
   else if (cmd === 'expire') result = 1;
   else if (cmd === 'ttl') result = 600;
@@ -250,6 +251,13 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     assert.strictEqual(r.body.access['lawn@client.test'], true, 'access shows once provisioned');
     r = res(); await apps(req('GET', null, auth(clientTok)), r);
     assert.strictEqual(r.body.access, undefined, 'clients never see the access map');
+    // Removing the engagement revokes the login and drops the visit counts.
+    const before = JSON.parse(store.get('onboarding'));
+    r = res(); await apps(req('POST', { action: 'onboarding-remove', email: 'lawn@client.test' }, auth(ownerTok)), r);
+    assert.strictEqual(r.code, 200);
+    assert.ok(!store.has('client:lawn@client.test'), 'access code deleted'); assert.ok(!store.has('visits:lawn@client.test'), 'visits deleted');
+    assert.ok(leads().some((l) => l.to === 'lawn@client.test'), 'leads kept as the record');
+    store.set('onboarding', JSON.stringify(before)); // restore for the tests below
   });
   await ok('client updates own outcome only; unsent fields and the click id survive', async () => {
     const before = leads().find((x) => x.id === tracked.id);
