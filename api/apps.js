@@ -123,6 +123,19 @@ module.exports = async (req, res) => {
       for (const k of Object.keys(rec.audit).slice(0, 40)) marks[String(k).slice(0, 40)] = String(rec.audit[k] == null ? '' : rec.audit[k]).slice(0, 20);
       clean.audit = marks;
     }
+    // Ad spend by month, per paid channel, entered by the owner. It stays on
+    // the client's copy of the record — it is their money, and the portal
+    // shows them what each customer cost. Bounded to 36 months, whole cents.
+    if (rec.spend && typeof rec.spend === 'object' && !Array.isArray(rec.spend)) {
+      const months = {};
+      const dollars = (v) => { const n = Math.round(parseFloat(v) * 100) / 100; return isFinite(n) && n >= 0 ? Math.min(n, 9999999) : 0; };
+      for (const k of Object.keys(rec.spend).filter((m) => /^\d{4}-(0[1-9]|1[0-2])$/.test(m)).sort().slice(-36)) {
+        const v = rec.spend[k] && typeof rec.spend[k] === 'object' ? rec.spend[k] : {};
+        const row = { ads: dollars(v.ads), lsa: dollars(v.lsa) };
+        if (row.ads || row.lsa) months[k] = row;
+      }
+      clean.spend = months;
+    }
     let all = [];
     try { all = JSON.parse((await kv('get/onboarding')) || '[]'); } catch (e) {}
     all = all.filter((o) => o.email !== email);

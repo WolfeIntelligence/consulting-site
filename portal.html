@@ -86,7 +86,7 @@
         <a href="#" sc-camel-on-click="{{ login }}" style="display:block;text-align:center;background:#c9a15f;color:#241e19;padding:15px 0;font:600 15.5px 'Newsreader',serif;margin-top:6px;">{{ loginLabel }}</a>
         <p style="margin:2px 0 0;font:400 12.5px/1.5 'Newsreader',serif;color:#8c8072;text-align:center;">Access codes are set by Wolfe Intelligence when your engagement starts. Lost yours? Write support@wolfeintelligence.com.</p>
       </div>
-      <p style="font:400 14px/1.6 'Newsreader',serif;color:#8c8072;text-align:center;margin:22px 0 0;">Not a client yet? <a href="/#book">Book a free consult</a> or <a href="?tour=1">walk through a sample portal</a>.</p>
+      <p style="font:400 14px/1.6 'Newsreader',serif;color:#8c8072;text-align:center;margin:22px 0 0;">Not a client yet? <a href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener">Book a free consult</a> or <a href="?tour=1">walk through a sample portal</a>.</p>
     </div>
   </div>
   </sc-if>
@@ -446,6 +446,19 @@ class Component extends DCLogic {
     const respTimes = real.map((l) => l.contactedAt ? (new Date(l.contactedAt) - new Date(l.at)) / 60000 : NaN).filter((m) => isFinite(m) && m >= 0);
     const medResp = (() => { if (!respTimes.length) return NaN; const a = respTimes.slice().sort((x, y) => x - y); const m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; })();
     const fmtMins = (m) => !isFinite(m) ? '—' : m < 60 ? Math.round(m) + ' min' : m < 2880 ? (m / 60).toFixed(1).replace(/\.0$/, '') + ' h' : Math.round(m / 1440) + ' days';
+    // Ad spend, entered by Wolfe each month, against the leads it bought:
+    // Google Ads spend to paid clicks, Local Services spend to phone/LSA leads.
+    const spend = ob && ob.spend && typeof ob.spend === 'object' ? ob.spend : {};
+    const spendTotal = Object.values(spend).reduce((t, v) => t + (+v.ads || 0) + (+v.lsa || 0), 0);
+    const paidLeads = real.filter((l) => ['paid', 'phone'].includes(bucketOf(l.source)));
+    const paidWon = paidLeads.filter((l) => l.won === 'Yes').length;
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    const spendMonth = spend[thisMonth] ? (+spend[thisMonth].ads || 0) + (+spend[thisMonth].lsa || 0) : 0;
+    const money = (n) => '$' + Math.round(n).toLocaleString();
+    const spendTiles = spendTotal ? [
+      { label: 'AD SPEND', value: money(spendMonth), note: 'this month · ' + money(spendTotal) + ' all time' },
+      { label: 'COST PER CUSTOMER', value: paidWon ? money(spendTotal / paidWon) : '—', note: paidWon ? 'from ads, all time' : 'no customer from ads yet' },
+    ] : [];
 
     return {
       /* --- shell + auth + nav --- */
@@ -573,7 +586,7 @@ class Component extends DCLogic {
         { label: 'CUSTOMERS', value: String(l30Won), note: l30.length ? Math.round(100 * l30Won / l30.length) + '% of inquiries' : '' },
         { label: 'TIME TO CALL BACK', value: fmtMins(medResp), note: respTimes.length ? 'median, all time' : 'tap “I called them” to start measuring' },
         { label: 'ALL TIME', value: String(real.length), note: real.length === 1 ? 'inquiry, ' + leadWon + ' won' : 'inquiries, ' + leadWon + ' won' },
-      ],
+      ].concat(spendTiles),
       rsRows,
       rsEmpty: rsRows.length === 0,
       rsFoot: 'Google Ads counts a visit as a paid click; Google Business Profile is people who found your listing on Google Maps or Search and tapped through; direct is anyone who typed the address or came from a message. Phone inquiries have no visit to count.',

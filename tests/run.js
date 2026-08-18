@@ -320,6 +320,18 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     await apps(req('POST', { action: 'onboarding', record: { email: 'lawn@client.test', businessName: 'Lawn', engagement: 'nonsense', steps: [] } }, auth(ownerTok)), r);
     assert.strictEqual(r.body.record.engagement, 'google', 'unknown type falls back to google');
   });
+  await ok('ad spend by month persists, is bounded and cleaned, and reaches the client', async () => {
+    let r = res();
+    await apps(req('POST', { action: 'onboarding', record: { email: 'lawn@client.test', businessName: 'Lawn', engagement: 'google', steps: [],
+      spend: { '2026-08': { ads: '412.5', lsa: 300 }, '2026-07': { ads: 0, lsa: '' }, 'not-a-month': { ads: 5 }, '2026-06': { ads: -4, lsa: 'abc' }, '2026-05': { ads: '1e12' } } } }, auth(ownerTok)), r);
+    assert.strictEqual(r.code, 200);
+    assert.deepStrictEqual(r.body.record.spend, { '2026-05': { ads: 9999999, lsa: 0 }, '2026-08': { ads: 412.5, lsa: 300 } },
+      'bad keys dropped, empty months dropped, negatives and junk read as 0, huge values capped');
+    r = res();
+    await apps(req('GET', null, auth(clientTok)), r);
+    const seen = r.body.onboarding.find((o) => o.email === 'lawn@client.test');
+    assert.deepStrictEqual(seen.spend, { '2026-05': { ads: 9999999, lsa: 0 }, '2026-08': { ads: 412.5, lsa: 300 } }, 'the client sees their own spend');
+  });
 
   console.log('\n' + pass + ' passed' + (process.exitCode ? ', with failures' : ''));
 })();

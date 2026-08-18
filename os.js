@@ -542,6 +542,49 @@
     return 'referral';
   }
   var BUCKET_LABEL = { paid: 'Google Ads', gbp: 'Business Profile', organic: 'Google search', referral: 'Other sites', direct: 'Direct / untagged', phone: 'Phone / LSA' };
+  function money(n) {
+    if (!isFinite(n)) return '—';
+    return '$' + Math.round(n).toLocaleString();
+  }
+  function ym(iso) { return String(iso || '').slice(0, 7); }
+  function monthLabel(k) {
+    var d = new Date(k + '-15T00:00:00Z');
+    return isNaN(d) ? k : d.toLocaleString(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  }
+  /* Ad spend and what it bought. Google Ads spend is matched to leads that
+     came through paid clicks; Local Services spend to phone/LSA leads. A
+     lead is counted in the month it arrived, so a March lead that becomes a
+     customer in May still belongs to March's spend — that is the month the
+     money that found them was spent. */
+  function spendTotals(c, leads) {
+    var sp = c.spend || {};
+    var months = {};
+    Object.keys(sp).forEach(function (k) { months[k] = months[k] || {}; });
+    leads.forEach(function (l) { var b = bucketOf(l.source); if (b === 'paid' || b === 'phone') months[ym(l.at)] = months[ym(l.at)] || {}; });
+    var keys = Object.keys(months).sort().reverse();
+    var chan = { ads: { bucket: 'paid', label: 'Google Ads', spend: 0, leads: 0, booked: 0, won: 0, recurring: 0 },
+                 lsa: { bucket: 'phone', label: 'Local Services Ads', spend: 0, leads: 0, booked: 0, won: 0, recurring: 0 } };
+    var rows = keys.map(function (k) {
+      var row = { month: k, ads: +((sp[k] || {}).ads || 0), lsa: +((sp[k] || {}).lsa || 0), leads: 0, booked: 0, won: 0, recurring: 0 };
+      leads.forEach(function (l) {
+        if (ym(l.at) !== k) return;
+        var b = bucketOf(l.source);
+        var ch = b === 'paid' ? chan.ads : b === 'phone' ? chan.lsa : null;
+        if (!ch) return;
+        row.leads += 1; ch.leads += 1;
+        if (l.booked === 'Yes') { row.booked += 1; ch.booked += 1; }
+        if (l.won === 'Yes') { row.won += 1; ch.won += 1; if (l.contract && l.contract !== 'One-off') { row.recurring += 1; ch.recurring += 1; } }
+      });
+      row.spend = row.ads + row.lsa;
+      chan.ads.spend += row.ads; chan.lsa.spend += row.lsa;
+      return row;
+    });
+    var total = rows.reduce(function (t, r) { t.spend += r.spend; t.leads += r.leads; t.booked += r.booked; t.won += r.won; t.recurring += r.recurring; return t; },
+      { spend: 0, leads: 0, booked: 0, won: 0, recurring: 0 });
+    return { rows: rows, chan: chan, total: total };
+  }
+  function per(spend, n) { return spend && n ? money(spend / n) : (spend ? 'none yet' : '—'); }
+
   function median(nums) {
     if (!nums.length) return NaN;
     var a = nums.slice().sort(function (x, y) { return x - y; });
@@ -600,6 +643,7 @@
         o.intake = o.intake || {};
         o.phaseState = o.phaseState || {};
         o.audit = o.audit || {};
+        o.spend = o.spend || {};
         // Steps are the client-facing projection; rebuild local state from them.
         var ph = E(o).phases;
         (o.steps || []).forEach(function (s, i) {
@@ -664,6 +708,8 @@
     // Local state kept alongside so the console does not lose audit marks that
     // the client-facing record has no place for.
     rec.audit = c.audit;
+    // Ad spend by month; the portal shows the client what each customer cost.
+    rec.spend = c.spend || {};
     // Resolves true only when the server actually stored it. A failed save must
     // never look like a successful one — the banner stays up until it works.
     return api('POST', { action: 'onboarding', record: rec }).then(function () {
@@ -801,7 +847,7 @@
       add.disabled = true; add.textContent = 'Saving…';
       var c = { email: email, businessName: name, engagement: S.newType || 'google',
                 intake: { businessName: name, businessType: 'field_service' },
-                phaseState: {}, audit: {}, steps: [] };
+                phaseState: {}, audit: {}, spend: {}, steps: [] };
       // Only keep it locally once the server has it. Otherwise a storage outage
       // leaves a client sitting in the rail that does not exist anywhere.
       persist(c, true).then(function (ok) {
@@ -1276,6 +1322,13 @@
         '<div style="display:flex;gap:28px;flex-wrap:wrap;">' +
         '<div><div class="lbl">Annual value of recurring customers won</div>' +
         '<div style="font-size:26px;font-weight:680;">$' + annual.toLocaleString(undefined, { maximumFractionDigits: 0 }) + '</div></div>' +
+        (function () {
+          var st = spendTotals(c, real);
+          if (!st.total.spend) return '';
+          return '<div><div class="lbl">Cost per customer won (paid channels)</div>' +
+            '<div style="font-size:26px;font-weight:680;">' + per(st.total.spend, st.total.won) + '</div>' +
+            '<div class="note" style="margin:2px 0 0;">' + money(st.total.spend) + ' spent &middot; ' + per(st.total.spend, st.total.leads) + ' per inquiry</div></div>';
+        })() +
         '<div><div class="lbl">Median time to call back</div><div style="font-size:26px;font-weight:680;">' + fmtMins(medResp) + '</div></div>' +
         '<div><div class="lbl">Waiting for a call back now</div><div style="font-size:26px;font-weight:680;color:' + (waiting.length ? 'var(--warn)' : 'inherit') + ';">' + waiting.length + '</div></div>' +
         '</div>' +
@@ -1317,6 +1370,77 @@
         html += '<tr>' + td('<b>All</b>') + td('<b>' + tv + '</b>', 1) + td('<b>' + tl + '</b>', 1) + td(tv ? (100 * tl / tv).toFixed(1) + '%' : '—', 1, true) + td('<b>' + tb + '</b>', 1) + td('<b>' + tw + '</b>', 1) + '</tr>';
         t.innerHTML = html;
         f.appendChild(t);
+        m.appendChild(f);
+      })();
+
+      // Ad spend by month, typed in here, next to what each month's money
+      // bought. This replaces the lead tracker spreadsheet: the leads already
+      // live here, so the spend is the only number that had nowhere to go.
+      (function () {
+        var f = el('fieldset');
+        f.appendChild(el('legend', null, 'Ad spend and cost per result'));
+        c.spend = c.spend || {};
+        var st = spendTotals(c, real);
+        // Always offer the current month and the two before it, so there is
+        // somewhere to type before the first paid lead arrives.
+        var now = new Date();
+        var offer = [0, 1, 2].map(function (i) { var d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1)); return d.toISOString().slice(0, 7); });
+        var keys = st.rows.map(function (r) { return r.month; });
+        offer.forEach(function (k) { if (keys.indexOf(k) < 0) keys.push(k); });
+        keys.sort().reverse();
+        if (!S.spendAll) keys = keys.slice(0, 12);
+        var byMonth = {};
+        st.rows.forEach(function (r) { byMonth[r.month] = r; });
+
+        var t = document.createElement('table');
+        t.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
+        var th = function (s, right) { return '<th style="text-align:' + (right ? 'right' : 'left') + ';padding:6px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--rule);white-space:nowrap;">' + s + '</th>'; };
+        var td = function (s, right, dim) { return '<td style="text-align:' + (right ? 'right' : 'left') + ';padding:4px 8px;border-bottom:1px solid var(--rule);white-space:nowrap;' + (dim ? 'color:var(--faint);' : '') + '">' + s + '</td>'; };
+        var html = '<tr>' + th('Month') + th('Google Ads $', 1) + th('Local Services $', 1) + th('Paid inquiries', 1) + th('Booked', 1) + th('Won', 1) + th('Per inquiry', 1) + th('Per booked', 1) + th('Per customer', 1) + '</tr>';
+        keys.forEach(function (k) {
+          var r = byMonth[k] || { ads: 0, lsa: 0, leads: 0, booked: 0, won: 0, spend: 0 };
+          html += '<tr data-month="' + k + '">' + td(esc(monthLabel(k))) +
+            td('<input type="number" min="0" step="1" inputmode="decimal" data-spend="ads" value="' + (r.ads || '') + '" placeholder="0" aria-label="Google Ads spend ' + esc(monthLabel(k)) + '" style="width:84px;text-align:right;">', 1) +
+            td('<input type="number" min="0" step="1" inputmode="decimal" data-spend="lsa" value="' + (r.lsa || '') + '" placeholder="0" aria-label="Local Services Ads spend ' + esc(monthLabel(k)) + '" style="width:84px;text-align:right;">', 1) +
+            td(r.leads, 1, !r.leads) + td(r.booked, 1, !r.booked) + td(r.won, 1, !r.won) +
+            td(per(r.spend, r.leads), 1, true) + td(per(r.spend, r.booked), 1, true) + td(per(r.spend, r.won), 1, true) + '</tr>';
+        });
+        var tt = st.total;
+        html += '<tr>' + td('<b>All time</b>') + td('<b>' + money(st.chan.ads.spend) + '</b>', 1) + td('<b>' + money(st.chan.lsa.spend) + '</b>', 1) +
+          td('<b>' + tt.leads + '</b>', 1) + td('<b>' + tt.booked + '</b>', 1) + td('<b>' + tt.won + '</b>', 1) +
+          td('<b>' + per(tt.spend, tt.leads) + '</b>', 1) + td('<b>' + per(tt.spend, tt.booked) + '</b>', 1) + td('<b>' + per(tt.spend, tt.won) + '</b>', 1) + '</tr>';
+        t.innerHTML = html;
+        // Type a number, tab away, it is saved — and the client's portal shows
+        // the new cost per customer on its next refresh.
+        t.querySelectorAll('input[data-spend]').forEach(function (inp) {
+          inp.onchange = function () {
+            var k = inp.closest('tr').getAttribute('data-month');
+            var v = Math.round(parseFloat(inp.value) * 100) / 100;
+            c.spend[k] = c.spend[k] || { ads: 0, lsa: 0 };
+            c.spend[k][inp.getAttribute('data-spend')] = isFinite(v) && v >= 0 ? v : 0;
+            if (!c.spend[k].ads && !c.spend[k].lsa) delete c.spend[k];
+            persist(c).then(function (ok) { if (ok) renderMain(); });
+          };
+        });
+        var wrap = el('div');
+        wrap.style.overflowX = 'auto';
+        wrap.appendChild(t);
+        f.appendChild(wrap);
+        var lines = [];
+        ['ads', 'lsa'].forEach(function (k) {
+          var ch = st.chan[k];
+          if (!ch.spend && !ch.leads) return;
+          lines.push('<strong>' + ch.label + '</strong>: ' + money(ch.spend) + ' spent &rarr; ' + ch.leads + ' inquir' + (ch.leads === 1 ? 'y' : 'ies') +
+            (ch.spend ? ' (' + per(ch.spend, ch.leads) + ' each)' : '') + ', ' + ch.booked + ' booked, ' + ch.won + ' won' +
+            (ch.spend ? ' (' + per(ch.spend, ch.won) + ' per customer' + (ch.recurring ? ', ' + per(ch.spend, ch.recurring) + ' per recurring customer' : '') + ')' : '') + '.');
+        });
+        if (lines.length) { var pl = el('p', 'note'); pl.innerHTML = lines.join('<br>'); f.appendChild(pl); }
+        var foot = el('p', 'note');
+        foot.innerHTML = 'Enter what each channel billed for the month; the rest is computed from the leads above. Google Ads spend is matched to leads that arrived on a paid click; '
+          + 'Local Services spend to leads logged as phone / LSA. A lead counts in the month it arrived, whatever month it closed. '
+          + (st.rows.length > 12 && !S.spendAll ? '<a href="#" data-spend-all>Show every month</a>' : '');
+        foot.querySelectorAll('[data-spend-all]').forEach(function (a) { a.onclick = function (e) { e.preventDefault(); S.spendAll = true; renderMain(); }; });
+        f.appendChild(foot);
         m.appendChild(f);
       })();
 
@@ -1548,9 +1672,9 @@
       });
 
       m.appendChild(el('p', 'note',
-        'Cost per recurring customer needs ad spend, which lives in the lead tracker spreadsheet. '
-        + 'A lead marked TRACKED carried a Google click id; “Export for Google Ads” turns its booked and won '
-        + 'outcomes into the offline-conversion upload file, worth doing once there is volume for Google to learn from.'));
+        'A lead marked TRACKED carried a Google click id; “Export for Google Ads” turns its booked and won '
+        + 'outcomes into the offline-conversion upload file, worth doing once there is volume for Google to learn from. '
+        + 'Cost per customer comes from the ad spend table above — no spreadsheet needed.'));
     }
 
 

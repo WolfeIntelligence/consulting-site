@@ -38,7 +38,7 @@ Vercel → Project → Settings → Environment Variables.
 | `OWNER_EMAIL` | Defaults to `zachary@wolfeintelligence.com`. |
 | `CLIENT_ACCOUNTS` | Optional quick client list: `a@b.com:code1,c@d.com:code2`. |
 | `ANTHROPIC_API_KEY` | Site Guide falls back to its scripted answer set. |
-| `CHAT_MODEL` | Defaults to `claude-haiku-4-5`. |
+| `CHAT_MODEL` | Defaults to `claude-opus-5` (thinking off, low effort, 350-token cap). |
 | `KV_REST_API_URL` + `KV_REST_API_TOKEN` | Portal provisioning reports "storage not configured", and rate limits fall back to per-instance memory. Add Upstash Redis from the Vercel Marketplace to set both automatically. |
 | `RESEND_API_KEY` | New-inquiry emails are not sent (leads are still stored). The console's Leads tab shows a warning while this is unset. |
 | `LEAD_FROM` | Sender for those emails. Defaults to `Wolfe Intelligence <leads@wolfeintelligence.com>`; the domain must be verified in Resend. |
@@ -147,12 +147,31 @@ the console fires `wolfe-os-expired` when its token dies. `os.css` is scoped to
 `#app` so it cannot touch the portal's own styles. Portal access codes for
 clients are set from the console (client header → "Give portal access").
 
+## Site Guide (the homepage chat)
+
+`api/chat.js` answers only from a fixed fact list in its system prompt. Every
+visitor turn is wrapped in `<visitor>` tags and a reminder rides on the last
+turn, so instructions inside a message are content, not commands; the reply is
+filtered on the way out (no links, no markdown, hard length cap) and the widget
+adds the one relevant action itself (book, sample portal, email). A refusal, a
+timeout, or an upstream error falls back to the widget's fixed answers and the
+header says so. After ~75 s of visible time the launcher glows once and offers
+help (`?guide=now` previews it); the offer is remembered per browser session.
+
+## Ad spend (the console)
+
+The Leads tab carries a month-by-month spend table — Google Ads and Local
+Services — saved on the client record (`spend`, whitelisted in `api/apps.js`)
+and shown against the leads each channel bought, with cost per inquiry, per
+booked estimate and per customer. The client's Results page shows the same
+cost per customer. This replaces the lead tracker spreadsheet.
+
 ## Rate limits
 
 `lib/ratelimit.js` counts per IP, backed by Upstash when configured and by
 per-instance memory otherwise.
 
-- `/api/chat` — 15 messages per 10 min, 60 per day
+- `/api/chat` — 15 messages per 10 min, 60 per day per IP, and 1,500 per day across the whole site
 - `/api/login` — 10 attempts per 15 min
 
 Both also reject browser requests whose `Origin` is not this site.

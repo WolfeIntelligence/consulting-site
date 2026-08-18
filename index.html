@@ -113,6 +113,15 @@
     [data-screen-label="Nav"]>div:last-child{gap:20px!important;flex-wrap:wrap}
     [data-stack]{flex-direction:column!important;align-items:flex-start!important;gap:22px!important}
   }
+  @keyframes wolfe-glow{0%,100%{box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 0 rgba(201,161,95,0)}50%{box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 9px rgba(201,161,95,.16),0 0 34px rgba(233,201,141,.45)}}
+  @keyframes wolfe-dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+  @keyframes wolfe-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes wolfe-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  [data-guide-scroll]{scrollbar-width:thin;scrollbar-color:rgba(201,161,95,.35) transparent}
+  [data-guide-scroll]::-webkit-scrollbar{width:6px}[data-guide-scroll]::-webkit-scrollbar-thumb{background:rgba(201,161,95,.35);border-radius:3px}
+  [data-guide-input]::placeholder{color:#8f8375}
+  [data-guide-input]:focus{border-color:rgba(201,161,95,.6)!important}
+  [data-guide-chip]:hover{border-color:var(--accent,#c9a15f)!important;color:var(--paper,#f4eee3)!important}
   @media (max-width:600px){
     [data-grid]{grid-template-columns:1fr!important}
     [data-pad]{padding-left:22px!important;padding-right:22px!important}
@@ -128,7 +137,7 @@
     <div style="font:700 13px 'Space Mono',monospace;letter-spacing:.24em;">WOLFE&nbsp;INTELLIGENCE</div>
     <div style="display:flex;align-items:center;gap:34px;font:500 13.5px 'Instrument Sans',sans-serif;color:#d8cdba;">
       <a href="#services">Services</a><a href="#approach">Approach</a><a href="/portal">Portal</a><a href="#about">About</a>
-      <a href="#book" style="border:1px solid var(--accent,#c9a15f);color:var(--accent-lt,#e9c98d);border-radius:2px;padding:9px 16px;">Book a free consult</a>
+      <a href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="border:1px solid var(--accent,#c9a15f);color:var(--accent-lt,#e9c98d);border-radius:2px;padding:9px 16px;">Book a free consult ↗</a>
     </div>
   </div>
 
@@ -140,7 +149,7 @@
         <h1 style="font:400 clamp(36px,5.6vw,70px)/1.05 'Newsreader',serif;letter-spacing:-.015em;margin:0 0 28px;">Your AI.&nbsp; <span style="color: var(--accent-lt,#e9c98d);"><i>Your</i></span> knowledge. Your rules.</h1>
         <p style="font:400 clamp(16px,1.6vw,18px)/1.62 'Instrument Sans',sans-serif;color:#cabda8;max-width:44ch;margin:0 0 40px;">We design and set up AI around your business &mdash; a private assistant on your own machines, automations that catch and follow up every inquiry, research that files itself, and the Google presence that brings customers in &mdash; then measure what each one produced and feed it back, so the whole system keeps learning. And we coach you until running it is second nature.</p>
         <div style="display:flex;gap:18px;align-items:center;">
-          <a href="#book" style="background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:16px 30px;border-radius:2px;font:600 14.5px 'Instrument Sans',sans-serif;">Book a free consult →</a>
+          <a href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:16px 30px;border-radius:2px;font:600 14.5px 'Instrument Sans',sans-serif;">Book a free consult ↗</a>
           <a href="#portal" style="font:500 14.5px 'Instrument Sans',sans-serif;color:var(--accent-lt,#e9c98d);border-bottom:1px solid var(--accent,#c9a15f);padding-bottom:3px;">Explore the portal</a>
         </div>
       </div>
@@ -336,33 +345,57 @@
   <!-- ============ SITE GUIDE ============ -->
   <div data-screen-label="Assistant" style="position:fixed;right:22px;bottom:22px;z-index:60;display:flex;flex-direction:column;align-items:flex-end;gap:12px;font-family:'Instrument Sans',sans-serif;">
     <sc-if value="{{ chatOpen }}" hint-placeholder-val="{{ false }}">
-      <div style="width:min(372px,calc(100vw - 44px));height:min(500px,calc(100vh - 120px));background:#2a2421;border:1px solid rgba(201,161,95,.45);border-radius:4px;box-shadow:0 24px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(244,238,227,.12);">
-          <div style="display:grid;gap:3px;">
-            <span style="font:700 11px 'Space Mono',monospace;letter-spacing:.18em;color:var(--accent,#c9a15f);">SITE GUIDE <span style="color:#8f8375;">· DEPLOYED APP 001</span></span>
-            <span style="font:400 11px/1.4 'Instrument Sans',sans-serif;color:#8f8375;">{{ chatModeNote }}</span>
+      <div style="width:min(380px,calc(100vw - 44px));height:min(540px,calc(100vh - 110px));background:linear-gradient(180deg,#2c2522 0%,#262019 100%);border:1px solid rgba(201,161,95,.42);border-radius:14px;box-shadow:0 30px 70px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.4);display:flex;flex-direction:column;overflow:hidden;animation:wolfe-rise .22s ease-out;">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 13px;border-bottom:1px solid rgba(244,238,227,.1);background:rgba(0,0,0,.14);">
+          <div style="width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#e9c98d,#a5773a);color:#241e19;display:flex;align-items:center;justify-content:center;font:700 13px 'Space Mono',monospace;letter-spacing:.02em;flex-shrink:0;">W</div>
+          <div style="display:grid;gap:3px;min-width:0;">
+            <span style="font:600 14px 'Instrument Sans',sans-serif;color:var(--paper,#f4eee3);letter-spacing:.01em;">Site Guide</span>
+            <span style="display:flex;align-items:center;gap:6px;font:400 11px/1.3 'Instrument Sans',sans-serif;color:#8f8375;"><span style="{{ chatDotStyle }}"></span>{{ chatModeNote }}</span>
           </div>
-          <button sc-camel-on-click="{{ chatToggle }}" style="margin-left:auto;border:0;background:none;color:#8f8375;font:400 18px/1 'Instrument Sans',sans-serif;cursor:pointer;padding:4px;">×</button>
+          <button sc-camel-on-click="{{ chatToggle }}" aria-label="Close" style="margin-left:auto;border:0;background:rgba(244,238,227,.06);color:#bdb2a3;width:28px;height:28px;border-radius:50%;font:400 16px/1 'Instrument Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
         </div>
-        <div ref="{{ chatMsgsRef }}" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;">
+        <div ref="{{ chatMsgsRef }}" data-guide-scroll style="flex:1;overflow-y:auto;padding:16px 16px 6px;display:flex;flex-direction:column;gap:12px;">
           <sc-for list="{{ chatMsgs }}" as="m" hint-placeholder-count="1">
             <div style="{{ m.wrap }}">
-              <div style="{{ m.bubble }}">{{ m.text }}<sc-if value="{{ m.hasLink }}" hint-placeholder-val="{{ false }}"><a href="{{ m.href }}" sc-camel-on-click="{{ m.onLink }}" style="display:inline-block;margin-top:8px;color:var(--accent-lt,#e9c98d);border-bottom:1px solid var(--accent,#c9a15f);font:500 13px 'Instrument Sans',sans-serif;">{{ m.linkLabel }}</a></sc-if></div>
+              <sc-if value="{{ m.isBot }}" hint-placeholder-val="{{ true }}"><div style="width:22px;height:22px;border-radius:50%;background:rgba(201,161,95,.18);border:1px solid rgba(201,161,95,.35);color:var(--accent-lt,#e9c98d);display:flex;align-items:center;justify-content:center;font:700 10px 'Space Mono',monospace;flex-shrink:0;margin-top:2px;">W</div></sc-if>
+              <div style="{{ m.bubble }}">{{ m.text }}<sc-if value="{{ m.hasLink }}" hint-placeholder-val="{{ false }}"><a href="{{ m.href }}" target="{{ m.target }}" rel="noopener" sc-camel-on-click="{{ m.onLink }}" style="display:inline-flex;align-items:center;gap:6px;margin-top:9px;padding:6px 11px;border:1px solid rgba(201,161,95,.5);border-radius:999px;color:var(--accent-lt,#e9c98d);font:500 12px 'Instrument Sans',sans-serif;">{{ m.linkLabel }}</a></sc-if></div>
             </div>
           </sc-for>
+          <sc-if value="{{ chatBusy }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+              <div style="width:22px;height:22px;border-radius:50%;background:rgba(201,161,95,.18);border:1px solid rgba(201,161,95,.35);color:var(--accent-lt,#e9c98d);display:flex;align-items:center;justify-content:center;font:700 10px 'Space Mono',monospace;flex-shrink:0;margin-top:2px;">W</div>
+              <div style="display:flex;gap:5px;align-items:center;background:rgba(244,238,227,.05);border:1px solid rgba(244,238,227,.1);padding:12px 14px;border-radius:14px 14px 14px 3px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent-lt,#e9c98d);animation:wolfe-dot 1.1s infinite;"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--accent-lt,#e9c98d);animation:wolfe-dot 1.1s .18s infinite;"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--accent-lt,#e9c98d);animation:wolfe-dot 1.1s .36s infinite;"></span></div>
+            </div>
+          </sc-if>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px;">
-          <sc-for list="{{ chatChips }}" as="c" hint-placeholder-count="4">
-            <button sc-camel-on-click="{{ c.go }}" style="padding:7px 11px;border:1px solid rgba(201,161,95,.4);border-radius:999px;background:transparent;color:#d8cdba;font:400 12px 'Instrument Sans',sans-serif;cursor:pointer;">{{ c.label }}</button>
-          </sc-for>
+        <sc-if value="{{ chatShowChips }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px 10px;">
+            <sc-for list="{{ chatChips }}" as="c" hint-placeholder-count="4">
+              <button data-guide-chip sc-camel-on-click="{{ c.go }}" style="padding:7px 12px;border:1px solid rgba(201,161,95,.35);border-radius:999px;background:rgba(201,161,95,.06);color:#d8cdba;font:400 12px 'Instrument Sans',sans-serif;cursor:pointer;transition:border-color .15s,color .15s;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <div style="display:flex;gap:8px;padding:12px 14px 12px 16px;border-top:1px solid rgba(244,238,227,.1);background:rgba(0,0,0,.14);align-items:center;">
+          <input data-guide-input value="{{ chatInput }}" sc-camel-on-change="{{ chatSet }}" sc-camel-on-key-down="{{ chatKey }}" sc-camel-max-length="300" placeholder="Ask about the practice…" style="flex:1;background:rgba(0,0,0,.25);border:1px solid rgba(244,238,227,.16);border-radius:999px;color:var(--paper,#f4eee3);padding:11px 15px;font:400 13.5px 'Instrument Sans',sans-serif;outline:none;transition:border-color .15s;">
+          <button sc-camel-on-click="{{ chatSend }}" aria-label="Send" style="{{ chatSendStyle }}">↑</button>
         </div>
-        <div style="display:flex;gap:8px;padding:12px 16px;border-top:1px solid rgba(244,238,227,.12);">
-          <input value="{{ chatInput }}" sc-camel-on-change="{{ chatSet }}" sc-camel-on-key-down="{{ chatKey }}" sc-camel-max-length="200" placeholder="Ask about the practice…" style="flex:1;background:var(--ink,#241e19);border:1px solid rgba(244,238,227,.2);border-radius:2px;color:var(--paper,#f4eee3);padding:11px 12px;font:400 13.5px 'Instrument Sans',sans-serif;outline:none;">
-          <button sc-camel-on-click="{{ chatSend }}" style="border:0;background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:0 16px;border-radius:2px;font:600 13px 'Instrument Sans',sans-serif;cursor:pointer;">Ask</button>
+        <div style="padding:0 16px 10px;font:400 10.5px/1.4 'Instrument Sans',sans-serif;color:#6f665b;text-align:center;">Answers only about this practice. For anything else, book the consult or write support@wolfeintelligence.com.</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ chatNudge }}" hint-placeholder-val="{{ false }}">
+      <div style="width:min(300px,calc(100vw - 44px));background:#2c2522;border:1px solid rgba(201,161,95,.45);border-radius:14px 14px 3px 14px;box-shadow:0 20px 50px rgba(0,0,0,.55);padding:14px 14px 12px;animation:wolfe-rise .3s ease-out;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#e9c98d,#a5773a);color:#241e19;display:flex;align-items:center;justify-content:center;font:700 11px 'Space Mono',monospace;flex-shrink:0;">W</div>
+          <div style="font:400 13.5px/1.5 'Instrument Sans',sans-serif;color:#e6dccb;">Still looking around? I can answer questions about what this practice does, what it costs, or how the portal works — anything about Wolfe Intelligence.</div>
+          <button sc-camel-on-click="{{ chatNudgeDismiss }}" aria-label="Dismiss" style="margin-left:auto;border:0;background:none;color:#8f8375;font:400 16px/1 'Instrument Sans',sans-serif;cursor:pointer;padding:0 0 0 4px;flex-shrink:0;">×</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:11px;padding-left:36px;">
+          <button sc-camel-on-click="{{ chatNudgeOpen }}" style="border:0;background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:7px 13px;border-radius:999px;font:600 12.5px 'Instrument Sans',sans-serif;cursor:pointer;">Ask a question</button>
+          <button sc-camel-on-click="{{ chatNudgeDismiss }}" style="border:0;background:none;color:#a99d8d;padding:7px 8px;font:500 12.5px 'Instrument Sans',sans-serif;cursor:pointer;">Not now</button>
         </div>
       </div>
     </sc-if>
-    <button sc-camel-on-click="{{ chatToggle }}" style="display:flex;align-items:center;gap:10px;border:1px solid var(--accent,#c9a15f);background:var(--ink,#241e19);color:var(--accent-lt,#e9c98d);padding:14px 20px;border-radius:999px;font:600 13.5px 'Instrument Sans',sans-serif;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.4);">{{ chatFabLabel }}</button>
+    <button sc-camel-on-click="{{ chatToggle }}" style="{{ chatFabStyle }}"><span style="{{ chatFabDot }}"></span>{{ chatFabLabel }}</button>
   </div>
 
 </div>
@@ -371,53 +404,95 @@
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240},&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#c9a15f&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;,&quot;options&quot;:[&quot;#c9a15f&quot;,&quot;#a85e3c&quot;,&quot;#8a7d4a&quot;]},&quot;inkTone&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#1f211d&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;,&quot;options&quot;:[&quot;#241e19&quot;,&quot;#1f211d&quot;,&quot;#2a211c&quot;]},&quot;paperTone&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#efe7d6&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;,&quot;options&quot;:[&quot;#f4eee3&quot;,&quot;#efe7d6&quot;,&quot;#f1ece2&quot;]}}">
 class Component extends DCLogic {
   state = {
-    chatOpen: false, chatInput: '', chatBusy: false, chatMode: '',
-    chatMsgs: [{ from: 'w', text: "I'm the Site Guide — the first app deployed on this site. I only answer questions about Wolfe Intelligence. Pick a question below or type your own." }],
+    chatOpen: false, chatInput: '', chatBusy: false, chatMode: '', chatNudge: false, chatGlow: false, chatAsked: false,
+    chatMsgs: [{ from: 'w', text: "Hi — I'm the Site Guide. Ask me anything about Wolfe Intelligence: what the practice does, what it costs, how the portal works. Pick a question or type your own." }],
   };
-  componentDidMount() { this.applyTheme(); }
+  componentDidMount() {
+    this.applyTheme();
+    this.startNudgeTimer();
+  }
+  componentWillUnmount() { if (this.nudgeTimer) clearInterval(this.nudgeTimer); }
   componentDidUpdate() {
     this.applyTheme();
     const el = this.msgsRef && this.msgsRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }
+  // After roughly 75 seconds of the page being visible the launcher glows and
+  // the guide offers help — once per browser session, never if the visitor has
+  // already opened the chat or dismissed the offer.
+  startNudgeTimer() {
+    let seen = false;
+    try { seen = sessionStorage.getItem('wolfe-guide-nudge') === '1'; } catch (e) {}
+    if (seen) return;
+    let visible = 0;
+    const wait = /[?&]guide=now/.test(location.search) ? 3 : 75; // ?guide=now: preview the nudge without waiting
+    this.nudgeTimer = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      visible += 1;
+      if (visible < wait) return;
+      clearInterval(this.nudgeTimer); this.nudgeTimer = null;
+      if (this.state.chatOpen || this.state.chatAsked) return;
+      this.setState({ chatNudge: true, chatGlow: true });
+    }, 1000);
+  }
+  markNudgeSeen() { try { sessionStorage.setItem('wolfe-guide-nudge', '1'); } catch (e) {} }
+  openChat(fromNudge) {
+    this.markNudgeSeen();
+    if (this.nudgeTimer) { clearInterval(this.nudgeTimer); this.nudgeTimer = null; }
+    const extra = fromNudge && !this.state.chatAsked
+      ? [{ from: 'w', text: 'What are you trying to figure out? Ask in your own words, or start with one of these.' }]
+      : [];
+    this.setState({ chatOpen: true, chatNudge: false, chatGlow: false, chatMsgs: [...this.state.chatMsgs, ...extra].slice(-40) });
+  }
+  // Fixed answers, used only when the model cannot be reached.
   answer(q) {
     const t = q.toLowerCase();
     const has = (...ws) => ws.some((w) => t.includes(w));
-    if (has('book', 'consult', 'schedul', 'appoint', 'meeting', 'talk to')) return { text: 'Booking is live — pick any open slot on the calendar at the bottom of the page. Thirty minutes, free, no pitch.', href: '#book', linkLabel: 'Go to booking' };
-    if (has('price', 'cost', 'how much', 'fee', 'rate', 'charge', 'pricing')) return { text: "Engagements are scoped and priced individually after the free consult. There's no subscription and no standard rate card.", href: '#book', linkLabel: 'Book the free consult' };
-    if (has('portal', 'login', 'log in', 'dashboard', 'wolfe os', 'client account')) return { text: 'The portal is each client\'s private page: inquiries from their website as they arrive, each step of their setup and whose turn it is, and results counted by source. Accounts are set up during an engagement, not self-serve — but there is a sample portal you can walk through.', href: '/portal?tour=1', linkLabel: 'See the sample portal' };
-    if (has('privacy', 'private', 'my data', 'data ', 'local', 'secure', 'security', 'key', 'credential', 'cloud', 'on prem')) return { text: 'Local-first is the rule: agents run on your machines, provider keys are encrypted on your device and never shown back to any interface, and your data stays with you.' };
+    if (has('book', 'consult', 'schedul', 'appoint', 'meeting', 'talk to')) return { text: 'Booking is open — the free consult is thirty minutes, no pitch. Pick any open slot on the calendar.', href: 'https://calendar.app.google/U4v93mjmVGS14Kwp6', linkLabel: 'Book a free consult ↗' };
+    if (has('price', 'cost', 'how much', 'fee', 'rate', 'charge', 'pricing')) return { text: "Engagements are scoped and priced individually after the free consult. There's no subscription and no standard rate card.", href: 'https://calendar.app.google/U4v93mjmVGS14Kwp6', linkLabel: 'Book the free consult ↗' };
+    if (has('portal', 'login', 'log in', 'dashboard', 'client account')) return { text: 'The portal is each client\'s private page: inquiries from their website as they arrive, each step of their setup and whose turn it is, and results counted by source. Accounts are set up during an engagement, not self-serve — but there is a sample portal you can walk through.', href: '/portal?tour=1', linkLabel: 'See the sample portal' };
+    if (has('privacy', 'private', 'my data', 'data ', 'local', 'secure', 'security', 'key', 'credential', 'cloud', 'on prem')) return { text: 'Local-first is the rule: assistants run on your machines or in your own accounts, provider keys are encrypted on your device and never shown back to any interface, and your data stays with you.' };
     if (has("can't", 'cannot', 'cant', 'limit', 'not do', "won't", 'wont', 'trade', 'publish', 'guarantee', 'risk', 'autonomous')) return { text: "What it will not do: nothing trades, publishes, or emails on its own — external effects always wait for your explicit word. And no outcome guarantees: every capability is labeled by evidence (planned, simulated, operational, tested, proven in use), never by promises." };
     if (has('service', 'offer', 'install', 'set up', 'setup', 'agent', 'automat', 'research', 'coach', 'knowledge', 'flywheel', 'do for me', 'help me', 'can it', 'can you')) return { text: 'Six services, standalone or combined: custom AI built around your business; intake and follow-up that run themselves; research that files itself; getting you found on Google with every inquiry tracked; a system that learns from your own results; and one-on-one coaching.' };
     if (has('who', 'zach', 'founder', 'advisor', 'wake forest', 'background', 'about you')) return { text: "Wolfe Intelligence is a solo advisory practice founded to give owners the private, compounding AI advantage large firms build in-house. The advisor holds an M.S. in AI Strategy & Innovation from Wake Forest University." };
     if (has('email', 'contact', 'reach', 'phone', 'write')) return { text: 'The direct line is support@wolfeintelligence.com — or book the free consult and skip the inbox.', href: 'mailto:support@wolfeintelligence.com', linkLabel: 'support@wolfeintelligence.com' };
     if (/^(hi|hello|hey|yo|howdy)\b/.test(t.trim())) return { text: 'Hello. Ask me what this practice is, what it can and cannot do, how privacy works, or what it costs.' };
-    if (has('what is', 'what do', 'about', 'wolfe intelligence', 'this site', 'company', 'explain')) return { text: 'Wolfe Intelligence sets up private AI and automation for owner-operators and small businesses: getting found on Google, capturing every lead, automating follow-up, and running an AI assistant on your own machine, with every external action gated on your word — then coaches you until running them is second nature.' };
-    return { text: "I answer from a fixed set of facts about this practice, and that one's outside it. Try a suggested question — or take it to a human: book the free consult or write support@wolfeintelligence.com.", href: '#book', linkLabel: 'Book a consult' };
+    if (has('what is', 'what do', 'about', 'wolfe intelligence', 'this site', 'company', 'explain')) return { text: 'Wolfe Intelligence sets up private AI and automation for owner-operators and small businesses: custom assistants on your own machines, intake and follow-up that run themselves, getting found on Google with every inquiry tracked, and a system that learns from your results — then coaches you until running it is second nature.' };
+    return { text: "That one's outside the fixed set I can answer from right now. Try a suggested question — or take it to a person: book the free consult or write support@wolfeintelligence.com.", href: 'https://calendar.app.google/U4v93mjmVGS14Kwp6', linkLabel: 'Book a free consult ↗' };
+  }
+  // The model returns plain prose with no links; the widget adds the one
+  // relevant action itself, so every link a visitor can click is ours.
+  actionFor(q, text) {
+    const t = (q + ' ' + text).toLowerCase();
+    if (/\bconsult|\bbook/.test(t)) return { href: 'https://calendar.app.google/U4v93mjmVGS14Kwp6', linkLabel: 'Book a free consult ↗' };
+    if (/\bportal\b/.test(t)) return { href: '/portal?tour=1', linkLabel: 'See the sample portal' };
+    if (/support@wolfeintelligence\.com/.test(t)) return { href: 'mailto:support@wolfeintelligence.com', linkLabel: 'Email support' };
+    return {};
   }
   async sendQ(raw) {
-    const q = String(raw || '').trim().slice(0, 200);
+    const q = String(raw || '').trim().slice(0, 300);
     if (!q || this.state.chatBusy) return;
+    this.markNudgeSeen();
     const hist = [...this.state.chatMsgs, { from: 'y', text: q }].slice(-40);
-    this.setState({ chatMsgs: hist, chatInput: '', chatBusy: true });
+    this.setState({ chatMsgs: hist, chatInput: '', chatBusy: true, chatAsked: true, chatNudge: false, chatGlow: false });
     let a = null;
     try {
       const r = await fetch('/api/chat', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ messages: hist.filter((m) => m.from !== 'w' || m.text).slice(-8).map((m) => ({ role: m.from === 'y' ? 'user' : 'assistant', content: m.text })) }),
+        body: JSON.stringify({ messages: hist.filter((m) => m.from === 'y' || m.live).slice(-8).map((m) => ({ role: m.from === 'y' ? 'user' : 'assistant', content: m.text })) }),
       });
       if (r.ok) {
         let d = null; try { d = await r.json(); } catch (e) {}
-        if (d && d.text) { a = { text: d.text }; if (this.state.chatMode !== 'live') this.setState({ chatMode: 'live' }); }
+        if (d && d.text) { a = { text: d.text, live: true, ...this.actionFor(q, d.text) }; if (this.state.chatMode !== 'live') this.setState({ chatMode: 'live' }); }
       } else if (r.status === 429) {
         // The limiter returns its own visitor-facing text; showing the scripted
         // fallback instead would hide the fact that answers have stopped.
         let d = null; try { d = await r.json(); } catch (e) {}
-        a = { text: (d && d.text) || 'You have reached the question limit for now.', href: '#book', linkLabel: 'Book a consult' };
+        a = { text: (d && d.text) || 'You have reached the question limit for now.', href: 'https://calendar.app.google/U4v93mjmVGS14Kwp6', linkLabel: 'Book a free consult ↗' };
       }
     } catch (e) {}
-    if (!a) { a = this.answer(q); if (this.state.chatMode === '') this.setState({ chatMode: 'scripted' }); }
-    this.setState({ chatMsgs: [...this.state.chatMsgs, { from: 'w', text: a.text, href: a.href, linkLabel: a.linkLabel }].slice(-40), chatBusy: false });
+    if (!a) { a = this.answer(q); this.setState({ chatMode: 'scripted' }); }
+    this.setState({ chatMsgs: [...this.state.chatMsgs, { from: 'w', text: a.text, href: a.href, linkLabel: a.linkLabel, live: !!a.live }].slice(-40), chatBusy: false });
   }
   applyTheme() {
     const r = document.documentElement.style;
@@ -428,26 +503,40 @@ class Component extends DCLogic {
   renderVals() {
     const s = this.state;
     this.msgsRef = this.msgsRef || React.createRef();
+    const live = s.chatMode !== 'scripted';
+    const fabBase = "display:flex;align-items:center;gap:10px;border:1px solid var(--accent,#c9a15f);background:var(--ink,#241e19);color:var(--accent-lt,#e9c98d);padding:14px 20px;border-radius:999px;font:600 13.5px 'Instrument Sans',sans-serif;cursor:pointer;transition:transform .15s;";
     return {
       chatOpen: s.chatOpen,
+      chatBusy: s.chatBusy,
+      chatNudge: s.chatNudge && !s.chatOpen,
+      chatShowChips: !s.chatBusy,
       chatFabLabel: s.chatOpen ? 'Close' : 'Ask Wolfe',
-      chatToggle: () => this.setState({ chatOpen: !s.chatOpen }),
+      chatFabStyle: fabBase + (s.chatGlow && !s.chatOpen ? 'animation:wolfe-glow 2.4s ease-in-out infinite;' : 'box-shadow:0 10px 30px rgba(0,0,0,.4);'),
+      chatFabDot: 'width:8px;height:8px;border-radius:50%;background:' + (s.chatOpen ? '#8f8375' : 'var(--accent,#c9a15f)') + ';' + (s.chatGlow && !s.chatOpen ? 'animation:wolfe-pulse 1.4s ease-in-out infinite;' : ''),
+      chatToggle: () => (s.chatOpen ? this.setState({ chatOpen: false }) : this.openChat(false)),
+      chatNudgeOpen: () => this.openChat(true),
+      chatNudgeDismiss: () => { this.markNudgeSeen(); this.setState({ chatNudge: false, chatGlow: false }); },
       chatMsgsRef: this.msgsRef,
       chatMsgs: s.chatMsgs.map((m) => ({
         text: m.text,
+        isBot: m.from !== 'y',
         hasLink: !!m.href, href: m.href || '#', linkLabel: m.linkLabel || '',
-        onLink: () => this.setState({ chatOpen: !(m.href || '').startsWith('#') && s.chatOpen }),
-        wrap: `display:flex;justify-content:${m.from === 'y' ? 'flex-end' : 'flex-start'};`,
+        target: /^https?:/.test(m.href || '') ? '_blank' : '_self',
+        onLink: () => { if (!/^https?:|^mailto:/.test(m.href || '')) this.setState({ chatOpen: false }); },
+        wrap: `display:flex;gap:8px;align-items:flex-start;justify-content:${m.from === 'y' ? 'flex-end' : 'flex-start'};`,
         bubble: m.from === 'y'
-          ? "max-width:85%;background:rgba(201,161,95,.16);border:1px solid rgba(201,161,95,.35);color:#f4eee3;padding:10px 13px;border-radius:10px 10px 2px 10px;font:400 13.5px/1.5 'Instrument Sans',sans-serif;white-space:pre-wrap;overflow-wrap:break-word;"
-          : "max-width:90%;background:#241e19;border:1px solid rgba(244,238,227,.14);color:#d8cdba;padding:10px 13px;border-radius:10px 10px 10px 2px;font:400 13.5px/1.5 'Instrument Sans',sans-serif;",
+          ? "max-width:82%;background:linear-gradient(135deg,rgba(201,161,95,.28),rgba(201,161,95,.16));border:1px solid rgba(201,161,95,.4);color:#f4eee3;padding:10px 14px;border-radius:14px 14px 3px 14px;font:400 13.5px/1.5 'Instrument Sans',sans-serif;white-space:pre-wrap;overflow-wrap:break-word;"
+          : "max-width:86%;background:rgba(244,238,227,.05);border:1px solid rgba(244,238,227,.1);color:#e2d8c7;padding:10px 14px;border-radius:14px 14px 14px 3px;font:400 13.5px/1.55 'Instrument Sans',sans-serif;white-space:pre-wrap;overflow-wrap:break-word;",
       })),
-      chatChips: ['What is this?', 'What can it not do?', 'Is my data private?', 'What does it cost?'].map((label) => ({
-        label, go: () => this.sendQ(label),
-      })),
-      chatModeNote: s.chatMode === 'live'
-        ? 'Live model — scope-locked to this practice; it will not answer anything else.'
-        : 'Scripted answers (fixed set). Goes live when the model API is configured.',
+      chatChips: (s.chatAsked
+        ? ['Book the free consult', 'How does the portal work?', 'What can it not do?']
+        : ['What does the practice do?', 'What does it cost?', 'Is my data private?', 'What can it not do?']
+      ).map((label) => ({ label, go: () => this.sendQ(label) })),
+      chatDotStyle: 'width:7px;height:7px;border-radius:50%;flex-shrink:0;background:' + (live ? '#7cc48a' : '#c9a15f') + ';' + (live ? 'box-shadow:0 0 0 3px rgba(124,196,138,.18);' : ''),
+      chatModeNote: live
+        ? 'Live · answers only about Wolfe Intelligence'
+        : 'Fixed answers right now · model unreachable',
+      chatSendStyle: "border:0;background:var(--accent,#c9a15f);color:var(--ink,#241e19);width:38px;height:38px;border-radius:50%;font:700 16px/1 'Instrument Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" + (s.chatBusy || !s.chatInput.trim() ? 'opacity:.45;' : ''),
       chatInput: s.chatInput,
       chatSet: (e) => this.setState({ chatInput: e.target.value }),
       chatKey: (e) => { if (e.key === 'Enter') this.sendQ(this.state.chatInput); },
