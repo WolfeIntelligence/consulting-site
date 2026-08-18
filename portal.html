@@ -5,7 +5,7 @@
 <script src="assets/resources.js"></script>
 <script src="assets/runtime.js"></script>
 <title>Client Portal — Wolfe Intelligence</title>
-<meta name="description" content="Private client portal for Wolfe Intelligence — your inquiries, your Google setup, and what needs you.">
+<meta name="description" content="Private client portal for Wolfe Intelligence — your inquiries, your setup, and what needs you.">
 <link rel="canonical" href="https://www.wolfeintelligence.com/portal">
 <!-- A sign-in wall has nothing to rank for, and an indexed login page only
      dilutes the homepage. The guided tour is linked from the homepage instead. -->
@@ -18,7 +18,7 @@
 <meta property="og:site_name" content="Wolfe Intelligence">
 <meta property="og:url" content="https://www.wolfeintelligence.com/portal">
 <meta property="og:title" content="Wolfe OS — Client Portal">
-<meta property="og:description" content="Your inquiries, your Google setup, and what needs you.">
+<meta property="og:description" content="Your inquiries, your setup, and what needs you.">
 <meta property="og:image" content="https://www.wolfeintelligence.com/assets/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -72,7 +72,7 @@
     <div style="width:420px;max-width:100%;">
       <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:#c9a15f;margin-bottom:20px;text-align:center;">PRIVATE ACCESS</div>
       <h1 style="font:400 38px/1.1 'Newsreader',serif;letter-spacing:-.01em;margin:0 0 12px;text-align:center;">Sign in</h1>
-      <p style="font:400 16px/1.55 'Newsreader',serif;color:#8c8072;margin:0 0 34px;text-align:center;">Your inquiries, your Google setup, and what needs you.</p>
+      <p style="font:400 16px/1.55 'Newsreader',serif;color:#8c8072;margin:0 0 34px;text-align:center;">Your inquiries, your setup, and what needs you.</p>
       <div style="display:flex;flex-direction:column;gap:14px;background:#2a2621;border:1px solid rgba(239,231,214,.14);padding:30px 28px;">
         <label style="display:flex;flex-direction:column;gap:7px;font:700 10px 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">EMAIL
           <input type="email" value="{{ emailDraft }}" sc-camel-on-change="{{ setEmail }}" placeholder="you@company.com" style="background:#241e19;border:1px solid rgba(239,231,214,.2);color:#efe7d6;padding:13px 14px;font-size:16px;">
@@ -152,7 +152,7 @@
 
     <sc-if value="{{ obShow }}" hint-placeholder-val="{{ true }}">
     <div style="display:grid;gap:14px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
-      <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOUR GOOGLE SETUP</span>
+      <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOUR SETUP</span>
       <div style="{{ obStatusStyle }}">{{ obStatus }}</div>
       <div style="font:400 14px/1.55 'Newsreader',serif;color:#a2968a;max-width:62ch;">{{ obStatusNote }}</div>
       <div style="display:grid;gap:9px;margin-top:4px;">
@@ -171,7 +171,7 @@
     <sc-if value="{{ emptyShow }}" hint-placeholder-val="{{ false }}">
     <div style="display:grid;gap:10px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
       <div style="font:400 20px/1.3 'Newsreader',serif;">Your engagement has not started yet.</div>
-      <div style="font:400 14.5px/1.55 'Newsreader',serif;color:#a2968a;max-width:60ch;">Once Wolfe Intelligence opens your file, your Google setup progress and every inquiry from your site will appear here. Nothing is needed from you right now.</div>
+      <div style="font:400 14.5px/1.55 'Newsreader',serif;color:#a2968a;max-width:60ch;">Once Wolfe Intelligence opens your file, each step of your setup and every inquiry from your site will appear here. Nothing is needed from you right now.</div>
     </div>
     </sc-if>
   </div>
@@ -480,8 +480,8 @@ class Component extends DCLogic {
       hHeadStyle: 'font:400 32px/1.18 \'Newsreader\',serif;color:' + (waiting > 0 || (obNext && obNext.owner === 'you') ? '#e9c98d' : '#efe7d6') + ';',
       hSub: waiting > 0
         ? 'The first business to call back usually gets the job. They are at the top of the list below.'
-        : obNext && obNext.owner === 'you' ? 'Your Google setup is waiting on a step only you can do — it is marked below.'
-        : ob ? 'Inquiries from your site and your Google setup progress land here as they happen.' : '',
+        : obNext && obNext.owner === 'you' ? 'Your setup is waiting on a step only you can do — it is marked below.'
+        : ob ? 'Inquiries from your site and each step of your setup land here as they happen.' : '',
       emptyShow: s.authed && !isOwner && !ob,
 
       /* --- inquiries --- */
