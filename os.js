@@ -10,7 +10,7 @@
 (function () {
   'use strict';
 
-  var S = { authed: false, email: '', token: '', clients: [], sel: null, tab: 'intake',
+  var S = { authed: false, email: '', token: '', clients: [], sel: null, tab: 'client',
             emailDraft: '', codeDraft: '', err: '', busy: false, saveError: '',
             adding: false, newEmail: '', newName: '', expired: false,
             leads: [], visits: {}, addingLead: false, newLead: {}, config: {},
@@ -55,8 +55,8 @@
     ['manager', 'Wolfe added as Manager', 'Never Owner', 'you'],
     ['reviews', 'Review drive started', 'Free, and usually beats early ad spend', 'you'],
     ['photos', 'Real photos added', '', 'you'],
-    ['booking', 'Booking page live', '', 'wolfe'],
-    ['bookLink', 'Booking link added to the profile', 'Only possible after verification', 'wolfe'],
+    ['booking', 'Website and estimate form live', 'The page ads land on; every enquiry lands here', 'wolfe'],
+    ['bookLink', 'Website link added to the profile', 'Only possible after verification', 'wolfe'],
     ['adsAcct', 'Advertising account set up', 'Route decided first', 'wolfe'],
     ['testLead', 'Test lead booked end to end, then deleted', 'The only step that proves the funnel works', 'wolfe'],
     ['handoff', 'Handoff sent', '', 'wolfe']
@@ -72,10 +72,7 @@
     ['reviewsA', 'Reviews and photos', 'Nothing incentivized — Google prohibits it'],
     ['route', 'Advertising route matches the gates', ''],
     ['adsState', 'Nothing spending that nobody designed', ''],
-    ['bookingA', 'Booking page correct', 'Fields, buffers, honest hours'],
-    ['reach', 'Booking reachable from the profile', 'Record the hops'],
     ['hours', 'Hours and availability differences are deliberate', "Ask, don't assume"],
-    ['reminders', 'A reminder route is in place', ''],
     ['test', 'TEST LEAD passes end to end', 'Everything above can be green while this fails']
   ];
 
@@ -107,14 +104,9 @@
       ['secondary', 'Secondary categories', 'text', ''],
       ['description', 'Profile description', 'textarea', '750 characters. You write it; read it back for a factual check']
     ]],
-    ['Accounts and booking', [
+    ['Accounts', [
       ['googleAccount', 'Google account', 'text', ''],
-      ['existingListing', 'Existing listing found', 'text', 'Leave blank if none'],
-      ['paidPlan', 'Paid Google plan', 'text', 'Blank = free tier, so no booking reminders'],
-      ['bookingTitle', 'Booking page title', 'text', 'Customer-facing'],
-      ['apptMin', 'Appointment minutes', 'text', ''],
-      ['bufferMin', 'Buffer minutes', 'text', ''],
-      ['bookingFields', 'Booking questions', 'text', 'Worded for the trade']
+      ['existingListing', 'Existing listing found', 'text', 'Leave blank if none']
     ]]
   ];
 
@@ -143,13 +135,13 @@
       lead: 'A full route means paid leads get turned away or stretch their drive time. Advertising here damages the engagement.',
       deliver: ['<strong>Profile and reviews</strong> so the leads they do get are better',
                 '<strong>Pricing and route review</strong> — replacing low-value customers beats adding volume',
-                '<strong>Booking page</strong> so enquiries stop getting lost while they work'],
+                '<strong>Estimate form on their page</strong> so enquiries stop getting lost while they work'],
       next: ['Revisit advertising when they add capacity or raise prices enough to free some.'] };
 
     if (a.verified === 'no' || a.verified === 'exists') return { kind: 'found', badge: 'Phase zero', title: 'Get verified first',
       lead: 'Nothing paid starts before the listing is approved. Verification takes days and sometimes weeks.',
       deliver: ['<strong>Profile ' + (a.verified === 'exists' ? 'claim' : 'creation') + '</strong> and verification, video prep included',
-                '<strong>Booking page</strong>, and the link on the profile once approved',
+                '<strong>Their page with the estimate form</strong>, and the link on the profile once approved',
                 '<strong>Lead log</strong> from the first enquiry, to build a pre-spend baseline'],
       next: ['Re-check this once Google approves — the channel answer may change.'] };
 
@@ -163,7 +155,7 @@
     if (a.budget === 'none' || a.budget === 'low') return { kind: 'found', badge: 'Organic only', title: 'Profile, reviews and booking',
       lead: "Below roughly $300 a month there isn't enough spend to gather signal, and the fee eats the budget.",
       deliver: ['<strong>Profile optimization</strong> and ongoing review collection',
-                '<strong>Booking page</strong> linked directly on the profile',
+                '<strong>Their page with the estimate form</strong> linked directly on the profile',
                 '<strong>Monthly reporting</strong> from the lead log'],
       next: ['Revisit paid channels once they will commit real monthly spend.'] };
 
@@ -463,13 +455,13 @@
       err.textContent = '';
       add.disabled = true; add.textContent = 'Saving…';
       var c = { email: email, businessName: name,
-                intake: { businessName: name, businessType: 'field_service', bookingTitle: 'Free Estimate' },
+                intake: { businessName: name, businessType: 'field_service' },
                 phaseState: {}, audit: {}, steps: [] };
       // Only keep it locally once the server has it. Otherwise a storage outage
       // leaves a client sitting in the rail that does not exist anywhere.
       persist(c, true).then(function (ok) {
         if (!ok) { add.disabled = false; add.textContent = 'Add client'; render(); return; }
-        S.clients.push(c); S.sel = email; S.tab = 'intake';
+        S.clients.push(c); S.sel = email; S.tab = 'client';
         S.adding = false; S.newEmail = ''; S.newName = '';
         render();
       });
@@ -782,7 +774,7 @@
     }
 
     var tabs = el('div', 'tabs');
-    [['intake', 'Intake'], ['route', 'Direction'], ['progress', 'Progress'], ['leads', 'Leads'], ['audit', 'Audit'], ['export', 'Export']]
+    [['client', 'Client'], ['progress', 'Progress'], ['leads', 'Leads']]
       .forEach(function (t) {
         var b = el('button', S.tab === t[0] ? 'on' : null, t[1]);
         b.onclick = function () { S.tab = t[0]; renderMain(); };
@@ -790,7 +782,7 @@
       });
     m.appendChild(tabs);
 
-    if (S.tab === 'intake') {
+    if (S.tab === 'client') {
       FIELDS.forEach(function (grp) {
         var fs = el('fieldset');
         fs.appendChild(el('legend', null, grp[0]));
@@ -800,12 +792,46 @@
         m.appendChild(fs);
       });
       var host = el('div'); host.id = 'verdictHost'; m.appendChild(host); renderVerdict();
-    }
-
-    if (S.tab === 'route') {
-      var h2 = el('div'); h2.id = 'verdictHost'; m.appendChild(h2); renderVerdict();
-      m.appendChild(el('p', 'note',
-        'Gates run in order and stop at the first failure: capacity, verification, reviews, budget, then LSA eligibility. Change an answer on the Intake tab and this updates.'));
+      var bar = el('div', 'bar');
+      var save = el('button', 'ghost', 'Save now');
+      save.onclick = function () { persist(c); };
+      bar.appendChild(save);
+      var dl = el('button', 'newbtn', 'Download packet (.md)');
+      dl.onclick = function () { downloadText(slug(c) + '-packet.md', packetMd(c)); };
+      bar.appendChild(dl);
+      // Inline confirmation for the same reason the new-client prompt went:
+      // a native dialog blocks the page and cannot be styled or automated.
+      var del = el('button', 'ghost', 'Remove client');
+      var confirmBox = el('div');
+      confirmBox.style.display = 'none';
+      confirmBox.style.cssText += 'margin-top:12px;padding:12px 14px;border-radius:3px;'
+        + 'background:var(--stop-bg);max-width:60ch;';
+      var msg = el('div');
+      msg.style.cssText = 'color:var(--stop);font-size:13.5px;margin-bottom:10px;';
+      msg.textContent = 'Remove ' + (c.intake.businessName || c.email)
+        + '? Their onboarding disappears from their portal too, and the intake is not recoverable.';
+      var cbar = el('div', 'bar');
+      cbar.style.marginTop = '0';
+      var yes = el('button', 'ghost', 'Yes, remove');
+      yes.style.cssText += 'border-color:var(--stop);color:var(--stop);';
+      yes.onclick = function () {
+        yes.disabled = true; yes.textContent = 'Removing…';
+        api('POST', { action: 'onboarding-remove', email: c.email }).then(function () {
+          S.clients = S.clients.filter(function (x) { return x.email !== c.email; });
+          S.sel = null; toast('Removed'); render();
+        }).catch(function (e) {
+          yes.disabled = false; yes.textContent = 'Yes, remove';
+          toast('Could not remove: ' + e.message);
+        });
+      };
+      var no = el('button', 'ghost', 'Keep it');
+      no.onclick = function () { confirmBox.style.display = 'none'; del.style.display = ''; };
+      cbar.appendChild(yes); cbar.appendChild(no);
+      confirmBox.appendChild(msg); confirmBox.appendChild(cbar);
+      del.onclick = function () { del.style.display = 'none'; confirmBox.style.display = 'block'; };
+      bar.appendChild(del);
+      m.appendChild(bar);
+      m.appendChild(confirmBox);
     }
 
     if (S.tab === 'progress') {
@@ -832,6 +858,27 @@
         m.appendChild(r);
       });
       m.appendChild(el('p', 'note', 'Ticking a step updates the client portal immediately.'));
+
+      // Launch checks: the pre-handoff audit, folded in here so it lives next
+      // to the steps it verifies instead of on a tab of its own.
+      var lc = el('fieldset');
+      lc.appendChild(el('legend', null, 'Launch checks'));
+      AUDIT.forEach(function (a) {
+        var r = el('div', 'row');
+        var t = el('div', 't');
+        t.innerHTML = '<b>' + esc(a[1]) + '</b>' + (a[2] ? '<p>' + esc(a[2]) + '</p>' : '');
+        var s = el('select');
+        [['', '—'], ['Pass', 'Pass'], ['Fail', 'Fail'], ['N/A', 'N/A'], ['Not checked', 'Not checked']]
+          .forEach(function (o) { var op = el('option'); op.value = o[0]; op.textContent = o[1]; s.appendChild(op); });
+        s.setAttribute('aria-label', 'Result: ' + a[1]);
+        s.value = c.audit[a[0]] || '';
+        s.onchange = function () { c.audit[a[0]] = s.value; persist(c, true); };
+        r.appendChild(t); r.appendChild(s);
+        lc.appendChild(r);
+      });
+      lc.appendChild(el('p', 'note',
+        "Mark a row N/A with a reason when it genuinely doesn't apply — a remote business has no service area, and scoring that as a failure invents problems. The failure mode of this audit is false positives, not missed findings."));
+      m.appendChild(lc);
     }
 
     if (S.tab === 'leads') {
@@ -1143,74 +1190,7 @@
         + 'outcomes into the offline-conversion upload file, worth doing once there is volume for Google to learn from.'));
     }
 
-    if (S.tab === 'audit') {
-      AUDIT.forEach(function (a) {
-        var r = el('div', 'row');
-        var t = el('div', 't');
-        t.innerHTML = '<b>' + esc(a[1]) + '</b>' + (a[2] ? '<p>' + esc(a[2]) + '</p>' : '');
-        var s = el('select');
-        [['', '—'], ['Pass', 'Pass'], ['Fail', 'Fail'], ['N/A', 'N/A'], ['Not checked', 'Not checked']]
-          .forEach(function (o) { var op = el('option'); op.value = o[0]; op.textContent = o[1]; s.appendChild(op); });
-        s.setAttribute('aria-label', 'Result: ' + a[1]);
-        s.value = c.audit[a[0]] || '';
-        s.onchange = function () { c.audit[a[0]] = s.value; persist(c, true); };
-        r.appendChild(t); r.appendChild(s);
-        m.appendChild(r);
-      });
-      m.appendChild(el('p', 'note',
-        "Mark rows N/A with a reason when they genuinely don't apply — a remote business has no service area, and scoring that as a failure invents problems. The failure mode of this audit is false positives, not missed findings."));
-    }
 
-    if (S.tab === 'export') {
-      var bar = el('div', 'bar');
-      var save = el('button', 'ghost', 'Save now');
-      save.onclick = function () { persist(c); };
-      bar.appendChild(save);
-      var dl = el('button', 'newbtn', 'Download packet (.md)');
-      dl.onclick = function () { downloadText(slug(c) + '-packet.md', packetMd(c)); };
-      bar.appendChild(dl);
-      // Inline confirmation for the same reason the new-client prompt went:
-      // a native dialog blocks the page and cannot be styled or automated.
-      var del = el('button', 'ghost', 'Remove client');
-      var confirmBox = el('div');
-      confirmBox.style.display = 'none';
-      confirmBox.style.cssText += 'margin-top:12px;padding:12px 14px;border-radius:3px;'
-        + 'background:var(--stop-bg);max-width:60ch;';
-      var msg = el('div');
-      msg.style.cssText = 'color:var(--stop);font-size:13.5px;margin-bottom:10px;';
-      msg.textContent = 'Remove ' + (c.intake.businessName || c.email)
-        + '? Their onboarding disappears from their portal too, and the intake is not recoverable.';
-      var cbar = el('div', 'bar');
-      cbar.style.marginTop = '0';
-      var yes = el('button', 'ghost', 'Yes, remove');
-      yes.style.cssText += 'border-color:var(--stop);color:var(--stop);';
-      yes.onclick = function () {
-        yes.disabled = true; yes.textContent = 'Removing…';
-        api('POST', { action: 'onboarding-remove', email: c.email }).then(function () {
-          S.clients = S.clients.filter(function (x) { return x.email !== c.email; });
-          S.sel = null; toast('Removed'); render();
-        }).catch(function (e) {
-          yes.disabled = false; yes.textContent = 'Yes, remove';
-          toast('Could not remove: ' + e.message);
-        });
-      };
-      var no = el('button', 'ghost', 'Keep it');
-      no.onclick = function () { confirmBox.style.display = 'none'; del.style.display = ''; };
-      cbar.appendChild(yes); cbar.appendChild(no);
-      confirmBox.appendChild(msg); confirmBox.appendChild(cbar);
-      del.onclick = function () { del.style.display = 'none'; confirmBox.style.display = 'block'; };
-      bar.appendChild(del);
-      m.appendChild(bar);
-      m.appendChild(confirmBox);
-      m.appendChild(el('p', 'note', 'What the client currently sees in their portal:'));
-      var pre = el('pre', 'mono');
-      var steps = PHASES.map(function (p) {
-        var st = (c.phaseState || {})[p[0]] || {};
-        return (st.done ? '[x] ' : '[ ] ') + p[1] + (st.date ? '  (' + st.date + ')' : '');
-      }).join('\n');
-      pre.textContent = (c.intake.businessName || c.email) + '\n' + decide(c.intake).title + '\n\n' + steps;
-      m.appendChild(pre);
-    }
   }
 
   /* ---------------------------------------------------------------- boot */

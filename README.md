@@ -56,8 +56,9 @@ client's site  --POST-->    /api/lead   (public; client must exist; honeypot + d
                               v
    /lead-status?t=…&set=contacted|booked|won|lost  ->  GET shows it, POST records it
    /portal   client sees enquiries (uncontacted first, with age), taps outcomes, logs calls
-   /os       owner: funnel by source (visits → enquiries → booked → won), median time to
-             call back, per-lead controls, "Export for Google Ads" in two formats
+   /portal   owner: the console — Client (intake facts, routing verdict, packet, remove),
+             Progress (the 15 steps the client sees + launch checks), Leads (funnel by
+             source, median time to call back, per-lead controls, Ads export)
 ```
 
 Outcome timestamps (`contactedAt`, `bookedAt`, `wonAt`) are stamped once,
