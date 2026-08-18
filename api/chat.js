@@ -43,7 +43,10 @@ const SITE_PER_DAY = 1500;    // across every visitor per day
 const MAX_MESSAGES = 8;
 const MAX_CHARS = 500;
 const MODEL = process.env.CHAT_MODEL || 'claude-opus-5';
-const UPSTREAM_TIMEOUT_MS = 25000;
+// If the first model is overloaded or errors, the next one answers. Same
+// system prompt, same rules; the visitor sees an answer instead of a fallback.
+const MODELS = [MODEL].concat(['claude-sonnet-5', 'claude-haiku-4-5'].filter((m) => m !== MODEL));
+const UPSTREAM_TIMEOUT_MS = 20000;
 
 const LIMITED = "You've reached the question limit for now. Book the free consult or write support@wolfeintelligence.com — a person will answer.";
 
@@ -91,37 +94,45 @@ module.exports = async (req, res) => {
     ? { role: 'user', content: '<visitor>' + m.content + '</visitor>' + (i === turns.length - 1 ? REMINDER : '') }
     : m));
 
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), UPSTREAM_TIMEOUT_MS);
-  try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 350,
-        thinking: { type: 'disabled' },
-        output_config: { effort: 'low' },
-        system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-        messages: wire,
-      }),
-    });
-    const data = await r.json().catch(() => null);
-    if (!r.ok || !data) {
-      // Enough to diagnose from the Vercel logs, never the visitor's text.
-      console.error('chat upstream', r.status, MODEL, data && data.error ? JSON.stringify(data.error).slice(0, 300) : 'no body');
-      return res.status(502).json({ error: 'upstream' });
+  const body = (model) => {
+    const b = { model, max_tokens: 350, thinking: { type: 'disabled' },
+      system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }], messages: wire };
+    if (!/haiku/.test(model)) b.output_config = { effort: 'low' };
+    return JSON.stringify(b);
+  };
+  const call = async (model) => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), UPSTREAM_TIMEOUT_MS);
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', signal: ctrl.signal,
+        headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: body(model),
+      });
+      const data = await r.json().catch(() => null);
+      if (!r.ok || !data) {
+        // Enough to diagnose from the Vercel logs, never the visitor's text.
+        console.error('chat upstream', r.status, model, data && data.error ? JSON.stringify(data.error).slice(0, 300) : 'no body');
+        return { retry: r.status === 429 || r.status >= 500 };
+      }
+      return { data };
+    } catch (e) {
+      console.error('chat upstream', model, e && e.name, String(e && e.message).slice(0, 200));
+      return { retry: true };
+    } finally {
+      clearTimeout(timer);
     }
-    if (data.stop_reason === 'refusal') return res.json({ text: REFUSAL, live: true });
-    const block = Array.isArray(data.content) ? data.content.find((b) => b && b.type === 'text') : null;
-    const text = clean(block && block.text);
-    if (!text) return res.json({ text: REFUSAL, live: true });
-    return res.json({ text, live: true });
-  } catch (e) {
-    console.error('chat upstream', e && e.name, String(e && e.message).slice(0, 200));
-    return res.status(502).json({ error: 'upstream' });
-  } finally {
-    clearTimeout(timer);
+  };
+
+  let data = null;
+  for (const model of MODELS) {
+    const out = await call(model);
+    if (out.data) { data = out.data; break; }
+    if (!out.retry) break;
   }
+  if (!data) return res.status(502).json({ error: 'upstream' });
+  if (data.stop_reason === 'refusal') return res.json({ text: REFUSAL, live: true });
+  const block = Array.isArray(data.content) ? data.content.find((b) => b && b.type === 'text') : null;
+  const text = clean(block && block.text);
+  return res.json({ text: text || REFUSAL, live: true });
 };
