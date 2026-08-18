@@ -42,10 +42,13 @@ const PER_DAY = 60;           // per IP per day
 const SITE_PER_DAY = 1500;    // across every visitor per day
 const MAX_MESSAGES = 8;
 const MAX_CHARS = 500;
-const MODEL = process.env.CHAT_MODEL || 'claude-opus-5';
+// Sonnet 5 first: on 2026-08-18 Opus 5 answered every call with 529
+// Overloaded and each attempt cost the visitor four seconds before the
+// fallback answered. Sonnet 5 held every guardrail in the live tests.
+const MODEL = process.env.CHAT_MODEL || 'claude-sonnet-5';
 // If the first model is overloaded or errors, the next one answers. Same
 // system prompt, same rules; the visitor sees an answer instead of a fallback.
-const MODELS = [MODEL].concat(['claude-sonnet-5', 'claude-haiku-4-5'].filter((m) => m !== MODEL));
+const MODELS = [MODEL].concat(['claude-opus-5', 'claude-haiku-4-5'].filter((m) => m !== MODEL));
 const UPSTREAM_TIMEOUT_MS = 20000;
 
 const LIMITED = "You've reached the question limit for now. Book the free consult or write support@wolfeintelligence.com — a person will answer.";

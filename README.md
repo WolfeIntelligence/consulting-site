@@ -38,7 +38,7 @@ Vercel → Project → Settings → Environment Variables.
 | `OWNER_EMAIL` | Defaults to `zachary@wolfeintelligence.com`. |
 | `CLIENT_ACCOUNTS` | Optional quick client list: `a@b.com:code1,c@d.com:code2`. |
 | `ANTHROPIC_API_KEY` | Site Guide falls back to its scripted answer set. |
-| `CHAT_MODEL` | Defaults to `claude-opus-5` (thinking off, low effort, 350-token cap). |
+| `CHAT_MODEL` | Defaults to `claude-sonnet-5` (thinking off, low effort, 350-token cap); falls back to `claude-opus-5`, then `claude-haiku-4-5`, on overload or error. |
 | `KV_REST_API_URL` + `KV_REST_API_TOKEN` | Portal provisioning reports "storage not configured", and rate limits fall back to per-instance memory. Add Upstash Redis from the Vercel Marketplace to set both automatically. |
 | `RESEND_API_KEY` | New-inquiry emails are not sent (leads are still stored). The console's Leads tab shows a warning while this is unset. |
 | `LEAD_FROM` | Sender for those emails. Defaults to `Wolfe Intelligence <leads@wolfeintelligence.com>`; the domain must be verified in Resend. |
