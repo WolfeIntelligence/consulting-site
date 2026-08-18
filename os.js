@@ -13,8 +13,8 @@
   var S = { authed: false, email: '', token: '', clients: [], sel: null, tab: 'intake',
             emailDraft: '', codeDraft: '', err: '', busy: false, saveError: '',
             adding: false, newEmail: '', newName: '', expired: false,
-            leads: [], addingLead: false, newLead: {}, config: {},
-            exportOpen: false, exportTz: 'America/New_York',
+            leads: [], visits: {}, addingLead: false, newLead: {}, config: {},
+            exportOpen: false, exportTz: 'America/New_York', exportFormat: 'enhanced',
             exportBookedName: 'Estimate booked', exportWonName: 'Customer won' };
 
   /* ------------------------------------------------------------ helpers */
@@ -214,19 +214,55 @@
      row per conversion. Times are rendered in the declared zone as
      yyyy-MM-dd HH:mm:ss. Only leads with a gclid qualify; the value of a
      won recurring customer is their annual value, a one-off their price. */
-  function offlineRows(leads) {
+  /* Two formats. "clicks" is the legacy click-conversion template: only
+     leads that carried a gclid qualify. "enhanced" is for Data Manager's
+     enhanced conversions for leads: every outcome goes, with the hashed
+     email and phone as match keys, so a customer whose click id was lost
+     (iOS, cleared storage, phoned first) can still be matched. Google asks
+     for all outcomes, attributed or not. Repeat enquiries are skipped so a
+     person is not counted twice. */
+  function offlineRows(leads, format) {
     var rows = [];
     leads.forEach(function (l) {
-      if (!l.gclid) return;
-      if (l.booked === 'Yes') rows.push({ gclid: l.gclid, name: S.exportBookedName, at: l.bookedAt || l.at, value: '', cur: '' });
+      if (l.duplicateOf) return;
+      if (format !== 'enhanced' && !l.gclid) return;
+      if (format === 'enhanced' && !l.gclid && !l.emailHash && !l.phoneHash) return;
+      var base = { gclid: l.gclid || '', email: l.emailHash || '', phone: l.phoneHash || '' };
+      if (l.booked === 'Yes') rows.push(Object.assign({}, base, { name: S.exportBookedName, at: l.bookedAt || l.at, value: '', cur: '', order: l.id + '-booked' }));
       if (l.won === 'Yes') {
         var v = parseFloat(l.perVisit);
         if (l.contract && l.contract !== 'One-off') v = v * parseFloat(l.visitsPerYear);
-        rows.push({ gclid: l.gclid, name: S.exportWonName, at: l.wonAt || l.at,
-                    value: isFinite(v) && v > 0 ? String(Math.round(v)) : '', cur: isFinite(v) && v > 0 ? 'USD' : '' });
+        rows.push(Object.assign({}, base, { name: S.exportWonName, at: l.wonAt || l.at, order: l.id + '-won',
+                  value: isFinite(v) && v > 0 ? String(Math.round(v)) : '', cur: isFinite(v) && v > 0 ? 'USD' : '' }));
       }
     });
     return rows;
+  }
+  function bucketOf(source) {
+    var s = String(source || '').toLowerCase();
+    if (s === 'google ads' || /\sads$/.test(s)) return 'paid';
+    if (s === 'google business profile') return 'gbp';
+    if (s === 'google search' || s === 'bing search') return 'organic';
+    if (s === 'phone' || s === 'lsa') return 'phone';
+    if (!s || s === 'website form' || s === 'direct') return 'direct';
+    return 'referral';
+  }
+  var BUCKET_LABEL = { paid: 'Google Ads', gbp: 'Business Profile', organic: 'Google search', referral: 'Other sites', direct: 'Direct / untagged', phone: 'Phone / LSA' };
+  function median(nums) {
+    if (!nums.length) return NaN;
+    var a = nums.slice().sort(function (x, y) { return x - y; });
+    var m = a.length >> 1;
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  }
+  function minutesBetween(a, b) {
+    var t = (new Date(b).getTime() - new Date(a).getTime()) / 60000;
+    return isFinite(t) && t >= 0 ? t : NaN;
+  }
+  function fmtMins(m) {
+    if (!isFinite(m)) return '—';
+    if (m < 60) return Math.round(m) + ' min';
+    if (m < 48 * 60) return (m / 60).toFixed(1).replace(/\.0$/, '') + ' h';
+    return Math.round(m / 1440) + ' days';
   }
   function tzStamp(iso, tz) {
     var d = new Date(iso);
@@ -239,19 +275,31 @@
       return p.year + '-' + p.month + '-' + p.day + ' ' + (p.hour === '24' ? '00' : p.hour) + ':' + p.minute + ':' + p.second;
     } catch (e) { return d.toISOString().slice(0, 19).replace('T', ' '); }
   }
-  function offlineCsv(rows) {
+  function offlineCsv(rows, format) {
     var q = function (s) { return '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"'; };
-    var out = ['Parameters:TimeZone=' + (S.exportTz || 'America/New_York') + ',,,,',
-               'Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency'];
-    rows.forEach(function (r) {
-      out.push([r.gclid, r.name, tzStamp(r.at, S.exportTz), r.value, r.cur].map(q).join(','));
-    });
+    var out;
+    if (format === 'enhanced') {
+      // Data Manager maps columns by name on upload. Email and Phone Number are
+      // SHA-256 of the normalised values, as Google specifies for hashed data.
+      out = ['Parameters:TimeZone=' + (S.exportTz || 'America/New_York') + ',,,,,,,',
+             'Google Click ID,Email,Phone Number,Conversion Name,Conversion Time,Conversion Value,Conversion Currency,Order ID'];
+      rows.forEach(function (r) {
+        out.push([r.gclid, r.email, r.phone, r.name, tzStamp(r.at, S.exportTz), r.value, r.cur, r.order].map(q).join(','));
+      });
+    } else {
+      out = ['Parameters:TimeZone=' + (S.exportTz || 'America/New_York') + ',,,,',
+             'Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency'];
+      rows.forEach(function (r) {
+        out.push([r.gclid, r.name, tzStamp(r.at, S.exportTz), r.value, r.cur].map(q).join(','));
+      });
+    }
     return out.join('\r\n') + '\r\n';
   }
 
   function loadClients() {
     return api('GET').then(function (d) {
       S.leads = d.leads || [];
+      S.visits = d.visits || {};
       S.config = d.config || {};
       S.clients = (d.onboarding || []).map(function (o) {
         o.intake = o.intake || {};
@@ -784,24 +832,73 @@
       // are kept apart because a weekly customer is worth their annual value
       // every year and a one-off pays once — averaging the two hides which
       // kind the advertising actually bought.
-      var booked = mine.filter(function (l) { return l.booked === 'Yes'; }).length;
-      var won = mine.filter(function (l) { return l.won === 'Yes'; });
+      var real = mine.filter(function (l) { return !l.duplicateOf; });
+      var booked = real.filter(function (l) { return l.booked === 'Yes'; }).length;
+      var won = real.filter(function (l) { return l.won === 'Yes'; });
       var recurring = won.filter(function (l) { return l.contract && l.contract !== 'One-off'; });
       var annual = recurring.reduce(function (t, l) {
         var v = parseFloat(l.perVisit) * parseFloat(l.visitsPerYear);
         return t + (isFinite(v) ? v : 0);
       }, 0);
+      // Speed to lead: minutes from enquiry to the first call back, on the
+      // leads that have one; and how many are still waiting right now.
+      var untouched = function (l) { return !l.contacted && !l.booked && !l.won; };
+      var waiting = real.filter(untouched);
+      var respTimes = real.map(function (l) { return l.contactedAt ? minutesBetween(l.at, l.contactedAt) : NaN; }).filter(isFinite);
+      var medResp = median(respTimes);
 
       var sum = el('div', 'verdict');
-      sum.style.borderLeftColor = 'var(--ok)';
+      sum.style.borderLeftColor = waiting.length ? 'var(--warn)' : 'var(--ok)';
       sum.innerHTML =
-        '<h3>' + mine.length + ' lead' + (mine.length === 1 ? '' : 's') + '</h3>' +
+        '<h3>' + real.length + ' lead' + (real.length === 1 ? '' : 's') + (mine.length > real.length ? ' <span style="font-weight:400;color:var(--muted);font-size:13px;">(+' + (mine.length - real.length) + ' repeat)</span>' : '') + '</h3>' +
         '<p>' + booked + ' booked an estimate &middot; ' + won.length + ' became customers &middot; ' +
         recurring.length + ' on recurring work</p>' +
-        '<div class="lbl">Annual value of recurring customers won</div>' +
-        '<div style="font-size:26px;font-weight:680;">$' +
-        annual.toLocaleString(undefined, { maximumFractionDigits: 0 }) + '</div>';
+        '<div style="display:flex;gap:28px;flex-wrap:wrap;">' +
+        '<div><div class="lbl">Annual value of recurring customers won</div>' +
+        '<div style="font-size:26px;font-weight:680;">$' + annual.toLocaleString(undefined, { maximumFractionDigits: 0 }) + '</div></div>' +
+        '<div><div class="lbl">Median time to call back</div><div style="font-size:26px;font-weight:680;">' + fmtMins(medResp) + '</div></div>' +
+        '<div><div class="lbl">Waiting for a call back now</div><div style="font-size:26px;font-weight:680;color:' + (waiting.length ? 'var(--warn)' : 'inherit') + ';">' + waiting.length + '</div></div>' +
+        '</div>' +
+        (respTimes.length ? '' : '<p class="note" style="margin:8px 0 0;">Time to call back appears once a lead is marked called back — from the portal, the email link, or here.</p>');
       m.appendChild(sum);
+
+      // Last 30 days by source: where the visits came from and what each
+      // source turned into. Visits are counted by the client site's beacon;
+      // phone/LSA leads have no visit and show as leads only.
+      (function () {
+        var since = Date.now() - 30 * 86400000;
+        var v30 = (S.visits && S.visits[c.email]) || {};
+        var l30 = real.filter(function (l) { return new Date(l.at).getTime() >= since; });
+        var buckets = ['paid', 'gbp', 'organic', 'referral', 'direct', 'phone'];
+        var any = buckets.some(function (b) { return v30[b] || l30.some(function (l) { return bucketOf(l.source) === b; }); });
+        var f = el('fieldset');
+        f.appendChild(el('legend', null, 'Last 30 days by source'));
+        if (!any) {
+          f.appendChild(el('p', 'note', 'Nothing yet. Once the client’s site is live its visits are counted here by source, next to the leads each source produced.'));
+          m.appendChild(f);
+          return;
+        }
+        var t = document.createElement('table');
+        t.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
+        var th = function (s, right) { return '<th style="text-align:' + (right ? 'right' : 'left') + ';padding:6px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--rule);">' + s + '</th>'; };
+        var td = function (s, right, dim) { return '<td style="text-align:' + (right ? 'right' : 'left') + ';padding:6px 8px;border-bottom:1px solid var(--rule);' + (dim ? 'color:var(--faint);' : '') + '">' + s + '</td>'; };
+        var html = '<tr>' + th('Source') + th('Visits', 1) + th('Enquiries', 1) + th('Enquiry rate', 1) + th('Booked', 1) + th('Won', 1) + '</tr>';
+        var tv = 0, tl = 0, tb = 0, tw = 0;
+        buckets.forEach(function (b) {
+          var ls = l30.filter(function (l) { return bucketOf(l.source) === b; });
+          var vis = v30[b] || 0;
+          if (!vis && !ls.length) return;
+          var bk = ls.filter(function (l) { return l.booked === 'Yes'; }).length;
+          var wn = ls.filter(function (l) { return l.won === 'Yes'; }).length;
+          tv += vis; tl += ls.length; tb += bk; tw += wn;
+          var rate = b === 'phone' ? '—' : (vis ? (100 * ls.length / vis).toFixed(1) + '%' : (ls.length ? 'no visits counted' : '—'));
+          html += '<tr>' + td(esc(BUCKET_LABEL[b])) + td(b === 'phone' ? '—' : vis, 1, !vis) + td(ls.length, 1, !ls.length) + td(rate, 1, true) + td(bk, 1, !bk) + td(wn, 1, !wn) + '</tr>';
+        });
+        html += '<tr>' + td('<b>All</b>') + td('<b>' + tv + '</b>', 1) + td('<b>' + tl + '</b>', 1) + td(tv ? (100 * tl / tv).toFixed(1) + '%' : '—', 1, true) + td('<b>' + tb + '</b>', 1) + td('<b>' + tw + '</b>', 1) + '</tr>';
+        t.innerHTML = html;
+        f.appendChild(t);
+        m.appendChild(f);
+      })();
 
       if (S.config && S.config.notify === false) {
         var nb = el('div', 'verdict');
@@ -817,9 +914,10 @@
       addBtn.onclick = function () { S.addingLead = !S.addingLead; S.newLead = {}; renderMain(); };
       addBar.appendChild(addBtn);
       var tracked = mine.filter(function (l) { return l.gclid; });
+      var matchable = mine.filter(function (l) { return !l.duplicateOf && (l.gclid || l.emailHash || l.phoneHash); });
       var expBtn = el('button', 'newbtn', S.exportOpen ? 'Close export' : 'Export for Google Ads');
-      expBtn.disabled = !tracked.length;
-      expBtn.title = tracked.length ? '' : 'Nothing to export until a lead arrives carrying a Google click id.';
+      expBtn.disabled = !matchable.length;
+      expBtn.title = matchable.length ? '' : 'Nothing to export until a lead arrives with a click id, an email or a phone number.';
       expBtn.onclick = function () { S.exportOpen = !S.exportOpen; renderMain(); };
       addBar.appendChild(expBtn);
       m.appendChild(addBar);
@@ -828,10 +926,19 @@
         var xf = el('fieldset');
         xf.appendChild(el('legend', null, 'Offline conversions for Google Ads'));
         xf.appendChild(el('p', 'note',
-          'One row per outcome on a lead that carried a Google click id: an estimate booked, a customer won. '
-          + 'Upload it in the client’s Google Ads account under Goals → Conversions → Uploads (Data Manager). '
-          + 'The conversion names must match conversion actions that already exist there, character for character.'));
+          'One row per outcome — an estimate booked, a customer won — uploaded in the client’s Google Ads account '
+          + 'under Goals → Conversions → Uploads (Data Manager). The conversion names must match conversion actions that '
+          + 'already exist there, character for character. Repeat enquiries are left out.'));
         var xg = el('div', 'grid');
+        var fw = el('label'); fw.appendChild(el('span', null, 'Format'));
+        var fsel = el('select');
+        [['enhanced', 'Enhanced conversions for leads (click id + hashed email/phone) — every outcome'],
+         ['clicks', 'Click conversions (legacy template) — click-id leads only']].forEach(function (o) {
+          var op = el('option'); op.value = o[0]; op.textContent = o[1]; fsel.appendChild(op);
+        });
+        fsel.value = S.exportFormat;
+        fsel.onchange = function () { S.exportFormat = fsel.value; renderMain(); };
+        fw.appendChild(fsel); xg.appendChild(fw);
         [['exportBookedName', 'Conversion name: estimate booked'], ['exportWonName', 'Conversion name: customer won'],
          ['exportTz', 'Time zone of the Ads account (IANA)']].forEach(function (f) {
           var lw = el('label'); lw.appendChild(el('span', null, f[1]));
@@ -840,16 +947,18 @@
           lw.appendChild(inp); xg.appendChild(lw);
         });
         xf.appendChild(xg);
-        var xrows = offlineRows(tracked);
+        var pool = S.exportFormat === 'enhanced' ? matchable : tracked;
+        var xrows = offlineRows(pool, S.exportFormat);
         var xb = el('div', 'bar');
         var dl = el('button', 'newbtn', 'Download ' + xrows.length + ' row' + (xrows.length === 1 ? '' : 's') + ' (.csv)');
         dl.disabled = !xrows.length;
         dl.onclick = function () {
-          var csv = offlineCsv(offlineRows(tracked));
+          var csv = offlineCsv(offlineRows(pool, S.exportFormat), S.exportFormat);
           var blob = new Blob([csv], { type: 'text/csv' });
           var a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
-          a.download = 'offline-conversions-' + (c.intake.businessName || c.email).replace(/[^a-z0-9]+/gi, '-').toLowerCase()
+          a.download = (S.exportFormat === 'enhanced' ? 'enhanced-conversions-' : 'click-conversions-')
+            + (c.intake.businessName || c.email).replace(/[^a-z0-9]+/gi, '-').toLowerCase()
             + '-' + new Date().toISOString().slice(0, 10) + '.csv';
           document.body.appendChild(a); a.click(); a.remove();
           setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
@@ -858,9 +967,11 @@
         xf.appendChild(xb);
         var braidOnly = mine.filter(function (l) { return !l.gclid && (l.gbraid || l.wbraid); }).length;
         xf.appendChild(el('p', 'note',
-          (xrows.length ? '' : 'No booked or won outcomes on tracked leads yet, so the file would be empty. ')
-          + tracked.length + ' tracked lead' + (tracked.length === 1 ? '' : 's') + ' in total'
-          + (braidOnly ? '; ' + braidOnly + ' more carried only an iOS click id (gbraid/wbraid), which this file format does not carry.' : '.')));
+          (xrows.length ? '' : 'No booked or won outcomes to export yet, so the file would be empty. ')
+          + tracked.length + ' lead' + (tracked.length === 1 ? '' : 's') + ' carried a click id; '
+          + matchable.length + ' can be matched by click id, email or phone'
+          + (braidOnly && S.exportFormat !== 'enhanced' ? '; ' + braidOnly + ' carried only an iOS click id, which the legacy format cannot carry — use the enhanced format for those.' : '.')
+          + ' The conversion action in Google Ads must have enhanced conversions for leads turned on for the hashed columns to be used.'));
         m.appendChild(xf);
       }
 
@@ -924,13 +1035,18 @@
 
         var top = el('div');
         top.style.cssText = 'display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;width:100%;';
+        var isWaiting = untouched(l);
         top.innerHTML = '<b style="font-size:15px;">' + esc(l.name || '(no name)') + '</b>'
           + '<span style="color:var(--muted);font-size:13px;">' + esc(l.phone || l.email || '') + '</span>'
+          + (l.duplicateOf ? '<span class="mono" style="font-size:10px;color:var(--warn);">REPEAT</span>' : '')
+          + (l.smsOk === 'Yes' ? '<span class="mono" style="font-size:10px;color:var(--faint);">OK TO TEXT</span>' : '')
           + '<span style="flex:1"></span>'
           + '<span class="mono" style="font-size:10.5px;color:var(--faint);">'
           + esc((l.source || 'unknown').toUpperCase()) + (l.gclid ? ' &middot; TRACKED' : '') + '</span>'
-          + '<span class="mono" style="font-size:10.5px;color:var(--faint);">'
-          + esc((l.at || '').slice(0, 10)) + '</span>';
+          + (isWaiting
+            ? '<span class="mono" style="font-size:10.5px;color:var(--warn);">WAITING ' + esc(fmtMins(minutesBetween(l.at, new Date().toISOString())).toUpperCase()) + '</span>'
+            : '<span class="mono" style="font-size:10.5px;color:var(--faint);">' + esc((l.at || '').slice(0, 10)) + '</span>');
+        if (isWaiting) r.style.borderLeft = '3px solid var(--warn)';
         r.appendChild(top);
 
         var bits = [l.service, l.address, l.preferred ? 'prefers ' + l.preferred : ''].filter(Boolean);
@@ -986,6 +1102,7 @@
           w.appendChild(sel);
           return w;
         };
+        ctrls.appendChild(mkSelect('Called back', 'contacted', ['', 'Yes'], 70));
         ctrls.appendChild(mkSelect('Estimate booked', 'booked', ['', 'Yes', 'No'], 78));
         ctrls.appendChild(mkSelect('Became a customer', 'won', ['', 'Yes', 'No', 'Pending'], 96));
         ctrls.appendChild(mkSelect('Contract', 'contract', ['', 'Weekly', 'Biweekly', 'Monthly', 'One-off'], 104));

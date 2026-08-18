@@ -5,12 +5,12 @@
   var app = document.getElementById('app');
   var q = new URLSearchParams(location.search);
   var t = q.get('t') || '', set = q.get('set') || '';
-  var LABEL = { booked: 'Estimate booked', won: 'Became a customer', lost: 'Did not go ahead' };
-  var VERB = { booked: 'booked an estimate', won: 'became a customer', lost: 'did not go ahead' };
+  var LABEL = { contacted: 'I called them back', booked: 'Estimate booked', won: 'Became a customer', lost: 'Did not go ahead' };
+  var VERB = { contacted: 'have been called back', booked: 'booked an estimate', won: 'became a customer', lost: 'did not go ahead' };
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function stateOf(l) {
-    return l.won === 'Yes' ? 'CUSTOMER' : l.booked === 'Yes' ? 'ESTIMATE BOOKED' : l.won === 'No' ? 'DID NOT PROCEED' : 'NEW';
+    return l.won === 'Yes' ? 'CUSTOMER' : l.booked === 'Yes' ? 'ESTIMATE BOOKED' : l.won === 'No' ? 'DID NOT PROCEED' : l.contacted === 'Yes' ? 'CALLED BACK' : 'NEW';
   }
   function fail(msg) { app.innerHTML = '<h1>That link will not work</h1><p class="err">' + esc(msg) + '</p><p>Open <a href="/portal">your portal</a> to update the enquiry there.</p>'; }
 

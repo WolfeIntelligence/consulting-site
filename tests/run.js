@@ -31,12 +31,18 @@ global.fetch = async (url, opt) => {
   if (cmd === 'get') result = store.has(parts[1]) ? store.get(parts[1]) : null;
   else if (cmd === 'set') { store.set(parts[1], parts[2]); result = 'OK'; }
   else if (cmd === 'incr') { const n = (parseInt(store.get(parts[1]) || '0', 10) || 0) + 1; store.set(parts[1], String(n)); result = n; }
+  else if (cmd === 'hincrby') {
+    const h = store.get(parts[1]) instanceof Map ? store.get(parts[1]) : new Map();
+    h.set(parts[2], (h.get(parts[2]) || 0) + parseInt(parts[3], 10)); store.set(parts[1], h); result = h.get(parts[2]);
+  }
+  else if (cmd === 'hgetall') { const h = store.get(parts[1]); result = h instanceof Map ? [].concat(...[...h.entries()].map(([k, v]) => [k, String(v)])) : []; }
   else if (cmd === 'expire') result = 1;
   else if (cmd === 'ttl') result = 600;
   return { ok: true, status: 200, json: async () => ({ result }) };
 };
 
 const lead = require(path.join(__dirname, '..', 'api', 'lead.js'));
+const visit = require(path.join(__dirname, '..', 'api', 'visit.js'));
 const leadStatus = require(path.join(__dirname, '..', 'api', 'lead-status.js'));
 const apps = require(path.join(__dirname, '..', 'api', 'apps.js'));
 const L = require(path.join(__dirname, '..', 'lib', 'leads.js'));
@@ -110,17 +116,63 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     assert.strictEqual(tracked.utm.campaign, 'spring');
     assert.strictEqual(tracked.booked, '');
   });
-  await ok('mail: goes to client and owner, replies to the lead, carries the three signed links', async () => {
-    const m = mails[mails.length - 1];
+  await ok('mail: goes to client and owner, replies to the lead, carries the four signed links; lead gets an auto-reply', async () => {
+    const m = mails[mails.length - 2];
     assert.deepStrictEqual(m.to.sort(), ['lawn@client.test', 'owner@wolfe.test']);
     assert.strictEqual(m.reply_to, 'jane@x.test');
     assert.ok(m.subject.includes('Jane Doe'));
     assert.ok(m.text.includes('Green Lawns'));
-    ['booked', 'won', 'lost'].forEach((s) => {
+    ['contacted', 'booked', 'won', 'lost'].forEach((s) => {
       assert.ok(m.text.includes('/lead-status?t=') && m.text.includes('&set=' + s), 'text link ' + s);
       assert.ok(m.html.includes('&amp;set=' + s), 'html link ' + s + ' (escaped)');
     });
     assert.ok(!m.html.includes('<script'));
+    const auto = mails[mails.length - 1];
+    assert.deepStrictEqual(auto.to, ['jane@x.test']);
+    assert.strictEqual(auto.reply_to, 'lawn@client.test');
+    assert.ok(auto.text.includes('Green Lawns') && auto.text.includes('336-555-0100'));
+  });
+  await ok('hashes: normalised email/phone SHA-256 stored; plaintext untouched', async () => {
+    assert.strictEqual(tracked.emailHash, crypto.createHash('sha256').update('jane@x.test').digest('hex'));
+    assert.strictEqual(tracked.phoneHash, crypto.createHash('sha256').update('+13365550100').digest('hex'));
+    assert.strictEqual(L.normEmail('  Jo.Hn.Doe@Gmail.com '), 'johndoe@gmail.com');
+    assert.strictEqual(L.normPhone('(336) 555-0100'), '+13365550100');
+    assert.strictEqual(L.normPhone('1 336 555 0100'), '+13365550100');
+    assert.strictEqual(L.normPhone('12345'), '');
+  });
+  await ok('repeat enquiry within 30 days is flagged, not double-counted; mail says so', async () => {
+    const r = res();
+    await lead(req('POST', { to: 'lawn@client.test', name: 'Jane Again', phone: '(336) 555 0100' }), r);
+    assert.strictEqual(r.code, 200);
+    const dup = leads().find((l) => l.name === 'Jane Again');
+    assert.strictEqual(dup.duplicateOf, tracked.id);
+    assert.ok(mails[mails.length - 1].subject.startsWith('Repeat enquiry:'));
+    const other = res();
+    await lead(req('POST', { to: 'other@client.test', name: 'Jane Elsewhere', phone: '(336) 555 0100' }), other);
+    assert.strictEqual(leads().find((l) => l.name === 'Jane Elsewhere').duplicateOf, '', 'another client is not a repeat');
+  });
+  await ok('dwell under 1.5s is treated like the honeypot; sms consent recorded only when ticked', async () => {
+    let r = res(); await lead(req('POST', { to: 'lawn@client.test', name: 'Fast Bot', phone: '5550001', dwell: 300 }), r);
+    assert.strictEqual(r.body.id, 'l0'); assert.ok(!leads().some((l) => l.name === 'Fast Bot'));
+    r = res(); await lead(req('POST', { to: 'lawn@client.test', name: 'Texter', phone: '5550002', dwell: 9000, smsOk: true }), r);
+    assert.strictEqual(leads().find((l) => l.name === 'Texter').smsOk, 'Yes');
+    r = res(); await lead(req('POST', { to: 'lawn@client.test', name: 'No Text', phone: '5550003', dwell: 9000 }), r);
+    assert.strictEqual(leads().find((l) => l.name === 'No Text').smsOk, '');
+  });
+
+  console.log('api/visit');
+  await ok('counts a visit per client per source bucket; unknown client refused; no PII stored', async () => {
+    let r = res(); await visit(req('POST', { to: 'nobody@x.test' }), r); assert.strictEqual(r.code, 404);
+    r = res(); await visit(req('POST', { to: 'lawn@client.test', paid: true }), r); assert.strictEqual(r.code, 204);
+    r = res(); await visit(req('POST', { to: 'lawn@client.test', paid: true }), r);
+    r = res(); await visit(req('POST', { to: 'lawn@client.test', utm_source: 'gbp' }), r);
+    r = res(); await visit(req('POST', { to: 'lawn@client.test', referrer: 'https://www.google.com/' }), r);
+    r = res(); await visit(req('POST', JSON.stringify({ to: 'lawn@client.test' })), r); // sendBeacon-style string body
+    assert.strictEqual(r.code, 204);
+    const v = await L.loadVisits('lawn@client.test', 30);
+    assert.deepStrictEqual(v, { paid: 2, gbp: 1, organic: 1, direct: 1 });
+    const h = store.get('visits:lawn@client.test');
+    for (const k of h.keys()) assert.ok(/^\d{4}-\d{2}-\d{2}\|\w+$/.test(k), 'field is day|bucket only: ' + k);
   });
   await ok('mail failure does not fail the capture', async () => {
     resendOk = false;
@@ -155,9 +207,12 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     assert.strictEqual(r.body.lead.gclid, undefined); assert.strictEqual(r.body.lead.to, undefined);
     assert.strictEqual(leads().find((l) => l.id === tracked.id).booked, '', 'GET must not change anything');
   });
-  await ok('POST booked stamps bookedAt; won stamps wonAt and implies booked; lost sets won=No', async () => {
-    let r = res(); await leadStatus(req('POST', { t: good, set: 'booked' }), r);
+  await ok('POST contacted stamps contactedAt; booked stamps bookedAt; won stamps wonAt and implies booked; lost sets won=No', async () => {
+    let r = res(); await leadStatus(req('POST', { t: good, set: 'contacted' }), r);
     let l = leads().find((x) => x.id === tracked.id);
+    assert.strictEqual(l.contacted, 'Yes'); assert.ok(l.contactedAt); assert.strictEqual(l.booked, '');
+    r = res(); await leadStatus(req('POST', { t: good, set: 'booked' }), r);
+    l = leads().find((x) => x.id === tracked.id);
     assert.strictEqual(l.booked, 'Yes'); assert.ok(l.bookedAt);
     r = res(); await leadStatus(req('POST', { t: good, set: 'won' }), r);
     l = leads().find((x) => x.id === tracked.id);
@@ -182,8 +237,11 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     let r = res(); await apps(req('GET', null, auth(clientTok)), r);
     assert.ok(r.body.leads.length > 0); assert.ok(r.body.leads.every((l) => l.to === 'lawn@client.test'));
     assert.strictEqual(r.body.config, undefined);
+    assert.deepStrictEqual(Object.keys(r.body.visits), ['lawn@client.test'], 'client sees only own visits');
+    assert.strictEqual(r.body.visits['lawn@client.test'].paid, 2);
     r = res(); await apps(req('GET', null, auth(ownerTok)), r);
     assert.strictEqual(typeof r.body.config.notify, 'boolean');
+    assert.ok(r.body.visits['lawn@client.test'] && r.body.visits['other@client.test'], 'owner sees every client');
   });
   await ok('client updates own outcome only; unsent fields and the click id survive', async () => {
     const before = leads().find((x) => x.id === tracked.id);

@@ -12,7 +12,7 @@ const L = require('../lib/leads');
 
 const PUBLIC = (l, biz) => ({
   id: l.id, name: l.name, service: l.service, at: l.at, phone: l.phone,
-  booked: l.booked, won: l.won, business: biz,
+  contacted: l.contacted, booked: l.booked, won: l.won, business: biz,
 });
 
 module.exports = async (req, res) => {
@@ -42,9 +42,10 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
 
   const set = String(q.set || '');
-  if (set === 'booked') { lead.booked = 'Yes'; if (lead.won === 'No') lead.won = ''; }
-  else if (set === 'won') { lead.won = 'Yes'; if (!lead.booked) lead.booked = 'Yes'; }
-  else if (set === 'lost') { lead.won = 'No'; }
+  if (set === 'contacted') { lead.contacted = 'Yes'; }
+  else if (set === 'booked') { lead.contacted = 'Yes'; lead.booked = 'Yes'; if (lead.won === 'No') lead.won = ''; }
+  else if (set === 'won') { lead.contacted = 'Yes'; lead.won = 'Yes'; if (!lead.booked) lead.booked = 'Yes'; }
+  else if (set === 'lost') { lead.contacted = 'Yes'; lead.won = 'No'; }
   else return res.status(400).json({ error: 'bad-outcome' });
   L.stampOutcomes(lead);
 

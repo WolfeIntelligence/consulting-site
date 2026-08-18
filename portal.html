@@ -134,7 +134,7 @@
     <sc-if value="{{ ldShow }}" hint-placeholder-val="{{ false }}">
     <div style="display:grid;gap:14px;padding-top:26px;border-top:1px solid rgba(239,231,214,.13);">
       <span style="font:700 11px/1 'Space Mono',monospace;letter-spacing:.16em;color:#8c8072;">YOUR ENQUIRIES</span>
-      <div style="font:400 26px/1.2 'Newsreader',serif;">{{ ldHead }}</div>
+      <div style="{{ ldHeadStyle }}">{{ ldHead }}</div>
       <div style="font:400 14px/1.55 'Newsreader',serif;color:#a2968a;">{{ ldSub }}</div>
       <sc-if value="{{ ldErr }}" hint-placeholder-val="{{ false }}">
         <div style="font:400 14px/1.5 'Newsreader',serif;color:#e0a89f;">{{ ldErr }}</div>
@@ -160,11 +160,12 @@
               <span style="font:400 17px/1.4 'Newsreader',serif;">{{ ld.name }}</span>
               <span style="font:400 13.5px/1.4 'Newsreader',serif;color:#8c8072;">{{ ld.detail }}</span>
               <span style="flex:1;height:1px;background:linear-gradient(to right, rgba(239,231,214,.12), transparent 90%);"></span>
-              <span style="font:400 11px 'Space Mono',monospace;color:#6f6459;">{{ ld.when }}</span>
+              <span style="{{ ld.whenStyle }}">{{ ld.when }}</span>
               <span style="{{ ld.stateStyle }}">{{ ld.state }}</span>
             </div>
             <sc-if value="{{ ld.canAct }}" hint-placeholder-val="{{ false }}">
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button sc-camel-on-click="{{ ld.setCalled }}" style="{{ ld.calledStyle }}">I CALLED THEM</button>
                 <button sc-camel-on-click="{{ ld.setBooked }}" style="{{ ld.bookedStyle }}">ESTIMATE BOOKED</button>
                 <button sc-camel-on-click="{{ ld.setWon }}" style="{{ ld.wonStyle }}">BECAME A CUSTOMER</button>
                 <button sc-camel-on-click="{{ ld.setLost }}" style="{{ ld.lostStyle }}">DID NOT GO AHEAD</button>
@@ -399,7 +400,7 @@ class Component extends DCLogic {
     r6: 'running', hDoneIds: [], hRead: false,
     role: 'client', token: '', previewMode: false, loggingIn: false,
     deployments: [], depEmail: '', depCode: '', depStatus: '',
-    onboarding: [], leads: [], leadBusy: '', leadErr: '',
+    onboarding: [], leads: [], visits: {}, leadBusy: '', leadErr: '',
     callOpen: false, callName: '', callPhone: '', callNote: '', callBusy: false,
   };
   set(patch) { this.setState(patch); }
@@ -455,6 +456,7 @@ class Component extends DCLogic {
         if (d && Array.isArray(d.deployments)) this.setState({ deployments: d.deployments });
         if (d && Array.isArray(d.onboarding)) this.setState({ onboarding: d.onboarding });
         if (d && Array.isArray(d.leads)) this.setState({ leads: d.leads });
+        if (d && d.visits && typeof d.visits === 'object') this.setState({ visits: d.visits });
       }
     } catch (e) {}
   }
@@ -551,9 +553,24 @@ class Component extends DCLogic {
     const leads = (!full && Array.isArray(s.onboarding) && s.onboarding.length) ? (s.leads || []) : [];
     const canLog = !full && s.authed && !!s.token && Array.isArray(s.onboarding) && s.onboarding.length > 0;
     const leadBtn = (on, tone) => `padding:7px 11px;border:1px solid ${on ? tone : 'rgba(239,231,214,.22)'};background:${on ? tone : 'transparent'};color:${on ? '#241e19' : '#cfc4b2'};font:${on ? '700' : '400'} 11px/1 'Space Mono',monospace;letter-spacing:.06em;cursor:pointer;white-space:nowrap;`;
-    const leadsSorted = leads.slice().sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
-    const leadWon = leads.filter((l) => l.won === 'Yes').length;
-    const leadBooked = leads.filter((l) => l.booked === 'Yes').length;
+    // Uncontacted first — those are the ones losing value by the minute —
+    // then newest first.
+    const untouched = (l) => !l.contacted && !l.booked && !l.won;
+    const leadsSorted = leads.slice().sort((a, b) =>
+      (untouched(b) ? 1 : 0) - (untouched(a) ? 1 : 0) || String(b.at || '').localeCompare(String(a.at || '')));
+    const real = leads.filter((l) => !l.duplicateOf);
+    const leadWon = real.filter((l) => l.won === 'Yes').length;
+    const leadBooked = real.filter((l) => l.booked === 'Yes').length;
+    const waiting = leads.filter(untouched).length;
+    const myVisits = (s.visits && s.visits[s.email]) || {};
+    const visitTotal = Object.values(myVisits).reduce((t, n) => t + (n || 0), 0);
+    const ageOf = (iso) => {
+      const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+      if (!isFinite(m)) return '';
+      if (m < 60) return m + ' min';
+      if (m < 48 * 60) return Math.round(m / 60) + ' h';
+      return Math.round(m / 1440) + ' days';
+    };
     const obSteps = ob && Array.isArray(ob.steps) ? ob.steps : [];
     const obNext = obSteps.filter((x) => !x.done)[0] || null;
 
@@ -579,29 +596,39 @@ class Component extends DCLogic {
 
       /* --- onboarding status, written by the owner console --- */
       ldShow: leads.length > 0 || canLog,
-      ldHead: leads.length === 0 ? 'No enquiries yet' : leads.length + (leads.length === 1 ? ' enquiry' : ' enquiries'),
+      ldHead: waiting > 0
+        ? (waiting === 1 ? '1 enquiry waiting for a call back' : waiting + ' enquiries waiting for a call back')
+        : leads.length === 0 ? 'No enquiries yet' : leads.length + (leads.length === 1 ? ' enquiry' : ' enquiries'),
+      ldHeadStyle: 'font:400 26px/1.2 \'Newsreader\',serif;color:' + (waiting > 0 ? '#e9c98d' : '#efe7d6') + ';',
       ldSub: leads.length === 0
-        ? 'When someone asks for a quote through your site, or you log a call below, it shows up here.'
-        : leadBooked + ' booked an estimate, ' + leadWon
-          + (leadWon === 1 ? ' became a customer' : ' became customers') + '. Tap what happened with each one \u2014 it keeps your numbers honest.',
+        ? (visitTotal ? visitTotal + (visitTotal === 1 ? ' visit' : ' visits') + ' to your site in the last 30 days, no enquiries yet. ' : '')
+          + 'When someone asks for a quote through your site, or you log a call below, it shows up here.'
+        : (visitTotal ? visitTotal + ' site visits in the last 30 days \u00b7 ' : '')
+          + real.length + (real.length === 1 ? ' enquiry, ' : ' enquiries, ') + leadBooked + ' booked an estimate, ' + leadWon
+          + (leadWon === 1 ? ' became a customer' : ' became customers') + '.'
+          + (waiting > 0 ? ' The first business to call back usually gets the job.' : ' Tap what happened with each one \u2014 it keeps your numbers honest.'),
       ldErr: s.leadErr,
       ldItems: leadsSorted.map((l) => ({
         name: l.name || 'Enquiry',
-        detail: [l.service, l.phone, l.preferred ? 'prefers ' + l.preferred : ''].filter(Boolean).join(' \u00b7 '),
-        when: String(l.at || '').slice(0, 10),
+        detail: [l.service, l.phone, l.preferred ? 'prefers ' + l.preferred : '', l.smsOk === 'Yes' ? 'ok to text' : '', l.duplicateOf ? 'repeat' : ''].filter(Boolean).join(' \u00b7 '),
+        when: untouched(l) ? 'waiting ' + ageOf(l.at) : String(l.at || '').slice(0, 10),
+        whenStyle: "font:400 11px 'Space Mono',monospace;color:" + (untouched(l) ? '#e9c98d' : '#6f6459') + ';',
         state: l.won === 'Yes' ? 'CUSTOMER'
           : l.booked === 'Yes' ? 'ESTIMATE BOOKED'
           : l.won === 'No' ? 'DID NOT PROCEED'
+          : l.contacted === 'Yes' ? 'CALLED BACK'
           : 'NEW',
         stateStyle: "font:700 10px/1 'Space Mono',monospace;letter-spacing:.12em;white-space:nowrap;color:"
-          + (l.won === 'Yes' ? '#9dbb7a' : l.booked === 'Yes' ? '#c9a15f' : l.won === 'No' ? '#6f6459' : '#efe7d6'),
+          + (l.won === 'Yes' ? '#9dbb7a' : l.booked === 'Yes' ? '#c9a15f' : l.won === 'No' ? '#6f6459' : l.contacted === 'Yes' ? '#a2c4de' : '#efe7d6'),
         canAct: canLog && s.leadBusy !== l.id,
+        calledStyle: leadBtn(l.contacted === 'Yes', '#a2c4de'),
         bookedStyle: leadBtn(l.booked === 'Yes', '#e9c98d'),
         wonStyle: leadBtn(l.won === 'Yes', '#9dbb7a'),
         lostStyle: leadBtn(l.won === 'No', '#a2968a'),
-        setBooked: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, booked: l.booked === 'Yes' ? '' : 'Yes', won: l.won === 'No' ? '' : l.won }); },
-        setWon: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, won: l.won === 'Yes' ? '' : 'Yes', booked: 'Yes' }); },
-        setLost: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, won: l.won === 'No' ? '' : 'No' }); },
+        setCalled: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, contacted: l.contacted === 'Yes' ? '' : 'Yes' }); },
+        setBooked: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, contacted: 'Yes', booked: l.booked === 'Yes' ? '' : 'Yes', won: l.won === 'No' ? '' : l.won }); },
+        setWon: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, contacted: 'Yes', won: l.won === 'Yes' ? '' : 'Yes', booked: 'Yes' }); },
+        setLost: (e) => { e.preventDefault(); this.saveLead('lead-update', { id: l.id, contacted: 'Yes', won: l.won === 'No' ? '' : 'No' }); },
       })),
       /* --- log a phone call as an enquiry --- */
       callCan: canLog,

@@ -43,19 +43,27 @@ Vercel → Project → Settings → Environment Variables.
 ## The lead pipeline
 
 ```
-client's site  --POST-->  /api/lead   (public; client must exist; honeypot; rate limited)
-                              |  stores the lead with gclid/gbraid/wbraid, UTM, landing, referrer
-                              |  emails client + owner via Resend, with signed one-tap links
+client's site  --beacon-->  /api/visit  (public; counts per client/day/source bucket; no PII)
+client's site  --POST-->    /api/lead   (public; client must exist; honeypot + dwell check; rate limited)
+                              |  stores the lead with gclid/gbraid/wbraid, UTM, landing, referrer,
+                              |  SMS consent, hashed email/phone (enhanced conversions), repeat flag
+                              |  emails client + owner via Resend with signed one-tap links;
+                              |  auto-replies to the lead if they left an email
                               v
-   /lead-status?t=…&set=booked|won|lost   ->  GET /api/lead-status shows it, POST records it
-   /portal        client sees enquiries, taps the outcome, logs phone calls (own leads only)
-   /os            owner works every lead; "Export for Google Ads" writes the offline-conversion CSV
+   /lead-status?t=…&set=contacted|booked|won|lost  ->  GET shows it, POST records it
+   /portal   client sees enquiries (uncontacted first, with age), taps outcomes, logs calls
+   /os       owner: funnel by source (visits → enquiries → booked → won), median time to
+             call back, per-lead controls, "Export for Google Ads" in two formats
 ```
 
-Outcome timestamps (`bookedAt`, `wonAt`) are stamped once, server-side, and
+Outcome timestamps (`contactedAt`, `bookedAt`, `wonAt`) are stamped once,
+server-side; `contactedAt` is the speed-to-lead clock and `bookedAt`/`wonAt`
 feed the export's Conversion Time. A client token can only change outcome
 fields on its own leads; capture fields are evidence and never editable by the
 client. `node tests/run.js` covers all of it against a mocked KV and Resend.
+
+Phone normalisation assumes US numbers (+1). Make it per-client the day a
+client is not.
 
 ## Things that will bite you
 

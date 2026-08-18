@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { stampOutcomes } = require('../lib/leads');
+const { stampOutcomes, hashIds, loadVisits } = require('../lib/leads');
 const sha = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
 function verify(token, secret) {
   const i = String(token).lastIndexOf('.');
@@ -33,6 +33,12 @@ module.exports = async (req, res) => {
     if (kvReady()) { try { onb = JSON.parse((await kv('get/onboarding')) || '[]'); } catch (e) {} }
     let leads = [];
     if (kvReady()) { try { leads = JSON.parse((await kv('get/leads')) || '[]'); } catch (e) {} }
+    // Site visits, last 30 days, per client, bucketed by source. Counts only.
+    const visits = {};
+    if (kvReady()) {
+      const who = ses.r === 'owner' ? onb.map((o) => o.email) : [ses.e];
+      for (const e of who) visits[e] = await loadVisits(e, 30);
+    }
     return res.json({
       role: ses.r,
       deployments: ses.r === 'owner' ? all : all.filter((d) => d.to === ses.e),
@@ -44,6 +50,7 @@ module.exports = async (req, res) => {
         : onb.filter((o) => o.email === ses.e).map(({ intake, ...safe }) => safe),
       // A client sees their own leads; the owner sees every client's.
       leads: ses.r === 'owner' ? leads : leads.filter((l) => l.to === ses.e),
+      visits,
       // What the operator needs to know about the machinery itself.
       config: ses.r === 'owner' ? { notify: !!process.env.RESEND_API_KEY } : undefined,
     });
@@ -134,6 +141,7 @@ module.exports = async (req, res) => {
     if (!isOwner && b.action === 'lead-update' && !existing) return res.status(404).json({ error: 'not-found' });
 
     const outcome = {
+      contacted: str(l.contacted, 20),
       booked: str(l.booked, 20),
       won: str(l.won, 20),
       contract: str(l.contract, 30),
@@ -175,6 +183,8 @@ module.exports = async (req, res) => {
       Object.keys(captured).forEach((k) => { if (has(k)) clean[k] = captured[k]; });
       Object.keys(outcome).forEach((k) => { if (has(k)) clean[k] = outcome[k]; });
       if (!isOwner) { clean.gclid = ''; clean.gbraid = ''; clean.wbraid = ''; }
+      // Contact details may have changed; keep the hashes in step with them.
+      if (has('email') || has('phone')) hashIds(clean);
     }
     if (!clean.name) return res.status(400).json({ error: 'name-required' });
     stampOutcomes(clean);

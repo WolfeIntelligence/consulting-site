@@ -45,8 +45,11 @@ module.exports = async (req, res) => {
   const str = L.str;
 
   // Honeypot: a field real visitors never see. Bots fill it. Answer as if it
-  // worked so they do not learn to skip it, and store nothing.
+  // worked so they do not learn to skip it, and store nothing. Same for a
+  // form "filled" faster than a person can type a name and a number.
   if (str(b.website, 200)) return res.json({ ok: true, id: 'l0' });
+  const dwell = parseInt(b.dwell, 10);
+  if (isFinite(dwell) && dwell >= 0 && dwell < 1500) return res.json({ ok: true, id: 'l0' });
 
   const to = str(b.to, 120).toLowerCase();
   const name = str(b.name, 120);
@@ -73,6 +76,10 @@ module.exports = async (req, res) => {
     address: str(b.address, 200),
     preferred: str(b.preferred, 120),
     notes: str(b.notes, 1000),
+    // An unticked box by default; the client may only text marketing to
+    // people who ticked it. Recorded as evidence of consent.
+    smsOk: b.smsOk === true || b.smsOk === 'Yes' || b.smsOk === 'on' ? 'Yes' : '',
+    dwell: isFinite(dwell) ? dwell : '',
     // Captured at the click and carried through the form. Without it a won
     // customer can never be matched back to the ad that produced them, and it
     // cannot be recovered later. gbraid/wbraid are the iOS-privacy variants.
@@ -88,18 +95,25 @@ module.exports = async (req, res) => {
     referrer: str(b.referrer, 300),
     source: L.deriveSource(b),
     // Set by the operator or the client afterwards.
+    contacted: '',
     booked: '',
     won: '',
     contract: '',
     perVisit: '',
     visitsPerYear: '',
   };
+  // Hashed identifiers for enhanced conversions: how a won customer is matched
+  // back to the ad when the click id is missing (iOS, cleared storage, a call
+  // that became a form later). Stored at capture; the export uses them.
+  L.hashIds(lead);
 
   const all = await L.loadLeads();
+  lead.duplicateOf = L.findDuplicate(lead, all, 30);
   all.push(lead);
   await L.saveLeads(all);
 
   const notified = await L.notifyNewLead(lead, client);
+  await L.autoReplyLead(lead, client);
 
   return res.json({ ok: true, id: lead.id, notified: notified === 'sent' });
 };
