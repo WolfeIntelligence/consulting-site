@@ -114,8 +114,7 @@
     [data-stack]{flex-direction:column!important;align-items:flex-start!important;gap:22px!important}
   }
   /* Motion: lamplight ambience behind the hero, a fade-up as sections enter,
-     dashes that flow along the approach and the learning-loop card, and hover
-     polish. All of it is off for people who asked their system for less motion. */
+     and hover polish. All of it is off for people who asked their system for less motion. */
   [data-screen-label="Hero"]{position:relative;isolation:isolate}
   [data-screen-label="Hero"]::before,[data-screen-label="Hero"]::after{content:"";position:absolute;z-index:-1;border-radius:50%;pointer-events:none;filter:blur(70px);opacity:.55}
   [data-screen-label="Hero"]::before{width:640px;height:640px;left:-8%;top:-18%;background:radial-gradient(circle,rgba(201,161,95,.30) 0%,rgba(201,161,95,.10) 40%,rgba(201,161,95,0) 70%)}
@@ -127,7 +126,6 @@
   [data-reveal-stagger]>[data-reveal]:nth-child(4){transition-delay:240ms}
   [data-reveal-stagger]>[data-reveal]:nth-child(5){transition-delay:320ms}
   [data-reveal-stagger]>[data-reveal]:nth-child(6){transition-delay:400ms}
-  [data-flow]{height:2px;background-image:repeating-linear-gradient(90deg,currentColor 0 7px,transparent 7px 15px);background-size:15px 2px;opacity:.7}
   [data-grid="services"]>div{position:relative;transition:transform .25s ease,box-shadow .25s ease,background-color .25s ease}
   [data-grid="services"]>div:hover{transform:translateY(-3px);z-index:1;background:#29231e!important;box-shadow:inset 0 0 0 1px rgba(201,161,95,.45),0 18px 40px rgba(0,0,0,.35)}
   [data-cta]{position:relative;overflow:hidden;transition:transform .2s ease,box-shadow .2s ease}
@@ -139,7 +137,6 @@
   @media (prefers-reduced-motion:no-preference){
     [data-screen-label="Hero"]::before{animation:wolfe-drift-a 26s ease-in-out infinite alternate}
     [data-screen-label="Hero"]::after{animation:wolfe-drift-b 32s ease-in-out infinite alternate}
-    [data-flow]{animation:wolfe-flow 1.4s linear infinite}
   }
   @media (prefers-reduced-motion:reduce){
     html.wolfe-anim [data-reveal]:not(.is-in){opacity:1;transform:none}
@@ -148,7 +145,6 @@
   }
   @keyframes wolfe-drift-a{0%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,40px) scale(1.12)}100%{transform:translate(-30px,60px) scale(.96)}}
   @keyframes wolfe-drift-b{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-60px,-40px) scale(1.1)}100%{transform:translate(20px,-70px) scale(.94)}}
-  @keyframes wolfe-flow{from{background-position:0 0}to{background-position:15px 0}}
   @keyframes wolfe-glow{0%,100%{box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 0 rgba(201,161,95,0)}50%{box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 9px rgba(201,161,95,.16),0 0 34px rgba(233,201,141,.45)}}
   @keyframes wolfe-dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
   @keyframes wolfe-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -252,7 +248,7 @@
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">Your Google Business Profile set up and verified properly, a page of your own with an estimate form, and every inquiry tracked from the first click to the customer &mdash; so you know what actually brought them in.</p>
       </div>
       <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px;"><div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">05</div><div data-flow style="flex:1;color:var(--accent,#c9a15f);"></div></div>
+        <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">05</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">A system that learns from your results</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">Everything we set up records what it did and what came of it &mdash; an inquiry and whether it became a customer, an answer and whether it was right, a run and whether a person had to step in. Those results feed back into the system doing the work and into the next engagement, so the second month beats the first. A learning loop only an AI-native practice can run &mdash; and it compounds.</p>
       </div>
@@ -271,7 +267,6 @@
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:#a85e3c;margin-bottom:20px;">THE APPROACH</div>
         <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:22ch;margin-bottom:60px;">Four steps from tool overwhelm to a system that runs itself.</h2>
       </div>
-      <div data-flow data-reveal style="color:#a85e3c;margin-bottom:-1px;"></div>
       <div data-grid="approach" data-reveal-stagger style="display:grid;grid-template-columns:repeat(4,1fr);gap:36px;">
         <div data-reveal style="border-top:1px solid rgba(36,30,25,.12);padding-top:22px;">
           <div style="font:700 12px 'Space Mono',monospace;color:#a85e3c;margin-bottom:16px;">STEP 01</div>
