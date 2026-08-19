@@ -5,6 +5,7 @@
 <meta name="google-site-verification" content="U4xmjrzp6gDQy7lT_gPZf4WM4jg9xK8OMDPkUS0_gLM">
 <script src="assets/resources.js"></script>
 <script src="assets/runtime.js"></script>
+<script src="assets/ambient.js" defer></script>
 <title>Wolfe Intelligence — AI Consultancy &amp; Custom AI Setup for Owners</title>
 <meta name="description" content="Wolfe Intelligence is an AI consultancy for owner-operators and small businesses — custom AI set up around how you work, intake and follow-up that run themselves, research that files itself, and getting found on Google. Tools you own.">
 <link rel="canonical" href="https://www.wolfeintelligence.com/">
@@ -113,42 +114,45 @@
     [data-screen-label="Nav"]>div:last-child{gap:20px!important;flex-wrap:wrap}
     [data-stack]{flex-direction:column!important;align-items:flex-start!important;gap:22px!important}
   }
-  /* Motion: lamplight ambience behind the hero, a fade-up as sections enter,
-     and hover polish. All of it is off for people who asked their system for less motion. */
-  [data-screen-label="Hero"]{position:relative;isolation:isolate}
-  [data-screen-label="Hero"]::before,[data-screen-label="Hero"]::after{content:"";position:absolute;z-index:-1;border-radius:50%;pointer-events:none;filter:blur(70px);opacity:.55}
-  [data-screen-label="Hero"]::before{width:640px;height:640px;left:-8%;top:-18%;background:radial-gradient(circle,rgba(201,161,95,.30) 0%,rgba(201,161,95,.10) 40%,rgba(201,161,95,0) 70%)}
-  [data-screen-label="Hero"]::after{width:520px;height:520px;right:-6%;bottom:-24%;background:radial-gradient(circle,rgba(233,201,141,.20) 0%,rgba(168,94,60,.10) 45%,rgba(168,94,60,0) 70%)}
-  [data-reveal]{transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
-  html.wolfe-anim [data-reveal]:not(.is-in){opacity:0;transform:translateY(16px)}
-  [data-reveal-stagger]>[data-reveal]:nth-child(2){transition-delay:80ms}
-  [data-reveal-stagger]>[data-reveal]:nth-child(3){transition-delay:160ms}
-  [data-reveal-stagger]>[data-reveal]:nth-child(4){transition-delay:240ms}
-  [data-reveal-stagger]>[data-reveal]:nth-child(5){transition-delay:320ms}
-  [data-reveal-stagger]>[data-reveal]:nth-child(6){transition-delay:400ms}
-  [data-grid="services"]>div{position:relative;transition:transform .25s ease,box-shadow .25s ease,background-color .25s ease}
-  [data-grid="services"]>div:hover{transform:translateY(-3px);z-index:1;background:#29231e!important;box-shadow:inset 0 0 0 1px rgba(201,161,95,.45),0 18px 40px rgba(0,0,0,.35)}
-  [data-cta]{position:relative;overflow:hidden;transition:transform .2s ease,box-shadow .2s ease}
-  [data-cta]::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.32) 50%,transparent 65%);transform:translateX(-130%)}
-  [data-cta]:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(201,161,95,.22)}
-  [data-cta]:hover::after{transform:translateX(130%);transition:transform .7s ease}
+  /* Motion. One idea for the background: a lamp. assets/ambient.js paints a
+     warm light field on a fixed canvas behind the page (and a still paper
+     grain), so the ink is lit from the top left like a desk at night. The
+     page wrapper is transparent so the light shows through; the light Approach
+     section is opaque and carries its own quiet warmth. On top of that: a
+     fade-up as sections enter, and hover polish. Everything is off or still for
+     people who asked their system for less motion. */
+  #wolfe-ambient{position:fixed;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 1.4s ease}
+  #wolfe-ambient.is-on{opacity:1}
+  #wolfe-grain{position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:var(--wolfe-grain);background-size:128px 128px;opacity:.04}
+  [data-screen-label="Approach"]{position:relative;isolation:isolate}
+  [data-screen-label="Approach"]::before,[data-screen-label="Approach"]::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+  [data-screen-label="Approach"]::before{background:radial-gradient(120% 70% at 50% 0%,rgba(201,161,95,.13),transparent 62%)}
+  [data-screen-label="Approach"]::after{background-image:var(--wolfe-grain);background-size:128px 128px;opacity:.035}
+  [data-reveal]{transition:opacity .6s ease var(--d,0s),transform .6s cubic-bezier(.2,.7,.2,1) var(--d,0s)}
+  html.wolfe-anim [data-reveal]:not(.is-in){opacity:0;transform:translateY(12px)}
+  [data-reveal-stagger]>[data-reveal]:nth-child(2){--d:80ms}
+  [data-reveal-stagger]>[data-reveal]:nth-child(3){--d:160ms}
+  [data-reveal-stagger]>[data-reveal]:nth-child(4){--d:240ms}
+  [data-reveal-stagger]>[data-reveal]:nth-child(5){--d:320ms}
+  [data-reveal-stagger]>[data-reveal]:nth-child(6){--d:400ms}
+  /* Cards lift with `translate`, separate from the reveal's `transform`, so the
+     two never fight and the stagger delay never leaks into hover. */
+  [data-grid="services"]>div{position:relative;transition:opacity .6s ease var(--d,0s),transform .6s cubic-bezier(.2,.7,.2,1) var(--d,0s),translate .25s ease,box-shadow .25s ease,background-color .25s ease}
+  [data-cta]{transition:transform .2s ease,box-shadow .2s ease}
   [data-cta-ghost]{transition:background-color .2s ease,color .2s ease}
-  [data-cta-ghost]:hover{background:rgba(201,161,95,.12)}
-  @media (prefers-reduced-motion:no-preference){
-    [data-screen-label="Hero"]::before{animation:wolfe-drift-a 26s ease-in-out infinite alternate}
-    [data-screen-label="Hero"]::after{animation:wolfe-drift-b 32s ease-in-out infinite alternate}
+  @media (hover:hover){
+    [data-grid="services"]>div:hover{translate:0 -3px;z-index:1;background:rgba(244,238,227,.035)!important;box-shadow:inset 0 0 0 1px rgba(201,161,95,.45),0 18px 40px rgba(0,0,0,.35)}
+    [data-cta]:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(201,161,95,.22)}
+    [data-cta-ghost]:hover{background:rgba(201,161,95,.12)}
   }
   @media (prefers-reduced-motion:reduce){
     html.wolfe-anim [data-reveal]:not(.is-in){opacity:1;transform:none}
-    [data-reveal],[data-grid="services"]>div,[data-cta]{transition:none}
-    [data-cta]::after{display:none}
+    [data-reveal],[data-grid="services"]>div,[data-cta],#wolfe-ambient{transition:none}
+    [data-screen-label="Assistant"] *{animation:none!important}
   }
-  @keyframes wolfe-drift-a{0%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,40px) scale(1.12)}100%{transform:translate(-30px,60px) scale(.96)}}
-  @keyframes wolfe-drift-b{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-60px,-40px) scale(1.1)}100%{transform:translate(20px,-70px) scale(.94)}}
   @keyframes wolfe-glow{0%,100%{box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 0 rgba(201,161,95,0)}50%{box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 9px rgba(201,161,95,.16),0 0 34px rgba(233,201,141,.45)}}
   @keyframes wolfe-dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
   @keyframes wolfe-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes wolfe-pulse{0%,100%{opacity:1}50%{opacity:.35}}
   [data-guide-scroll]{scrollbar-width:thin;scrollbar-color:rgba(201,161,95,.35) transparent}
   [data-guide-scroll]::-webkit-scrollbar{width:6px}[data-guide-scroll]::-webkit-scrollbar-thumb{background:rgba(201,161,95,.35);border-radius:3px}
   [data-guide-input]::placeholder{color:#8f8375}
@@ -162,7 +166,7 @@
 </style>
 </helmet>
 
-<div style="width:100%;background:var(--ink,#241e19);color:var(--paper,#f4eee3);overflow:hidden;">
+<div style="width:100%;background:transparent;color:var(--paper,#f4eee3);overflow:hidden;">
 
   <!-- ============ NAV ============ -->
   <div data-screen-label="Nav" data-pad="x" style="max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:26px 40px;">
@@ -185,7 +189,7 @@
           <a href="#portal" style="font:500 14.5px 'Instrument Sans',sans-serif;color:var(--accent-lt,#e9c98d);border-bottom:1px solid var(--accent,#c9a15f);padding-bottom:3px;">Explore the portal</a>
         </div>
       </div>
-      <div data-reveal style="border-left:1px solid rgba(244,238,227,.14);display:flex;flex-direction:column;justify-content:center;gap:26px;padding:56px 0 56px 52px;transition-delay:140ms;">
+      <div data-reveal style="border-left:1px solid rgba(244,238,227,.14);display:flex;flex-direction:column;justify-content:center;gap:26px;padding:56px 0 56px 52px;--d:140ms;">
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:#8f8375;">THE OPERATING CONTRACT</div>
         <div style="display:grid;gap:8px;">
           <div style="font:400 19px 'Newsreader',serif;">No claim without a source.</div>
@@ -226,33 +230,33 @@
       </div>
       <p style="font:400 15px/1.6 'Instrument Sans',sans-serif;color:#a89b8b;max-width:34ch;">For owners who want AI working for them, not another subscription &mdash; trades, home services, solo professionals, and small firms. Six services that stand alone or work together, every one tracked in your own private portal.</p>
     </div>
-    <div data-grid="services" data-reveal-stagger style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(244,238,227,.14);border:1px solid rgba(244,238,227,.14);">
-      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
+    <div data-grid="services" data-reveal-stagger style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(244,238,227,.14);border-left:1px solid rgba(244,238,227,.14);">
+      <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">01</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Custom AI, built around you</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">A private assistant set up on your own machine or in your own accounts, working from your prices, your services, your documents, and the answers you already give &mdash; plus custom tools shaped to how you actually work.</p>
       </div>
-      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
+      <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">02</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Intake and follow-up that run themselves</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">Calls, forms and messages captured and sorted the moment they arrive; quotes chased, appointments confirmed, past customers reminded when it&rsquo;s time again &mdash; so a job is never lost because you were out working.</p>
       </div>
-      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
+      <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">03</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Research that files itself</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">Suppliers, competitors, pricing, and whatever else you keep meaning to look into &mdash; gathered, sourced, and summarized on a schedule, so you are not doing it at ten at night.</p>
       </div>
-      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
+      <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">04</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Get found on Google</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">Your Google Business Profile set up and verified properly, a page of your own with an estimate form, and every inquiry tracked from the first click to the customer &mdash; so you know what actually brought them in.</p>
       </div>
-      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
+      <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">05</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">A system that learns from your results</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">Everything we set up records what it did and what came of it &mdash; an inquiry and whether it became a customer, an answer and whether it was right, a run and whether a person had to step in. Those results feed back into the system doing the work and into the next engagement, so the second month beats the first. A learning loop only an AI-native practice can run &mdash; and it compounds.</p>
       </div>
-      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
+      <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">06</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Coaching</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">One-on-one sessions until running it feels normal. No jargon, no homework, no dependency on me.</p>
@@ -346,7 +350,7 @@
       <div data-reveal style="border:1px solid rgba(244,238,227,.14);overflow:hidden;">
         <img src="assets/zachary-wolfe.jpg" alt="Zachary Wolfe, founder of Wolfe Intelligence" style="width:100%;display:block;">
       </div>
-      <div data-reveal style="display:flex;flex-direction:column;justify-content:center;transition-delay:120ms;">
+      <div data-reveal style="display:flex;flex-direction:column;justify-content:center;--d:120ms;">
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:22px;">THE ADVISOR</div>
         <h2 style="font:400 clamp(28px,3.6vw,40px)/1.15 'Newsreader',serif;letter-spacing:-.01em;margin-bottom:24px;">A strategist who sets up the future, then teaches you to run it.</h2>
         <p style="font:400 17px/1.65 'Instrument Sans',sans-serif;color:#cabda8;max-width:52ch;margin-bottom:20px;">Wolfe Intelligence was founded to give small-business owners and solopreneurs the same private, compounding AI advantage that large firms build in-house — without giving up ownership of their data or their tools.</p>
@@ -568,8 +572,10 @@ class Component extends DCLogic {
       chatNudge: s.chatNudge && !s.chatOpen,
       chatShowChips: !s.chatBusy,
       chatFabLabel: s.chatOpen ? 'Close' : 'Ask Wolfe',
-      chatFabStyle: fabBase + (s.chatGlow && !s.chatOpen ? 'animation:wolfe-glow 2.4s ease-in-out infinite;' : 'box-shadow:0 10px 30px rgba(0,0,0,.4);'),
-      chatFabDot: 'width:8px;height:8px;border-radius:50%;background:' + (s.chatOpen ? '#8f8375' : 'var(--accent,#c9a15f)') + ';' + (s.chatGlow && !s.chatOpen ? 'animation:wolfe-pulse 1.4s ease-in-out infinite;' : ''),
+      chatFabStyle: fabBase + (s.chatGlow && !s.chatOpen
+        ? 'animation:wolfe-glow 2.4s ease-in-out 3;box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 3px rgba(201,161,95,.22);'
+        : 'box-shadow:0 10px 30px rgba(0,0,0,.4);'),
+      chatFabDot: 'width:8px;height:8px;border-radius:50%;background:' + (s.chatOpen ? '#8f8375' : 'var(--accent,#c9a15f)') + ';',
       chatToggle: () => (s.chatOpen ? this.setState({ chatOpen: false }) : this.openChat(false)),
       chatNudgeOpen: () => this.openChat(true),
       chatNudgeDismiss: () => { this.markNudgeSeen(); this.setState({ chatNudge: false, chatGlow: false }); },
