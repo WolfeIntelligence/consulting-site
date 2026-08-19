@@ -14,7 +14,8 @@ favicon.svg      the W mark
 robots.txt       crawl rules
 sitemap.xml      submitted to Search Console
 assets/          fonts, images, the social card, and the vendored runtime + React
-api/             serverless functions (auth, chat, provisioning)
+ws.js + ws.css   the workspace browser — the client-facing view of the graph
+api/             serverless functions (auth, chat, provisioning, the graph)
 lib/             shared helpers — NOT routes (see below)
 vercel.json      security headers, caching, clean URLs
 ```
@@ -102,6 +103,96 @@ client. `node tests/run.js` covers all of it against a mocked KV and Resend.
 
 Phone normalization assumes US numbers (+1). Make it per-client the day a
 client is not.
+
+## Client workspaces (the object graph)
+
+Every client business gets a workspace: its own object types, its own records,
+its own documents, its own people. The shape of a business is stored as data,
+not written out in code — which is the whole point, because `os.js` currently
+carries three complete copies of one idea (a phase list, a field list, routing
+logic, blockers and a packet template, written once for Google engagements,
+once for private AI and once for automation) and a fourth engagement type would
+mean a fourth copy.
+
+```
+lib/kv.js         Redis primitives — POST-body commands and pipelining
+lib/digest.js     canonical JSON and stable hashes
+lib/tenancy.js    workspaces, membership, which workspace a session may see
+lib/authority.js  the capability table — the ONLY copy of it
+lib/types.js      the 18 property types: coerce, validate, format
+lib/schema.js     the metamodel: types, links, the closed rule registry, compile
+lib/ontology.js   records, links, history, referential integrity
+lib/actions.js    governed write-back
+lib/receipts.js   idempotency
+lib/audit.js      the append-only trail
+lib/files.js      documents
+lib/templates.js  the seed schemas
+lib/migrate.js    carrying the existing leads and engagements across
+api/graph.js      one route, 24 operations
+```
+
+`node tests/graph.js` covers this layer against `tests/kvmock.js`, an in-memory
+Redis that speaks both REST shapes the codebase uses.
+
+### Things that will bite you here
+
+**The capability table lives in `lib/authority.js` and nowhere else.** There was
+briefly a second copy in `lib/tenancy.js`. Two copies of one policy table start
+out agreeing and quietly stop.
+
+**Authority has four states, not two.** Allowed, approval-required, forbidden,
+and unclassified. A capability with no row for a role resolves to
+*unclassified*, which refuses — it does not fall through to allowed. Adding an
+operation to `api/graph.js` without adding it to the table means it does not
+work, on purpose.
+
+**Every op in `OPS` must have a `case` in the dispatch switch, and vice versa.**
+A command with no control and a control with no command are both invisible to
+typechecking. There is a parity check for this; run it if you add an operation.
+
+**A workspace you are not a member of returns 404, not 403.** On a public URL a
+403 confirms the workspace exists. Do not "fix" this.
+
+**Isolation is the key layout, not a filter.** Every key is addressed under a
+workspace id, so there is no "all records" key to accidentally read from. Do not
+add one.
+
+**Objects are archived, never deleted**, and a record something links to cannot
+even be archived until the link is removed. The refusal names what points at it.
+
+**Writes carry the revision they read.** A mismatch is refused as stale rather
+than silently overwriting whoever saved first.
+
+**The rule registry in `lib/schema.js` is closed.** Six rules, and adding one is
+a deliberate edit. A free-text condition would let someone write a rule that
+quietly does nothing and never find out. A stored rule this build cannot read
+*refuses* rather than passes — dropping a check the client believes is
+protecting them is the worse failure.
+
+**Checks compile with their wording frozen.** Renaming a property later must not
+change what an older refusal claimed happened.
+
+**The audit trail has no update or delete function.** Not by policy — there is
+no such method to call. Entries are written after something has happened; there
+is no "about to" event.
+
+**Documents are capped at 400 KB and stored beside the record.** That covers
+PDFs, spreadsheets and exports. Phone photos (2–5 MB) do not fit. Large-file
+storage needs a blob store created on the hosting account; `lib/files.js`
+detects `BLOB_READ_WRITE_TOKEN` and refuses clearly until the backend is wired,
+rather than guessing at an unofficial upload endpoint.
+
+**`lib/migrate.js` never writes the old keys.** `leads`, `onboarding` and
+`deployments` are read only. It is re-runnable — each carried inquiry keeps its
+`legacyId` and a second pass skips it — and a value the new type will not accept
+costs that field, not the whole record. Run `migrate.plan` and read it before
+running `migrate.apply`.
+
+**The storage substrate is deliberately provisional.** Per-record keys with set
+indexes, on the Redis already provisioned. Honest for one to a few dozen
+clients; it cannot do ad-hoc queries or multi-key transactions. `lib/kv.js` is
+the seam if that changes.
+
 
 ## Things that will bite you
 

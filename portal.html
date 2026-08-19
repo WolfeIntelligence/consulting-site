@@ -13,6 +13,7 @@
 <meta name="theme-color" content="#241e19">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/os.css">
+<link rel="stylesheet" href="/ws.css">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Wolfe Intelligence">
@@ -221,6 +222,14 @@
      renders its own DOM and the runtime must never re-render over it. Shown
      only once an owner is signed in; the portal hands the session over. -->
 <div id="app" data-embed hidden></div>
+<!-- The workspace browser. Same reasoning as the console above: it renders its
+     own DOM outside the runtime root, which re-renders its own tree and would
+     wipe anything of ours inside it. Unlike the console this one is for
+     everyone — a client sees their own business, the operator sees all of
+     them — so it is not gated on an owner session. ws.js reads the stored
+     session itself rather than waiting to be handed one, because a client
+     signing in fires no event in the tab that wrote the token. -->
+<div id="wsapp"></div>
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240}}">
 class Component extends DCLogic {
   state = {
@@ -595,4 +604,5 @@ class Component extends DCLogic {
 }
 </script>
 <script src="/os.js"></script>
+<script src="/ws.js"></script>
 </body></html>
