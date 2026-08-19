@@ -113,6 +113,42 @@
     [data-screen-label="Nav"]>div:last-child{gap:20px!important;flex-wrap:wrap}
     [data-stack]{flex-direction:column!important;align-items:flex-start!important;gap:22px!important}
   }
+  /* Motion: lamplight ambience behind the hero, a fade-up as sections enter,
+     dashes that flow along the approach and the learning-loop card, and hover
+     polish. All of it is off for people who asked their system for less motion. */
+  [data-screen-label="Hero"]{position:relative;isolation:isolate}
+  [data-screen-label="Hero"]::before,[data-screen-label="Hero"]::after{content:"";position:absolute;z-index:-1;border-radius:50%;pointer-events:none;filter:blur(70px);opacity:.55}
+  [data-screen-label="Hero"]::before{width:640px;height:640px;left:-8%;top:-18%;background:radial-gradient(circle,rgba(201,161,95,.30) 0%,rgba(201,161,95,.10) 40%,rgba(201,161,95,0) 70%)}
+  [data-screen-label="Hero"]::after{width:520px;height:520px;right:-6%;bottom:-24%;background:radial-gradient(circle,rgba(233,201,141,.20) 0%,rgba(168,94,60,.10) 45%,rgba(168,94,60,0) 70%)}
+  [data-reveal]{transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+  html.wolfe-anim [data-reveal]:not(.is-in){opacity:0;transform:translateY(16px)}
+  [data-reveal-stagger]>[data-reveal]:nth-child(2){transition-delay:80ms}
+  [data-reveal-stagger]>[data-reveal]:nth-child(3){transition-delay:160ms}
+  [data-reveal-stagger]>[data-reveal]:nth-child(4){transition-delay:240ms}
+  [data-reveal-stagger]>[data-reveal]:nth-child(5){transition-delay:320ms}
+  [data-reveal-stagger]>[data-reveal]:nth-child(6){transition-delay:400ms}
+  [data-flow]{height:2px;background-image:repeating-linear-gradient(90deg,currentColor 0 7px,transparent 7px 15px);background-size:15px 2px;opacity:.7}
+  [data-grid="services"]>div{position:relative;transition:transform .25s ease,box-shadow .25s ease,background-color .25s ease}
+  [data-grid="services"]>div:hover{transform:translateY(-3px);z-index:1;background:#29231e!important;box-shadow:inset 0 0 0 1px rgba(201,161,95,.45),0 18px 40px rgba(0,0,0,.35)}
+  [data-cta]{position:relative;overflow:hidden;transition:transform .2s ease,box-shadow .2s ease}
+  [data-cta]::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.32) 50%,transparent 65%);transform:translateX(-130%)}
+  [data-cta]:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(201,161,95,.22)}
+  [data-cta]:hover::after{transform:translateX(130%);transition:transform .7s ease}
+  [data-cta-ghost]{transition:background-color .2s ease,color .2s ease}
+  [data-cta-ghost]:hover{background:rgba(201,161,95,.12)}
+  @media (prefers-reduced-motion:no-preference){
+    [data-screen-label="Hero"]::before{animation:wolfe-drift-a 26s ease-in-out infinite alternate}
+    [data-screen-label="Hero"]::after{animation:wolfe-drift-b 32s ease-in-out infinite alternate}
+    [data-flow]{animation:wolfe-flow 1.4s linear infinite}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html.wolfe-anim [data-reveal]:not(.is-in){opacity:1;transform:none}
+    [data-reveal],[data-grid="services"]>div,[data-cta]{transition:none}
+    [data-cta]::after{display:none}
+  }
+  @keyframes wolfe-drift-a{0%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,40px) scale(1.12)}100%{transform:translate(-30px,60px) scale(.96)}}
+  @keyframes wolfe-drift-b{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-60px,-40px) scale(1.1)}100%{transform:translate(20px,-70px) scale(.94)}}
+  @keyframes wolfe-flow{from{background-position:0 0}to{background-position:15px 0}}
   @keyframes wolfe-glow{0%,100%{box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 0 rgba(201,161,95,0)}50%{box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 9px rgba(201,161,95,.16),0 0 34px rgba(233,201,141,.45)}}
   @keyframes wolfe-dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
   @keyframes wolfe-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -137,23 +173,23 @@
     <div style="font:700 13px 'Space Mono',monospace;letter-spacing:.24em;">WOLFE&nbsp;INTELLIGENCE</div>
     <div style="display:flex;align-items:center;gap:34px;font:500 13.5px 'Instrument Sans',sans-serif;color:#d8cdba;">
       <a href="#services">Services</a><a href="#approach">Approach</a><a href="/portal">Portal</a><a href="#about">About</a>
-      <a href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="border:1px solid var(--accent,#c9a15f);color:var(--accent-lt,#e9c98d);border-radius:2px;padding:9px 16px;">Book a free consult ↗</a>
+      <a data-cta-ghost href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="border:1px solid var(--accent,#c9a15f);color:var(--accent-lt,#e9c98d);border-radius:2px;padding:9px 16px;">Book a free consult ↗</a>
     </div>
   </div>
 
   <!-- ============ HERO ============ -->
   <div data-screen-label="Hero" data-pad="x" style="max-width:1240px;margin:0 auto;padding:0 40px;">
     <div data-grid="hero" style="display:grid;grid-template-columns:1fr 1fr;min-height:600px;border-top:1px solid rgba(244,238,227,.14);">
-      <div style="padding:84px 56px 84px 0;display:flex;flex-direction:column;justify-content:center;">
+      <div data-reveal style="padding:84px 56px 84px 0;display:flex;flex-direction:column;justify-content:center;">
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:30px;">AI CONSULTANCY &middot; CUSTOM AI SETUP FOR OWNERS</div>
         <h1 style="font:400 clamp(36px,5.6vw,70px)/1.05 'Newsreader',serif;letter-spacing:-.015em;margin:0 0 28px;">Your AI.&nbsp; <span style="color: var(--accent-lt,#e9c98d);"><i>Your</i></span> knowledge. Your rules.</h1>
         <p style="font:400 clamp(16px,1.6vw,18px)/1.62 'Instrument Sans',sans-serif;color:#cabda8;max-width:44ch;margin:0 0 40px;">We design and set up AI around your business &mdash; a private assistant on your own machines, automations that catch and follow up every inquiry, research that files itself, and the Google presence that brings customers in &mdash; then measure what each one produced and feed it back, so the whole system keeps learning. And we coach you until running it is second nature.</p>
         <div style="display:flex;gap:18px;align-items:center;">
-          <a href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:16px 30px;border-radius:2px;font:600 14.5px 'Instrument Sans',sans-serif;">Book a free consult ↗</a>
+          <a data-cta href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:16px 30px;border-radius:2px;font:600 14.5px 'Instrument Sans',sans-serif;">Book a free consult ↗</a>
           <a href="#portal" style="font:500 14.5px 'Instrument Sans',sans-serif;color:var(--accent-lt,#e9c98d);border-bottom:1px solid var(--accent,#c9a15f);padding-bottom:3px;">Explore the portal</a>
         </div>
       </div>
-      <div style="border-left:1px solid rgba(244,238,227,.14);display:flex;flex-direction:column;justify-content:center;gap:26px;padding:56px 0 56px 52px;">
+      <div data-reveal style="border-left:1px solid rgba(244,238,227,.14);display:flex;flex-direction:column;justify-content:center;gap:26px;padding:56px 0 56px 52px;transition-delay:140ms;">
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:#8f8375;">THE OPERATING CONTRACT</div>
         <div style="display:grid;gap:8px;">
           <div style="font:400 19px 'Newsreader',serif;">No claim without a source.</div>
@@ -187,40 +223,40 @@
 
   <!-- ============ SERVICES ============ -->
   <div id="services" data-screen-label="Services" data-pad="x" style="max-width:1240px;margin:0 auto;padding:96px 40px 40px;">
-    <div data-stack="x" style="display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:52px;flex-wrap:wrap;">
+    <div data-reveal data-stack="x" style="display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:52px;flex-wrap:wrap;">
       <div>
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:20px;">WHAT WE SET UP &amp; OPERATE</div>
         <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:20ch;">A working AI practice, not another subscription.</h2>
       </div>
       <p style="font:400 15px/1.6 'Instrument Sans',sans-serif;color:#a89b8b;max-width:34ch;">For owners who want AI working for them, not another subscription &mdash; trades, home services, solo professionals, and small firms. Six services that stand alone or work together, every one tracked in your own private portal.</p>
     </div>
-    <div data-grid="services" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(244,238,227,.14);border:1px solid rgba(244,238,227,.14);">
-      <div style="background:var(--ink,#241e19);padding:40px 34px;">
+    <div data-grid="services" data-reveal-stagger style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(244,238,227,.14);border:1px solid rgba(244,238,227,.14);">
+      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">01</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Custom AI, built around you</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">A private assistant set up on your own machine or in your own accounts, working from your prices, your services, your documents, and the answers you already give &mdash; plus custom tools shaped to how you actually work.</p>
       </div>
-      <div style="background:var(--ink,#241e19);padding:40px 34px;">
+      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">02</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Intake and follow-up that run themselves</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">Calls, forms and messages captured and sorted the moment they arrive; quotes chased, appointments confirmed, past customers reminded when it&rsquo;s time again &mdash; so a job is never lost because you were out working.</p>
       </div>
-      <div style="background:var(--ink,#241e19);padding:40px 34px;">
+      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">03</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Research that files itself</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">Suppliers, competitors, pricing, and whatever else you keep meaning to look into &mdash; gathered, sourced, and summarized on a schedule, so you are not doing it at ten at night.</p>
       </div>
-      <div style="background:var(--ink,#241e19);padding:40px 34px;">
+      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">04</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Get found on Google</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">Your Google Business Profile set up and verified properly, a page of your own with an estimate form, and every inquiry tracked from the first click to the customer &mdash; so you know what actually brought them in.</p>
       </div>
-      <div style="background:var(--ink,#241e19);padding:40px 34px;">
-        <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">05</div>
+      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px;"><div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">05</div><div data-flow style="flex:1;color:var(--accent,#c9a15f);"></div></div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">A system that learns from your results</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">Everything we set up records what it did and what came of it &mdash; an inquiry and whether it became a customer, an answer and whether it was right, a run and whether a person had to step in. Those results feed back into the system doing the work and into the next engagement, so the second month beats the first. A learning loop only an AI-native practice can run &mdash; and it compounds.</p>
       </div>
-      <div style="background:var(--ink,#241e19);padding:40px 34px;">
+      <div data-reveal style="background:var(--ink,#241e19);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">06</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Coaching</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#a89b8b;">One-on-one sessions until running it feels normal. No jargon, no homework, no dependency on me.</p>
@@ -231,25 +267,28 @@
   <!-- ============ APPROACH ============ -->
   <div id="approach" data-screen-label="Approach" style="background:var(--paper,#f4eee3);color:var(--ink,#241e19);">
     <div data-pad="x" style="max-width:1240px;margin:0 auto;padding:96px 40px;">
-      <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:#a85e3c;margin-bottom:20px;">THE APPROACH</div>
-      <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:22ch;margin-bottom:60px;">Four steps from tool overwhelm to a system that runs itself.</h2>
-      <div data-grid="approach" style="display:grid;grid-template-columns:repeat(4,1fr);gap:36px;">
-        <div style="border-top:1px solid rgba(36,30,25,.2);padding-top:22px;">
+      <div data-reveal>
+        <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:#a85e3c;margin-bottom:20px;">THE APPROACH</div>
+        <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:22ch;margin-bottom:60px;">Four steps from tool overwhelm to a system that runs itself.</h2>
+      </div>
+      <div data-flow data-reveal style="color:#a85e3c;margin-bottom:-1px;"></div>
+      <div data-grid="approach" data-reveal-stagger style="display:grid;grid-template-columns:repeat(4,1fr);gap:36px;">
+        <div data-reveal style="border-top:1px solid rgba(36,30,25,.12);padding-top:22px;">
           <div style="font:700 12px 'Space Mono',monospace;color:#a85e3c;margin-bottom:16px;">STEP 01</div>
           <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Assess</h3>
           <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#5a4f45;">A free consult to find where you are losing time or leads, and what is worth fixing first.</p>
         </div>
-        <div style="border-top:1px solid rgba(36,30,25,.2);padding-top:22px;">
+        <div data-reveal style="border-top:1px solid rgba(36,30,25,.12);padding-top:22px;">
           <div style="font:700 12px 'Space Mono',monospace;color:#a85e3c;margin-bottom:16px;">STEP 02</div>
           <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Set up</h3>
           <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#5a4f45;">We set it all up for you &mdash; your AI, the automations, the profile &mdash; connected to how you already work.</p>
         </div>
-        <div style="border-top:1px solid rgba(36,30,25,.2);padding-top:22px;">
+        <div data-reveal style="border-top:1px solid rgba(36,30,25,.12);padding-top:22px;">
           <div style="font:700 12px 'Space Mono',monospace;color:#a85e3c;margin-bottom:16px;">STEP 03</div>
           <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Coach</h3>
           <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#5a4f45;">Hands-on sessions until running it feels like second nature.</p>
         </div>
-        <div style="border-top:1px solid rgba(36,30,25,.2);padding-top:22px;">
+        <div data-reveal style="border-top:1px solid rgba(36,30,25,.12);padding-top:22px;">
           <div style="font:700 12px 'Space Mono',monospace;color:#a85e3c;margin-bottom:16px;">STEP 04</div>
           <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Compound</h3>
           <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#5a4f45;">Outcomes are recorded and fed back &mdash; into whatever system did the work, and into the next engagement &mdash; so the second month beats the first. That loop is the difference between an AI-native practice and a vendor.</p>
@@ -260,8 +299,8 @@
 
   <!-- ============ PORTAL SPOTLIGHT ============ -->
   <div id="portal" data-screen-label="Portal" data-pad="x" style="max-width:1240px;margin:0 auto;padding:100px 40px;">
-    <div data-grid="split" style="display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:center;">
-      <div>
+    <div data-grid="split" data-reveal-stagger style="display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:center;">
+      <div data-reveal>
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:22px;">THE PORTAL</div>
         <h2 style="font:400 clamp(29px,4vw,44px)/1.1 'Newsreader',serif;letter-spacing:-.01em;margin-bottom:24px;">Every engagement, on one private page.</h2>
         <p style="font:400 16.5px/1.65 'Instrument Sans',sans-serif;color:#cabda8;margin-bottom:30px;max-width:46ch;">New inquiries land here the moment they arrive, with the ones still waiting for a call back at the top. Whatever we are setting up &mdash; your AI, your automations, your Google presence &mdash; shows step by step, with whose turn it is. Results are counted by source, so you can see what actually produced customers.</p>
@@ -272,7 +311,7 @@
         </div>
         <div style="margin-top:34px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;"><a href="/portal" style="display:inline-block;border:1px solid var(--accent,#c9a15f);color:var(--accent-lt,#e9c98d);padding:14px 26px;border-radius:2px;font:600 14px 'Instrument Sans',sans-serif;">Client login →</a><a href="/portal?tour=1" style="font:500 14px 'Instrument Sans',sans-serif;color:#cabda8;border-bottom:1px solid rgba(202,189,168,.5);padding-bottom:2px;">See a sample portal</a></div>
       </div>
-      <div style="border:1px solid rgba(244,238,227,.16);background:#2a2420;border-radius:4px;overflow:hidden;">
+      <div data-reveal style="border:1px solid rgba(244,238,227,.16);background:#2a2420;border-radius:4px;overflow:hidden;">
         <div style="display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid rgba(244,238,227,.12);">
           <span style="width:9px;height:9px;border-radius:50%;background:#4a423a;"></span><span style="width:9px;height:9px;border-radius:50%;background:#4a423a;"></span><span style="width:9px;height:9px;border-radius:50%;background:#4a423a;"></span>
           <span style="margin-left:10px;font:400 11px 'Space Mono',monospace;color:#8f8375;">client portal · sample data</span>
@@ -309,10 +348,10 @@
   <!-- ============ ABOUT ============ -->
   <div id="about" data-screen-label="About" style="border-top:1px solid rgba(244,238,227,.14);">
     <div data-pad="x" style="max-width:1240px;margin:0 auto;padding:96px 40px;display:grid;grid-template-columns:.8fr 1.2fr;gap:56px;align-items:center;" data-grid="split">
-      <div style="border:1px solid rgba(244,238,227,.14);overflow:hidden;">
+      <div data-reveal style="border:1px solid rgba(244,238,227,.14);overflow:hidden;">
         <img src="assets/zachary-wolfe.jpg" alt="Zachary Wolfe, founder of Wolfe Intelligence" style="width:100%;display:block;">
       </div>
-      <div style="display:flex;flex-direction:column;justify-content:center;">
+      <div data-reveal style="display:flex;flex-direction:column;justify-content:center;transition-delay:120ms;">
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:22px;">THE ADVISOR</div>
         <h2 style="font:400 clamp(28px,3.6vw,40px)/1.15 'Newsreader',serif;letter-spacing:-.01em;margin-bottom:24px;">A strategist who sets up the future, then teaches you to run it.</h2>
         <p style="font:400 17px/1.65 'Instrument Sans',sans-serif;color:#cabda8;max-width:52ch;margin-bottom:20px;">Wolfe Intelligence was founded to give small-business owners and solopreneurs the same private, compounding AI advantage that large firms build in-house — without giving up ownership of their data or their tools.</p>
@@ -322,12 +361,12 @@
   </div>
 
   <!-- ============ BOOKING CTA ============ -->
-  <div id="book" data-screen-label="Book" data-pad="x" style="max-width:1240px;margin:0 auto;padding:110px 40px;text-align:center;">
+  <div id="book" data-screen-label="Book" data-pad="x" data-reveal style="max-width:1240px;margin:0 auto;padding:110px 40px;text-align:center;">
     <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:26px;">START HERE</div>
     <h2 style="font:400 clamp(34px,5vw,56px)/1.08 'Newsreader',serif;letter-spacing:-.02em;max-width:18ch;margin:0 auto 26px;">Book a free consult and map your first agents.</h2>
     <p style="font:400 17px/1.6 'Instrument Sans',sans-serif;color:#cabda8;max-width:48ch;margin:0 auto 40px;">Thirty minutes, no pitch — just a clear read on where private, locally-run AI will pay off first in your business.</p>
     <div style="display:flex;gap:16px;align-items:center;justify-content:center;margin-bottom:22px;">
-      <a href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:17px 36px;border-radius:2px;font:600 15px 'Instrument Sans',sans-serif;">Book a free consult ↗</a>
+      <a data-cta href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:17px 36px;border-radius:2px;font:600 15px 'Instrument Sans',sans-serif;">Book a free consult ↗</a>
       <a href="mailto:support@wolfeintelligence.com" style="font:500 15px 'Instrument Sans',sans-serif;color:var(--accent-lt,#e9c98d);border-bottom:1px solid var(--accent,#c9a15f);padding-bottom:3px;">support@wolfeintelligence.com</a>
     </div>
     <div style="font:400 12px 'Space Mono',monospace;letter-spacing:.06em;color:#8f8375;">pick a time &middot; 30 min &middot; free &middot; opens Google Calendar in a new tab</div>
@@ -410,8 +449,31 @@ class Component extends DCLogic {
   componentDidMount() {
     this.applyTheme();
     this.startNudgeTimer();
+    this.startReveal();
   }
-  componentWillUnmount() { if (this.nudgeTimer) clearInterval(this.nudgeTimer); }
+  componentWillUnmount() {
+    if (this.nudgeTimer) clearInterval(this.nudgeTimer);
+    if (this.revealObs) this.revealObs.disconnect();
+  }
+  // Sections fade up as they enter view. The hidden state is only applied once
+  // this runs (html.wolfe-anim), so if the script never loads the page simply
+  // shows everything.
+  startReveal() {
+    const els = Array.from(document.querySelectorAll('[data-reveal]'));
+    if (!els.length) return;
+    const show = (el) => el.classList.add('is-in');
+    if (!('IntersectionObserver' in window)) { els.forEach(show); return; }
+    document.documentElement.classList.add('wolfe-anim');
+    this.revealObs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { show(e.target); this.revealObs.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    els.forEach((el) => this.revealObs.observe(el));
+    // Safety net: nothing on screen may stay hidden if the observer is late.
+    setTimeout(() => {
+      const h = window.innerHeight || 800;
+      els.forEach((el) => { const r = el.getBoundingClientRect(); if (r.top < h && r.bottom > 0) show(el); });
+    }, 2500);
+  }
   componentDidUpdate() {
     this.applyTheme();
     const el = this.msgsRef && this.msgsRef.current;
