@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { stampOutcomes, hashIds, loadVisits } = require('../lib/leads');
+const sync = require('../lib/migrate');
 const sha = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
 function verify(token, secret) {
   const i = String(token).lastIndexOf('.');
@@ -75,6 +76,8 @@ module.exports = async (req, res) => {
     const email = String(b.email || '').trim().toLowerCase(), code = String(b.code || '').trim();
     if (!email.includes('@') || code.length < 6) return res.status(400).json({ error: 'bad-input' });
     await kv('set/' + encodeURIComponent('client:' + email) + '/' + encodeURIComponent(sha(code)));
+    // Giving someone a way in is also the moment they need somewhere to land.
+    await sync.quietly(email, { by: ses.e });
     return res.json({ ok: true });
   }
   if (b.action === 'deploy') {
@@ -141,6 +144,9 @@ module.exports = async (req, res) => {
     all = all.filter((o) => o.email !== email);
     all.push(clean);
     await kv('set/onboarding/' + encodeURIComponent(JSON.stringify(all).slice(0, 200000)));
+    // A client exists, so their workspace exists, with everything already
+    // captured for them inside it. Never the reason this save fails.
+    await sync.quietly(email, { record: clean, by: ses.e });
     return res.json({ ok: true, record: clean });
   }
   if (b.action === 'onboarding-remove') {
@@ -226,6 +232,10 @@ module.exports = async (req, res) => {
     all.push(clean);
     if (all.length > 2000) all = all.slice(-2000);
     await kv('set/leads/' + encodeURIComponent(JSON.stringify(all).slice(0, 900000)));
+    // refresh, because this is the one path that changes a lead that may
+    // already have been carried across — an outcome being recorded. Without
+    // it the workspace copy would still say the job was never won.
+    await sync.quietly(to, { leads: [clean], by: ses.e, refresh: true });
     return res.json({ ok: true, lead: clean });
   }
   if (b.action === 'lead-remove') {

@@ -42,6 +42,9 @@ function makeKv(host) {
       case 'SCARD': return S(a[0]).size;
       case 'SISMEMBER': return S(a[0]).has(a[1]) ? 1 : 0;
       case 'HINCRBY': { const h = H(a[0]); const n = (parseInt(h.get(a[1]) || '0', 10) || 0) + parseInt(a[2], 10); h.set(a[1], String(n)); return n; }
+      case 'HSET': { const h = H(a[0]); let n = 0; for (let i = 1; i < a.length; i += 2) { if (!h.has(a[i])) n++; h.set(a[i], String(a[i + 1])); } return n; }
+      case 'HGET': { const h = H(a[0]); return h.has(a[1]) ? h.get(a[1]) : null; }
+      case 'HDEL': { const h = H(a[0]); let n = 0; for (const f of a.slice(1)) if (h.delete(f)) n++; return n; }
       case 'HGETALL': { const out = []; for (const [k, v] of H(a[0])) out.push(k, String(v)); return out; }
       case 'LPUSH': { const l = L(a[0]); for (const v of a.slice(1)) l.unshift(v); return l.length; }
       case 'LTRIM': { const l = L(a[0]); const stop = parseInt(a[2], 10); lists.set(a[0], l.slice(parseInt(a[1], 10), stop < 0 ? undefined : stop + 1)); return 'OK'; }

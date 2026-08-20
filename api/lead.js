@@ -112,6 +112,14 @@ module.exports = async (req, res) => {
   all.push(lead);
   await L.saveLeads(all);
 
+  // The same inquiry, in the client's own workspace, as it arrives. Required
+  // here rather than at the top so the public endpoint's cold start does not
+  // pay for the graph on every request. It is awaited rather than left to
+  // finish on its own, because this function can be frozen the moment the
+  // response goes out — but it can never fail the capture: the lead is already
+  // stored above, and an unfinished copy is picked up by the next pass.
+  await require('../lib/migrate').quietly(to, { record: client, leads: [lead], by: 'system' });
+
   const notified = await L.notifyNewLead(lead, client);
   await L.autoReplyLead(lead, client);
 

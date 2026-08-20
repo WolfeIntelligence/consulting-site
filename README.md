@@ -127,7 +127,7 @@ lib/receipts.js   idempotency
 lib/audit.js      the append-only trail
 lib/files.js      documents
 lib/templates.js  the seed schemas
-lib/migrate.js    carrying the existing leads and engagements across
+lib/migrate.js    keeping the graph in step with the older records
 api/graph.js      one route, 24 operations
 ```
 
@@ -182,11 +182,25 @@ storage needs a blob store created on the hosting account; `lib/files.js`
 detects `BLOB_READ_WRITE_TOKEN` and refuses clearly until the backend is wired,
 rather than guessing at an unofficial upload endpoint.
 
-**`lib/migrate.js` never writes the old keys.** `leads`, `onboarding` and
-`deployments` are read only. It is re-runnable — each carried inquiry keeps its
-`legacyId` and a second pass skips it — and a value the new type will not accept
-costs that field, not the whole record. Run `migrate.plan` and read it before
-running `migrate.apply`.
+**`lib/migrate.js` is not a migration you run.** It is the sync that keeps the
+graph in step with the old records, and it is called from the places a client
+comes into being rather than from a button: `api/apps.js` on provision, on an
+engagement save and on a lead being logged; `api/lead.js` when a lead arrives;
+`api/graph.js` when the operator lists workspaces, and when a client lists an
+empty one. `ensureFor(email)` is the whole surface — after it returns, that
+client has a workspace, is its admin, and their inquiries are in it.
+
+It never writes the old keys: `leads`, `onboarding` and `deployments` are read
+only. It is re-runnable — `ws:<id>:legacy` maps each old lead id to the object
+it became, so a second pass skips it — and a value the new type will not accept
+costs that field, not the whole record.
+
+Two things to keep true. Every call site goes through `quietly()`, so a storage
+failure in the graph can never be the reason a lead is lost — the lead is stored
+first and the next pass picks up what did not finish. And `backfill` only
+re-reads already-carried records when `refresh` is set, which is one call site:
+the console recording an outcome. Turning that on everywhere would put a read
+per inquiry on every portal load.
 
 **The storage substrate is deliberately provisional.** Per-record keys with set
 indexes, on the Redis already provisioned. Honest for one to a few dozen

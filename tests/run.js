@@ -15,7 +15,18 @@ process.env.OWNER_EMAIL = 'owner@wolfe.test';
 process.env.PUBLIC_BASE = 'https://www.wolfeintelligence.com';
 
 // ---- mocks -----------------------------------------------------------------
-const store = new Map();
+const { makeKv } = require(path.join(__dirname, 'kvmock.js'));
+const kvm = makeKv('kv.test');
+/* One storage mock for the whole suite. The older endpoints speak the URL-path
+ * form and the graph modules speak the POST-body form; these tests exercise
+ * both at once now that a lead arriving also writes into a workspace, so a
+ * mock that only understood one of them would quietly skip half the work. */
+const store = {
+  get: (k) => (kvm.strings.has(k) ? kvm.strings.get(k) : kvm.hashes.get(k)),
+  set: (k, v) => kvm.strings.set(k, v),
+  has: (k) => kvm.strings.has(k) || kvm.hashes.has(k) || kvm.sets.has(k) || kvm.lists.has(k),
+  delete: (k) => kvm.strings.delete(k),
+};
 const mails = [];
 let resendOk = true;
 global.fetch = async (url, opt) => {
@@ -24,23 +35,7 @@ global.fetch = async (url, opt) => {
     mails.push(JSON.parse(opt.body));
     return { ok: resendOk, status: resendOk ? 200 : 500, json: async () => ({ id: 'm1' }) };
   }
-  if (!u.startsWith('https://kv.test/')) throw new Error('unexpected fetch ' + u);
-  const parts = u.slice('https://kv.test/'.length).split('/').map(decodeURIComponent);
-  const cmd = parts[0];
-  let result = null;
-  if (cmd === 'get') result = store.has(parts[1]) ? store.get(parts[1]) : null;
-  else if (cmd === 'set') { store.set(parts[1], parts[2]); result = 'OK'; }
-  else if (cmd === 'incr') { const n = (parseInt(store.get(parts[1]) || '0', 10) || 0) + 1; store.set(parts[1], String(n)); result = n; }
-  else if (cmd === 'hincrby') {
-    const h = store.get(parts[1]) instanceof Map ? store.get(parts[1]) : new Map();
-    h.set(parts[2], (h.get(parts[2]) || 0) + parseInt(parts[3], 10)); store.set(parts[1], h); result = h.get(parts[2]);
-  }
-  else if (cmd === 'exists') result = store.has(parts[1]) ? 1 : 0;
-  else if (cmd === 'del') { result = store.delete(parts[1]) ? 1 : 0; }
-  else if (cmd === 'hgetall') { const h = store.get(parts[1]); result = h instanceof Map ? [].concat(...[...h.entries()].map(([k, v]) => [k, String(v)])) : []; }
-  else if (cmd === 'expire') result = 1;
-  else if (cmd === 'ttl') result = 600;
-  return { ok: true, status: 200, json: async () => ({ result }) };
+  return kvm.handle(url, opt);
 };
 
 const lead = require(path.join(__dirname, '..', 'api', 'lead.js'));
@@ -331,6 +326,118 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     await apps(req('GET', null, auth(clientTok)), r);
     const seen = r.body.onboarding.find((o) => o.email === 'lawn@client.test');
     assert.deepStrictEqual(seen.spend, { '2026-05': { ads: 9999999, lsa: 0 }, '2026-08': { ads: 412.5, lsa: 300 } }, 'the client sees their own spend');
+  });
+
+
+  console.log('the workspace keeps itself in step (nobody presses anything)');
+  const graphApi = require(path.join(__dirname, '..', 'api', 'graph.js'));
+  const sync = require(path.join(__dirname, '..', 'lib', 'migrate.js'));
+  const T = require(path.join(__dirname, '..', 'lib', 'tenancy.js'));
+  const O = require(path.join(__dirname, '..', 'lib', 'ontology.js'));
+
+  // What the client's own workspace holds, read the way the portal reads it.
+  const wsFor = async (email) => {
+    const ids = await require(path.join(__dirname, '..', 'lib', 'kv.js')).smembers('user:' + email + ':ws');
+    return ids.length ? ids[0] : null;
+  };
+  const inquiriesIn = async (wsId) => O.listByType(wsId, 'inquiry', { includeArchived: true });
+
+  await ok('saving an engagement record opens that client a workspace, with them as its admin', async () => {
+    const r = res();
+    await apps(req('POST', { action: 'onboarding', record: { email: 'fresh@client.test', businessName: 'Fresh Cuts', engagement: 'google', steps: [] } }, auth(ownerTok)), r);
+    assert.strictEqual(r.code, 200);
+    const wsId = await wsFor('fresh@client.test');
+    assert.ok(wsId, 'a workspace exists for the client we just wrote down');
+    const ws = await T.get(wsId);
+    assert.strictEqual(ws.name, 'Fresh Cuts', 'named after the business, not the email');
+    const seat = await T.membership(wsId, 'fresh@client.test');
+    assert.ok(seat && seat.role === 'admin', 'the client runs their own workspace');
+  });
+
+  await ok('a lead arriving lands in the workspace as an inquiry, by itself', async () => {
+    const before = (await inquiriesIn(await wsFor('fresh@client.test'))).length;
+    const r = res();
+    await lead(req('POST', { to: 'fresh@client.test', name: 'Dana Whitfield', phone: '3365550188', service: 'Weekly mowing', utm_source: 'google', utm_medium: 'cpc' }), r);
+    assert.strictEqual(r.code, 200);
+    const rows = await inquiriesIn(await wsFor('fresh@client.test'));
+    assert.strictEqual(rows.length, before + 1, 'exactly one new inquiry');
+    const it = rows.find((x) => x.props.name === 'Dana Whitfield');
+    assert.ok(it, 'the person who asked is in the workspace');
+    assert.strictEqual(it.props.phone, '3365550188', 'reachable, not just named');
+    assert.strictEqual(it.props.utmSource, 'google', 'the ad that produced them came across too');
+    assert.strictEqual(it.props.legacyId, r.body.id, 'it remembers which stored lead it came from');
+  });
+
+  await ok('the same lead is never carried twice', async () => {
+    const wsId = await wsFor('fresh@client.test');
+    const before = (await inquiriesIn(wsId)).length;
+    await sync.ensureFor('fresh@client.test', { by: 'owner@wolfe.test' });
+    await sync.ensureFor('fresh@client.test', { by: 'owner@wolfe.test' });
+    assert.strictEqual((await inquiriesIn(wsId)).length, before, 'running it again changes nothing');
+  });
+
+  await ok('recording an outcome updates the workspace copy instead of leaving it stale', async () => {
+    const wsId = await wsFor('fresh@client.test');
+    const stored = leads().find((l) => l.name === 'Dana Whitfield');
+    const mirrored = () => inquiriesIn(wsId).then((rows) => rows.find((x) => x.props.legacyId === stored.id));
+    assert.ok(!(await mirrored()).props.won, 'not won yet');
+    const r = res();
+    await apps(req('POST', { action: 'lead-update', lead: { id: stored.id, to: 'fresh@client.test', contacted: 'Yes', booked: 'Yes', won: 'Yes' } }, auth(ownerTok)), r);
+    assert.strictEqual(r.code, 200);
+    const after = await mirrored();
+    assert.strictEqual(after.props.won, 'Yes', 'the workspace says what the console says');
+    assert.strictEqual(after.props.contacted, 'Yes');
+    assert.ok(after.rev > 1, 'it was updated, not replaced');
+  });
+
+  await ok('the graph never becomes the reason a lead is lost', async () => {
+    // Storage refuses every write the graph attempts. The capture must still
+    // succeed, because the lead is stored before any of this is tried.
+    const realHset = kvm.run;
+    let broken = true;
+    kvm.run = function (c) {
+      if (broken && ['SADD', 'HSET'].includes(String(c[0]).toUpperCase())) throw new Error('storage is having a bad day');
+      return realHset.apply(this, arguments);
+    };
+    try {
+      const r = res();
+      await lead(req('POST', { to: 'fresh@client.test', name: 'Survives Anyway', phone: '5550000' }), r);
+      assert.strictEqual(r.code, 200, 'the visitor is told it worked');
+      assert.ok(leads().some((l) => l.name === 'Survives Anyway'), 'and it is stored');
+    } finally { broken = false; kvm.run = realHset; }
+  });
+
+  await ok('a client signing in to an empty portal is given their own workspace, not a blank page', async () => {
+    const onb = JSON.parse(store.get('onboarding'));
+    onb.push({ email: 'newcomer@client.test', businessName: 'Newcomer Roofing' });
+    store.set('onboarding', JSON.stringify(onb));
+    assert.strictEqual(await wsFor('newcomer@client.test'), null, 'nothing yet');
+    const tok = sign({ e: 'newcomer@client.test', r: 'client', x: Date.now() + 1e7 });
+    const got = await new Promise((done) => {
+      const rr = { _s: 200, status(c) { this._s = c; return this; }, setHeader() {}, json(o) { done({ code: this._s, body: o }); return this; } };
+      graphApi({ method: 'POST', headers: { authorization: 'Bearer ' + tok, 'x-forwarded-for': '10.9.0.2' }, body: { op: 'workspaces' } }, rr);
+    });
+    assert.strictEqual(got.code, 200);
+    assert.strictEqual(got.body.workspaces.length, 1, 'exactly one, and it is theirs');
+    assert.strictEqual(got.body.workspaces[0].name, 'Newcomer Roofing');
+    assert.strictEqual(got.body.workspaces[0].role, 'admin');
+  });
+
+  await ok('a client who predates all of this appears the first time the operator looks', async () => {
+    // Written straight into storage, the way a client recorded before any of
+    // this existed would be: no console save, so nothing has fired for them.
+    const onb = JSON.parse(store.get('onboarding'));
+    onb.push({ email: 'legacy@client.test', businessName: 'Old Timer Paving' });
+    store.set('onboarding', JSON.stringify(onb));
+    assert.strictEqual(await wsFor('legacy@client.test'), null, 'nothing yet');
+    const r = res();
+    await new Promise((done) => {
+      const rr = { _s: 200, status(c) { this._s = c; return this; }, setHeader() {}, json(o) { r.code = this._s; r.body = o; done(); return this; } };
+      graphApi({ method: 'POST', headers: { authorization: 'Bearer ' + ownerTok, 'x-forwarded-for': '10.9.0.1' }, body: { op: 'workspaces' } }, rr);
+    });
+    assert.strictEqual(r.code, 200);
+    assert.ok(await wsFor('legacy@client.test'), 'the operator looking was enough');
+    assert.ok(r.body.workspaces.some((w) => w.name === 'Old Timer Paving'), 'and it is in the list they got back');
   });
 
   console.log('\n' + pass + ' passed' + (process.exitCode ? ', with failures' : ''));

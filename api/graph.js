@@ -138,7 +138,28 @@ async function dispatch(op, ws, session, b) {
       return { describe: schema.describe(), files: files.capability(), templates: templates ? templates.list() : [] };
 
     case 'workspaces': {
-      const list = await tenancy.visibleTo(session);
+      /* Clients who existed before any of this did still need to appear. The
+       * operator's list is the one place that can see everyone, so it is the
+       * place that closes the gap — a client whose record predates the graph
+       * gets their workspace the first time the operator looks, rather than
+       * waiting for someone to remember to press something.
+       *
+       * Cheap on purpose: it creates what is missing and carries leads that
+       * were never carried. It does not re-examine records already there —
+       * that happens on the path that changes them.
+       */
+      if (session.role === 'owner') {
+        try { await require('../lib/migrate').apply(session, {}); }
+        catch (e) { console.error('workspace reconcile skipped: ' + e.message); }
+      }
+      let list = await tenancy.visibleTo(session);
+      /* A client who signs in before the operator has looked would otherwise
+       * be shown an empty portal. Only when there is genuinely nothing to
+       * show — a client who already has a workspace never pays for this. */
+      if (!list.length && session.role !== 'owner') {
+        const made = await require('../lib/migrate').quietly(session.email, { by: 'system' });
+        if (made) list = await tenancy.visibleTo(session);
+      }
       const withRole = [];
       for (const w of list) {
         withRole.push({ id: w.id, name: w.name, kind: w.kind, archived: !!w.archived, role: await tenancy.roleIn(session, w.id) });
