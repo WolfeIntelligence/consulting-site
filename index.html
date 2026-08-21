@@ -39,9 +39,9 @@
   "name": "Wolfe Intelligence",
   "url": "https://www.wolfeintelligence.com/",
   "email": "support@wolfeintelligence.com",
-  "description": "AI consultancy and custom AI setup for owner-operators and small businesses: private AI assistants, intake and follow-up automation, research systems, Google presence with every inquiry tracked, systems that learn from their own results, and coaching.",
+  "description": "AI consultancy and custom AI setup for owner-operators, small businesses, and professional firms: private AI assistants, intake and follow-up automation, research systems, Google presence with every inquiry tracked, systems that learn from their own results, coaching, and AI adoption for professional firms — staff training, written AI use policies, and readiness assessments.",
   "areaServed": { "@type": "Country", "name": "United States" },
-  "knowsAbout": ["small business AI", "custom AI assistants", "workflow automation", "customer intake automation", "research automation", "Google Business Profile", "conversion tracking", "offline conversion import", "marketing automation"],
+  "knowsAbout": ["small business AI", "custom AI assistants", "workflow automation", "customer intake automation", "research automation", "Google Business Profile", "conversion tracking", "offline conversion import", "marketing automation", "AI training workshops", "AI use policies", "AI readiness assessments", "responsible AI adoption"],
   "founder": {
     "@type": "Person",
     "name": "Zachary Wolfe",
@@ -54,7 +54,8 @@
     { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Follow-up automation" } },
     { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Private AI assistant setup" } },
     { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Research automation" } },
-    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Coaching" } }
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Coaching" } },
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "AI training and policy for professional firms" } }
   ]
 }
 </script>
@@ -103,7 +104,9 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--ink,#1f1b17);font-family:"Instrument Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--paper,#f4eee3);letter-spacing:-.012em;}
   a{color:inherit;text-decoration:none}
-  h1,h2,h3{margin:0;font-weight:400}
+  /* Headings share their last line out evenly instead of stranding one word
+     on it. Two card titles were doing exactly that. */
+  h1,h2,h3{margin:0;font-weight:400;text-wrap:balance}
   img{max-width:100%}
   @media (max-width:1024px){
     [data-grid="hero"],[data-grid="split"]{grid-template-columns:1fr!important;gap:36px!important}
@@ -185,7 +188,7 @@
   <div data-screen-label="Nav" data-pad="x" style="max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:18px 40px;">
     <div style="font:700 13px 'Space Mono',monospace;letter-spacing:.24em;">WOLFE&nbsp;INTELLIGENCE</div>
     <div style="display:flex;align-items:center;gap:34px;font:500 13.5px 'Instrument Sans',sans-serif;color:#d8cdba;">
-      <a href="#services">Services</a><a href="#approach">Approach</a><a href="/portal">Portal</a><a href="#about">About</a>
+      <a href="#services">Services</a><a href="#firms">For firms</a><a href="#approach">Approach</a><a href="/portal">Portal</a><a href="#about">About</a>
       <a data-cta-ghost href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="border:1px solid var(--accent,#c9a15f);color:var(--accent-lt,#e9c98d);border-radius:2px;padding:9px 16px;">Book a free consult ↗</a>
     </div>
   </div>
@@ -197,7 +200,7 @@
       <div data-reveal style="padding:84px 56px 84px 0;display:flex;flex-direction:column;justify-content:center;container-type:inline-size;">
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:30px;">AI CONSULTANCY &middot; CUSTOM AI SETUP FOR OWNERS</div>
         <h1 style="font:400 clamp(32px,calc(100cqw / 7.3),74px)/1.06 'Newsreader',serif;letter-spacing:-.022em;margin:0 0 30px;"><span style="display:block;"><span data-w>Your</span> <span data-w style="--w:1">rules.</span></span><span style="display:block;"><span data-w style="--w:2;color:var(--accent-lt,#e9c98d);"><i>Your</i></span> <span data-w style="--w:3">knowledge.</span></span><span style="display:block;"><span data-w style="--w:4">Your</span> <span data-w style="--w:5">AI.</span></span></h1>
-        <p style="font:400 clamp(16px,1.6vw,18px)/1.62 'Instrument Sans',sans-serif;color:#cabda8;max-width:44ch;margin:0 0 40px;">We design and set up AI around your business &mdash; a private assistant on your own machines, automations that catch and follow up every inquiry, research that files itself, and the Google presence that brings customers in &mdash; then measure what each one produced and feed it back, so the whole system keeps learning. And we coach you until running it is second nature.</p>
+        <p style="font:400 clamp(16px,1.6vw,18px)/1.62 'Instrument Sans',sans-serif;color:#cabda8;max-width:44ch;margin:0 0 40px;">I design and set up AI around your business &mdash; a private assistant on your own machines, automations that catch and follow up every inquiry, research that files itself, and the Google presence that brings customers in &mdash; then measure what each one produced and feed it back, so the whole system keeps learning. And I stay with you until running it is second nature.</p>
         <div style="display:flex;gap:18px;align-items:center;">
           <a data-cta href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:16px 30px;border-radius:2px;font:600 14.5px 'Instrument Sans',sans-serif;">Book a free consult ↗</a>
           <a href="#portal" style="font:500 14.5px 'Instrument Sans',sans-serif;color:var(--accent-lt,#e9c98d);border-bottom:1px solid var(--accent,#c9a15f);padding-bottom:3px;">Explore the portal</a>
@@ -219,7 +222,7 @@
         </div>
         <div style="display:grid;gap:8px;">
           <div style="font:400 19px 'Newsreader',serif;">Evidence, not scores.</div>
-          <p style="margin:0;font:400 14px/1.55 'Instrument Sans',sans-serif;color:#b3a593;max-width:40ch;">Every capability is labeled plainly: planned, simulated, operational, tested, verified, proven in use.</p>
+          <p style="margin:0;font:400 14px/1.55 'Instrument Sans',sans-serif;color:#b3a593;max-width:40ch;">Nothing gets called finished until it has been used on real work. You are always told which stage a thing is at.</p>
         </div>
       </div>
     </div>
@@ -230,7 +233,7 @@
     <div data-pad="x" style="max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:40px;padding:22px 40px;font:400 12.5px 'Instrument Sans',sans-serif;color:#988b7a;flex-wrap:wrap;">
       <span style="font-family:'Space Mono',monospace;letter-spacing:.15em;color:#cabda8;">TRUSTED FOUNDATIONS —</span>
       <span>Local-first · data stays on your machines</span>
-      <span>M.S. AI Strategy &amp; Innovation, Wake Forest</span>
+      <span>Master of AI Strategy &amp; Innovation, Wake Forest</span>
       <span style="margin-left:auto;font-family:'Space Mono',monospace;">EST. 2024</span>
     </div>
   </div>
@@ -239,10 +242,10 @@
   <div id="services" data-screen-label="Services" data-pad="x" style="max-width:1240px;margin:0 auto;padding:96px 40px 40px;">
     <div data-reveal data-stack="x" style="display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:52px;flex-wrap:wrap;">
       <div>
-        <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:20px;">WHAT WE SET UP &amp; OPERATE</div>
-        <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:20ch;">A working AI practice, not another subscription.</h2>
+        <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:20px;">WHAT I SET UP &amp; OPERATE</div>
+        <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:20ch;">AI that works for you. Not another subscription.</h2>
       </div>
-      <p style="font:400 15px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:34ch;">For owners who want AI working for them, not another subscription &mdash; trades, home services, solo professionals, and small firms. Six services that stand alone or work together, every one tracked in your own private portal.</p>
+      <p style="font:400 15px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:34ch;">For trades, home services, solo professionals and small firms. Six services that stand alone or work together, every one of them tracked in your own private portal.</p>
     </div>
     <div data-grid="services" data-reveal-stagger style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(244,238,227,.14);border-left:1px solid rgba(244,238,227,.14);">
       <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
@@ -268,7 +271,7 @@
       <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">05</div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">A system that learns from your results</h3>
-        <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">Everything we set up records what it did and what came of it &mdash; an inquiry and whether it became a customer, an answer and whether it was right, a run and whether a person had to step in. Those results feed back into the system doing the work and into the next engagement, so the second month beats the first. A learning loop only an AI-native practice can run &mdash; and it compounds.</p>
+        <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">Everything I set up keeps score of itself &mdash; an inquiry and whether it became a customer, an answer and whether it was right, a run and whether someone had to step in. That goes back into the system doing the work, so the second month beats the first.</p>
       </div>
       <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
         <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">06</div>
@@ -278,12 +281,46 @@
     </div>
   </div>
 
+  <!-- ============ PROFESSIONAL FIRMS ============ -->
+  <div id="firms" data-screen-label="Firms" style="border-top:1px solid rgba(244,238,227,.14);">
+    <div data-pad="x" style="max-width:1240px;margin:0 auto;padding:96px 40px;">
+      <div data-reveal data-stack="x" style="display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:52px;flex-wrap:wrap;">
+        <div>
+          <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:20px;">FOR PROFESSIONAL FIRMS</div>
+          <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:22ch;">AI adoption for firms that answer to a regulator.</h2>
+        </div>
+        <p style="font:400 15px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:38ch;">Law practices, accounting firms, insurance agencies, real estate brokerages &mdash; your staff is already using AI, usually with no rules. I help you adopt it inside the guardrails your profession has drawn, grounded in the guidance that actually governs you.</p>
+      </div>
+      <div data-grid="approach" data-reveal-stagger style="display:grid;grid-template-columns:repeat(3,1fr);gap:36px;">
+        <div data-reveal style="border-top:1px solid rgba(244,238,227,.14);padding-top:22px;">
+          <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:16px;">01</div>
+          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Train your team</h3>
+          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">A half-day workshop for your whole staff: what to use, what must never go into it, and the verification habits that keep AI out of your disciplinary file &mdash; built on the rules of your profession and real cases of firms that got burned.</p>
+        </div>
+        <div data-reveal style="border-top:1px solid rgba(244,238,227,.14);padding-top:22px;">
+          <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:16px;">02</div>
+          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Put it in writing</h3>
+          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">A written AI use policy tailored to your firm &mdash; approved tools, data lines, client-consent language, review requirements &mdash; plus an honest look at what your staff uses today and a 90-day adoption plan your most cautious partner will sign off on.</p>
+        </div>
+        <div data-reveal style="border-top:1px solid rgba(244,238,227,.14);padding-top:22px;">
+          <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:16px;">03</div>
+          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Automate what pays</h3>
+          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">The two or three workflows the assessment shows will pay for themselves &mdash; intake, follow-up, document chase &mdash; set up vendor-neutral, measured from day one, with nothing going out unreviewed.</p>
+        </div>
+      </div>
+      <div data-reveal style="margin-top:44px;display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
+        <a data-cta-ghost href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="display:inline-block;border:1px solid var(--accent,#c9a15f);color:var(--accent-lt,#e9c98d);padding:14px 26px;border-radius:2px;font:600 14px 'Instrument Sans',sans-serif;">Book a free consult ↗</a>
+        <span style="font:400 12.5px 'Instrument Sans',sans-serif;color:#988b7a;">Workshops are not approved for CLE, CPE, or CE credit.</span>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ APPROACH ============ -->
   <div id="approach" data-screen-label="Approach" style="background:var(--paper,#f4eee3);color:var(--ink,#241e19);">
     <div data-pad="x" style="max-width:1240px;margin:0 auto;padding:96px 40px;">
       <div data-reveal>
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:#a85e3c;margin-bottom:20px;">THE APPROACH</div>
-        <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:22ch;margin-bottom:60px;">Four steps from tool overwhelm to a system that runs itself.</h2>
+        <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:22ch;margin-bottom:60px;">Four steps, from “I should probably be using AI” to a system that runs itself.</h2>
       </div>
       <div data-grid="approach" data-reveal-stagger style="display:grid;grid-template-columns:repeat(4,1fr);gap:36px;">
         <div data-reveal style="border-top:1px solid rgba(36,30,25,.12);padding-top:22px;">
@@ -294,7 +331,7 @@
         <div data-reveal style="border-top:1px solid rgba(36,30,25,.12);padding-top:22px;">
           <div style="font:700 12px 'Space Mono',monospace;color:#a85e3c;margin-bottom:16px;">STEP 02</div>
           <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Set up</h3>
-          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#5a4f45;">We set it all up for you &mdash; your AI, the automations, the profile &mdash; connected to how you already work.</p>
+          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#5a4f45;">I set it all up for you &mdash; your AI, the automations, the profile &mdash; connected to how you already work.</p>
         </div>
         <div data-reveal style="border-top:1px solid rgba(36,30,25,.12);padding-top:22px;">
           <div style="font:700 12px 'Space Mono',monospace;color:#a85e3c;margin-bottom:16px;">STEP 03</div>
@@ -304,7 +341,7 @@
         <div data-reveal style="border-top:1px solid rgba(36,30,25,.12);padding-top:22px;">
           <div style="font:700 12px 'Space Mono',monospace;color:#a85e3c;margin-bottom:16px;">STEP 04</div>
           <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Compound</h3>
-          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#5a4f45;">Outcomes are recorded and fed back &mdash; into whatever system did the work, and into the next engagement &mdash; so the second month beats the first. That loop is the difference between an AI-native practice and a vendor.</p>
+          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#5a4f45;">Outcomes are recorded and fed back &mdash; into whatever system did the work, and into the next engagement &mdash; so the second month beats the first. That loop is the difference between hiring me and buying software.</p>
         </div>
       </div>
     </div>
@@ -316,7 +353,7 @@
       <div data-reveal>
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:22px;">THE PORTAL</div>
         <h2 style="font:400 clamp(29px,4vw,44px)/1.1 'Newsreader',serif;letter-spacing:-.01em;margin-bottom:24px;">Every engagement, on one private page.</h2>
-        <p style="font:400 16.5px/1.65 'Instrument Sans',sans-serif;color:#cabda8;margin-bottom:30px;max-width:46ch;">New inquiries land here the moment they arrive, with the ones still waiting for a call back at the top. Whatever we are setting up &mdash; your AI, your automations, your Google presence &mdash; shows step by step, with whose turn it is. Results are counted by source, so you can see what actually produced customers.</p>
+        <p style="font:400 16.5px/1.65 'Instrument Sans',sans-serif;color:#cabda8;margin-bottom:30px;max-width:46ch;">New inquiries land here the moment they arrive, with the ones still waiting for a call back at the top. Whatever I am setting up &mdash; your AI, your automations, your Google presence &mdash; shows step by step, with whose turn it is. Results are counted by source, so you can see what actually produced customers.</p>
         <div style="display:flex;flex-direction:column;gap:14px;">
           <div style="display:flex;gap:14px;align-items:baseline;"><span style="font:700 11px 'Space Mono',monospace;color:var(--accent,#c9a15f);">→</span><span style="font:400 15px/1.5 'Instrument Sans',sans-serif;color:#d8cdba;">Inquiries appear as they happen; one tap records the estimate booked or the customer won.</span></div>
           <div style="display:flex;gap:14px;align-items:baseline;"><span style="font:700 11px 'Space Mono',monospace;color:var(--accent,#c9a15f);">→</span><span style="font:400 15px/1.5 'Instrument Sans',sans-serif;color:#d8cdba;">Every step of the setup — what is done, what is with Wolfe, what needs you.</span></div>
@@ -365,10 +402,10 @@
         <img src="assets/zachary-wolfe.jpg" alt="Zachary Wolfe, founder of Wolfe Intelligence" style="width:100%;display:block;">
       </div>
       <div data-reveal style="display:flex;flex-direction:column;justify-content:center;--d:120ms;">
-        <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:22px;">THE ADVISOR</div>
-        <h2 style="font:400 clamp(28px,3.6vw,40px)/1.15 'Newsreader',serif;letter-spacing:-.01em;margin-bottom:24px;">A strategist who sets up the future, then teaches you to run it.</h2>
-        <p style="font:400 17px/1.65 'Instrument Sans',sans-serif;color:#cabda8;max-width:52ch;margin-bottom:20px;">Wolfe Intelligence was founded to give small-business owners and solopreneurs the same private, compounding AI advantage that large firms build in-house — without giving up ownership of their data or their tools.</p>
-        <p style="font:400 17px/1.65 'Instrument Sans',sans-serif;color:#cabda8;max-width:52ch;">Holding a Master's in AI Strategy &amp; Innovation from Wake Forest University, the practice pairs rigorous method with hands-on setup — custom AI, automation, research systems, and the Google presence that brings customers in — and measures what each one actually produced.</p>
+        <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:22px;">WHO YOU ARE ACTUALLY WORKING WITH</div>
+        <h2 style="font:400 clamp(28px,3.6vw,40px)/1.15 'Newsreader',serif;letter-spacing:-.01em;margin-bottom:24px;">I set it up. Then I teach you to run it without me.</h2>
+        <p style="font:400 17px/1.65 'Instrument Sans',sans-serif;color:#cabda8;max-width:52ch;margin-bottom:20px;">Big companies build this in-house and keep the advantage to themselves. I started Wolfe Intelligence so a small business can have the same thing — without handing over its data, its accounts, or its tools to get it.</p>
+        <p style="font:400 17px/1.65 'Instrument Sans',sans-serif;color:#cabda8;max-width:52ch;">I have a Master's in AI Strategy &amp; Innovation from Wake Forest University. What that buys you is someone who does the work instead of reselling it — the custom AI, the automations, the research, the Google presence — and who then measures what each one actually produced, so you are not taking my word for any of it.</p>
       </div>
     </div>
   </div>
@@ -376,9 +413,9 @@
   <!-- ============ BOOKING CTA ============ -->
   <div id="book" data-screen-label="Book" data-pad="x" data-reveal style="max-width:1240px;margin:0 auto;padding:110px 40px;text-align:center;">
     <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:26px;">START HERE</div>
-    <h2 style="font:400 clamp(34px,5vw,56px)/1.08 'Newsreader',serif;letter-spacing:-.02em;max-width:18ch;margin:0 auto 26px;">Book a free consult and map your first agents.</h2>
-    <p style="font:400 17px/1.6 'Instrument Sans',sans-serif;color:#cabda8;max-width:48ch;margin:0 auto 40px;">Thirty minutes, no pitch — just a clear read on where private, locally-run AI will pay off first in your business.</p>
-    <div style="display:flex;gap:16px;align-items:center;justify-content:center;margin-bottom:22px;">
+    <h2 style="font:400 clamp(34px,5vw,56px)/1.08 'Newsreader',serif;letter-spacing:-.02em;max-width:18ch;margin:0 auto 26px;">Let's find the first thing worth fixing.</h2>
+    <p style="font:400 17px/1.6 'Instrument Sans',sans-serif;color:#cabda8;max-width:48ch;margin:0 auto 40px;">Thirty minutes, no pitch. You will leave knowing where AI would pay off first in your business — whether or not you hire me.</p>
+    <div style="display:flex;gap:16px;align-items:center;justify-content:center;margin-bottom:22px;flex-wrap:wrap;">
       <a data-cta href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:17px 36px;border-radius:2px;font:600 15px 'Instrument Sans',sans-serif;">Book a free consult ↗</a>
       <a href="mailto:support@wolfeintelligence.com" style="font:500 15px 'Instrument Sans',sans-serif;color:var(--accent-lt,#e9c98d);border-bottom:1px solid var(--accent,#c9a15f);padding-bottom:3px;">support@wolfeintelligence.com</a>
     </div>
@@ -389,7 +426,7 @@
   <div style="border-top:1px solid rgba(244,238,227,.14);">
     <div data-pad="x" style="max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:34px 40px;font:400 12.5px 'Instrument Sans',sans-serif;color:#988b7a;flex-wrap:wrap;gap:16px;">
       <div style="font:700 12px 'Space Mono',monospace;letter-spacing:.22em;color:#d8cdba;">WOLFE&nbsp;INTELLIGENCE</div>
-      <div style="display:flex;gap:28px;"><a href="#services">Services</a><a href="#approach">Approach</a><a href="/portal">Portal</a><a href="#about">About</a><a href="#book">Book</a></div>
+      <div style="display:flex;gap:28px;"><a href="#services">Services</a><a href="#firms">For firms</a><a href="#approach">Approach</a><a href="/portal">Portal</a><a href="#about">About</a><a href="#book">Book</a></div>
       <div style="font-family:'Space Mono',monospace;">© 2026 Wolfe Intelligence</div>
     </div>
   </div>
@@ -528,8 +565,8 @@ class Component extends DCLogic {
     if (has('portal', 'login', 'log in', 'dashboard', 'client account')) return { text: 'The portal is each client\'s private page: inquiries from their website as they arrive, each step of their setup and whose turn it is, and results counted by source. Accounts are set up during an engagement, not self-serve — but there is a sample portal you can walk through.', href: '/portal?tour=1', linkLabel: 'See the sample portal' };
     if (has('privacy', 'private', 'my data', 'data ', 'local', 'secure', 'security', 'key', 'credential', 'cloud', 'on prem')) return { text: 'Local-first is the rule: assistants run on your machines or in your own accounts, provider keys are encrypted on your device and never shown back to any interface, and your data stays with you.' };
     if (has("can't", 'cannot', 'cant', 'limit', 'not do', "won't", 'wont', 'trade', 'publish', 'guarantee', 'risk', 'autonomous')) return { text: "What it will not do: nothing trades, publishes, or emails on its own — external effects always wait for your explicit word. And no outcome guarantees: every capability is labeled by evidence (planned, simulated, operational, tested, proven in use), never by promises." };
-    if (has('service', 'offer', 'install', 'set up', 'setup', 'agent', 'automat', 'research', 'coach', 'knowledge', 'flywheel', 'do for me', 'help me', 'can it', 'can you')) return { text: 'Six services, standalone or combined: custom AI built around your business; intake and follow-up that run themselves; research that files itself; getting you found on Google with every inquiry tracked; a system that learns from your own results; and one-on-one coaching.' };
-    if (has('who', 'zach', 'founder', 'advisor', 'wake forest', 'background', 'about you')) return { text: "Wolfe Intelligence is a solo advisory practice founded to give owners the private, compounding AI advantage large firms build in-house. The advisor holds an M.S. in AI Strategy & Innovation from Wake Forest University." };
+    if (has('service', 'offer', 'install', 'set up', 'setup', 'agent', 'automat', 'research', 'coach', 'knowledge', 'flywheel', 'do for me', 'help me', 'can it', 'can you')) return { text: 'Six services, standalone or combined: custom AI built around your business; intake and follow-up that run themselves; research that files itself; getting you found on Google with every inquiry tracked; a system that learns from your own results; and one-on-one coaching. For professional firms — law, accounting, insurance, real estate — there is also staff AI training, a written AI use policy, and a readiness assessment.' };
+    if (has('who', 'zach', 'founder', 'advisor', 'wake forest', 'background', 'about you')) return { text: "Wolfe Intelligence is a solo advisory practice founded to give owners the private, compounding AI advantage large firms build in-house. The advisor holds a Master of AI Strategy & Innovation from Wake Forest University." };
     if (has('email', 'contact', 'reach', 'phone', 'write')) return { text: 'The direct line is support@wolfeintelligence.com — or book the free consult and skip the inbox.', href: 'mailto:support@wolfeintelligence.com', linkLabel: 'support@wolfeintelligence.com' };
     if (/^(hi|hello|hey|yo|howdy)\b/.test(t.trim())) return { text: 'Hello. Ask me what this practice is, what it can and cannot do, how privacy works, or what it costs.' };
     if (has('what is', 'what do', 'about', 'wolfe intelligence', 'this site', 'company', 'explain')) return { text: 'Wolfe Intelligence sets up private AI and automation for owner-operators and small businesses: custom assistants on your own machines, intake and follow-up that run themselves, getting found on Google with every inquiry tracked, and a system that learns from your results — then coaches you until running it is second nature.' };
