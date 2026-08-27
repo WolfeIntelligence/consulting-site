@@ -6,6 +6,7 @@
 <script src="assets/resources.js"></script>
 <script src="assets/runtime.js"></script>
 <script src="assets/ambient.js" defer></script>
+<script src="assets/flow.js" defer></script>
 <!-- Google Ads tag (home page only): measures clicks on "Book a free consult" when the visitor came from an ad. -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=AW-788072268"></script>
 <script src="assets/tag.js" defer></script>
@@ -137,6 +138,15 @@
   @keyframes wolfe-word{from{opacity:0;filter:blur(10px);transform:translateY(.14em)}to{opacity:1;filter:blur(0);transform:translateY(0)}}
   #wolfe-ambient{position:fixed;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 1.4s ease}
   #wolfe-ambient.is-on{opacity:1}
+  /* The workflow loop rides on top of the lamplight and under everything
+     else, and comes up slower than the light does. */
+  #wolfe-flow{position:fixed;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 1.8s ease .3s}
+  #wolfe-flow.is-on{opacity:1}
+  /* Hero into Services: the seam the trust bar used to be. A hairline that
+     is only there in the middle, so the circuit behind it stays visible. */
+  [data-seam]{height:clamp(58px,7vw,104px);position:relative}
+  [data-seam]::before{content:"";position:absolute;left:50%;top:50%;transform:translateX(-50%);width:min(1160px,calc(100% - 80px));height:1px;
+    background:linear-gradient(90deg,transparent,rgba(244,238,227,.10) 18%,rgba(201,161,95,.30) 50%,rgba(244,238,227,.10) 82%,transparent)}
   #wolfe-grain{position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:var(--wolfe-grain);background-size:128px 128px;opacity:.04}
   [data-screen-label="Approach"]{position:relative;isolation:isolate}
   [data-screen-label="Approach"]::before,[data-screen-label="Approach"]::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
@@ -161,7 +171,7 @@
   }
   @media (prefers-reduced-motion:reduce){
     html.wolfe-anim [data-reveal]:not(.is-in){opacity:1;transform:none}
-    [data-reveal],[data-grid="services"]>div,[data-cta],#wolfe-ambient{transition:none}
+    [data-reveal],[data-grid="services"]>div,[data-cta],#wolfe-ambient,#wolfe-flow{transition:none}
     [data-screen-label="Assistant"] *{animation:none!important}
     html.wolfe-anim [data-w]{animation:none}
   }
@@ -228,18 +238,11 @@
     </div>
   </div>
 
-  <!-- ============ TRUST BAR ============ -->
-  <div style="border-top:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);">
-    <div data-pad="x" style="max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:40px;padding:22px 40px;font:400 12.5px 'Instrument Sans',sans-serif;color:#988b7a;flex-wrap:wrap;">
-      <span style="font-family:'Space Mono',monospace;letter-spacing:.15em;color:#cabda8;">TRUSTED FOUNDATIONS —</span>
-      <span>Your data stays on your machines</span>
-      <span>Master of AI Strategy &amp; Innovation, Wake Forest</span>
-      <span style="margin-left:auto;font-family:'Space Mono',monospace;">EST. 2024</span>
-    </div>
-  </div>
+  <!-- ============ HERO / SERVICES SEAM ============ -->
+  <div data-seam aria-hidden="true"></div>
 
   <!-- ============ SERVICES ============ -->
-  <div id="services" data-screen-label="Services" data-pad="x" style="max-width:1240px;margin:0 auto;padding:96px 40px 40px;">
+  <div id="services" data-screen-label="Services" data-pad="x" style="max-width:1240px;margin:0 auto;padding:40px 40px;">
     <div data-reveal data-stack="x" style="display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:52px;flex-wrap:wrap;">
       <div>
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:20px;">WHAT I SET UP &amp; OPERATE</div>
