@@ -110,7 +110,19 @@ module.exports = async (req, res) => {
   const all = await L.loadLeads();
   lead.duplicateOf = L.findDuplicate(lead, all, 30);
   all.push(lead);
-  await L.saveLeads(all);
+
+  // A failed write must not end the request: the inquiry still has to reach a
+  // human, and the notification below is the path that does that. So carry on,
+  // and report it rather than answering with a plain ok the portal cannot back
+  // up. `stored: false` in the response and an error in the runtime log are the
+  // two places this surfaces.
+  let stored = true;
+  try {
+    await L.saveLeads(all);
+  } catch (e) {
+    stored = false;
+    console.error('LEAD STORAGE FAILED', lead.id, to, (e && e.message) || e);
+  }
 
   // The same inquiry, in the client's own workspace, as it arrives. Required
   // here rather than at the top so the public endpoint's cold start does not
@@ -123,5 +135,5 @@ module.exports = async (req, res) => {
   const notified = await L.notifyNewLead(lead, client);
   await L.autoReplyLead(lead, client);
 
-  return res.json({ ok: true, id: lead.id, notified: notified === 'sent' });
+  return res.json({ ok: true, id: lead.id, notified: notified === 'sent', stored });
 };

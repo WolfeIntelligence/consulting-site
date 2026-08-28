@@ -66,11 +66,20 @@ function makeKv(host) {
     const method = (opt && opt.method) || 'GET';
     // POST body form: one command, or an array of commands at /pipeline.
     if (method === 'POST') {
-      const body = JSON.parse(opt.body);
       if (u === base + '/pipeline') {
+        const body = JSON.parse(opt.body);
         return { ok: true, status: 200, json: async () => body.map((c) => { try { return { result: run(c) }; } catch (e) { return { error: e.message }; } }) };
       }
-      return reply(run(body));
+      // Command in the path with the value as the raw request body —
+      // POST /set/<key>. This is how a value too large to sit in a URL is
+      // written; lib/leads.js saves the whole lead array this way.
+      const path = u.slice(base.length + 1);
+      if (path) {
+        const parts = path.split('/').map(decodeURIComponent);
+        return reply(run(parts.concat([opt.body])));
+      }
+      // No path: the whole command is the JSON body (lib/kv.js).
+      return reply(run(JSON.parse(opt.body)));
     }
     // URL path form, used by the older modules.
     const parts = u.slice(base.length + 1).split('/').map(decodeURIComponent);
