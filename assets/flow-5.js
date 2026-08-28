@@ -3,8 +3,8 @@
    Eight layers of nodes across the viewport, wired forward, with signals
    propagating left to right: something arrives at the input side, each node it
    reaches pauses while its step runs, then fires on down the wires it owns
-   until it comes out the other end. Eighty-four nodes, about a hundred and
-   seventy wires. It is the page saying what the business does without a
+   until it comes out the other end. Eighty-four nodes, two hundred and
+   twenty-five wires. It is the page saying what the business does without a
    caption.
 
    A signal does not glide through a node. It arrives, the node waits while the
@@ -15,8 +15,8 @@
    it. Wires have weight: every wire is assigned a fixed strength, drawn at that
    weight, and a node choosing where to send something picks in proportion to
    it — so the heavy wires are both the visible spine of the net and the route
-   most traffic actually takes. A crossed wire stays warm for a second and a
-   half afterwards, so you can see the path a signal took after it has gone.
+   most traffic actually takes. A crossed wire stays warm for a couple of
+   seconds afterwards, so you can see the path a signal took after it has gone.
    And work arrives in waves — two to four inputs within a fifth of a second of
    each other — so what crosses the screen is a front, not a lone particle.
 
@@ -72,7 +72,7 @@
     // neighbours is the same everywhere and the net takes a lens shape rather
     // than filling a rectangle. It is what stops the short outer columns
     // reading as a zigzag stretched over the full height.
-    var C = COUNT[l], ext = 0.60 + 0.36 * (C - 7) / 6;
+    var C = COUNT[l], ext = 0.68 + 0.28 * (C - 7) / 6;
     for (k = 0; k < C; k++) {
       var h = hash(l * 131 + k * 17 + 7);
       nodes.push({
@@ -136,7 +136,7 @@
   }
 
   /* How much of itself the net is allowed at a point: all of it out in the
-     margins, a quarter of it behind the reading column. Brighter things get
+     margins, a fifth of it behind the reading column. Brighter things get
      this applied twice, so a firing node over a paragraph stays under the type
      rather than competing with it. */
   var qx = 0, qy0 = 0, qy1 = 0;
@@ -144,11 +144,20 @@
     qx = Math.min(1240, Math.max(320, W - 80)) / 2;
     qy0 = 0.12 * H; qy1 = 0.82 * H;
   }
+  // A wire is only ever as bright as the quietest place it passes through.
+  // Judging it by its midpoint alone lets a wire whose middle sits out in the
+  // margin cross the reading column at full strength, which is how type ends
+  // up with a bright line through it.
+  function calmSeg(ax, ay, bx, by) {
+    var m = calm((ax + bx) / 2, (ay + by) / 2), a = calm(ax, ay), b = calm(bx, by);
+    if (a < m) m = a; if (b < m) m = b;
+    return m;
+  }
   function calm(x, y) {
     var dx = Math.abs(x - W / 2) - qx;
     var dy = Math.max(qy0 - y, y - qy1);
     var out = Math.max(dx, dy);
-    return 0.26 + 0.74 * Math.max(0, Math.min(1, (out + 30) / 110));
+    return 0.18 + 0.82 * Math.max(0, Math.min(1, (out + 30) / 110));
   }
 
   function place(t) {
@@ -255,9 +264,9 @@
   }
 
   // Wire alphas are bucketed so the whole net is a handful of stroked paths
-  // rather than a hundred and seventy of them. Weight goes into the bucket, so
+  // rather than two hundred and twenty-five of them. Weight goes into the bucket, so
   // the heavy wires sort themselves into the brighter, thicker passes.
-  var BUCKETS = 5;
+  var BUCKETS = 7;
   function paint(now) {
     var i, b;
     ctx.clearRect(0, 0, W, H);
@@ -273,7 +282,7 @@
       var vis = Math.max(0, Math.min(1, lin * L - e.l));
       if (vis <= 0) continue;
       var na = nodes[e.a], nb = nodes[e.b];
-      var cm = calm((na.x + nb.x) / 2, (na.y + nb.y) / 2);
+      var cm = calmSeg(na.x, na.y, nb.x, nb.y);
       var f = cm * vis * e.w;
       b = Math.min(BUCKETS - 1, Math.floor(f * BUCKETS));
       if (!paths[b]) paths[b] = [];
@@ -286,7 +295,7 @@
       ctx.beginPath();
       for (i = 0; i < pts.length; i += 4) { ctx.moveTo(pts[i], pts[i + 1]); ctx.lineTo(pts[i + 2], pts[i + 3]); }
       ctx.lineWidth = 0.75 + 0.5 * g;
-      ctx.strokeStyle = 'rgba(' + AMBER + ',' + (0.19 * g).toFixed(4) + ')';
+      ctx.strokeStyle = 'rgba(' + AMBER + ',' + (0.22 * g).toFixed(4) + ')';
       ctx.stroke();
     }
 
@@ -318,7 +327,7 @@
       }
       var a = n.act * cm * cm * nv;        // bright things get calmed twice
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 0.25 + a * 1.3, 0, 6.2832);
-      ctx.fillStyle = 'rgba(' + AMBER + ',' + (0.18 * cm * nv + a * 0.42) + ')';
+      ctx.fillStyle = 'rgba(' + AMBER + ',' + (0.18 * cm * cm * nv + a * 0.42) + ')';
       ctx.fill();
       ctx.beginPath(); ctx.arc(n.x, n.y, 4.2 + a * 1.6, 0, 6.2832);
       ctx.strokeStyle = 'rgba(' + AMBER + ',' + (a * 0.30) + ')';
