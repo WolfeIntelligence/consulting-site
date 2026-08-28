@@ -48,6 +48,31 @@
    the page moves, and at seven steps a wire crosses a visible 8/255 jump every
    couple of frames.
 
+   The net used to be flat: every node the same size, the same brightness, and
+   drifting the same distance, which is why it read as a diagram of a net
+   rather than as a thing with air in it. Every node now sits somewhere between
+   the front of the volume and the back of it, and that one number drives three
+   things together — how large the node is, how bright, and how far it travels
+   as it drifts. The last of those is the one the eye actually reads: near
+   things move further than far things, and no static cue is as convincing.
+   Depth itself breathes on a two-minute cycle, so the arrangement is never
+   twice the same, but slowly enough to stay in the same register as the rest
+   of the drift.
+
+   Depth is only ever allowed to take away, never add. The near plane is the
+   layer exactly as it was measured against the type and found to clear it —
+   same places, same sizes, same brightness, same drift — and everything else
+   is behind that. So depth can be tuned to taste without ever being able to
+   put more light on a word, and it is the far plane receding that does the
+   work rather than the near plane advancing.
+
+   Position is deliberately not part of it. Pulling far nodes in toward a
+   vanishing point is the honest perspective and the wrong move here, because
+   the vanishing point would be the middle of the viewport and that is where
+   the reading column is: it walks the far plane onto the words. Built and
+   measured, it put thirty to sixty per cent more ink on type to buy a cue
+   that size, brightness and parallax already carry, so it is not here.
+
    The rest is the lamplight's manners (assets/ambient.js), because the same
    objection killed an earlier version of this: motion here is meant to be
    felt, not watched. Nodes drift on incommensurate periods so the shape is
@@ -97,16 +122,21 @@
     // reading as a zigzag stretched over the full height.
     var C = COUNT[l], ext = 0.68 + 0.28 * (C - 7) / 6;
     for (k = 0; k < C; k++) {
-      var h = hash(l * 131 + k * 17 + 7);
+      var h = hash(l * 131 + k * 17 + 7), h2 = hash(l * 977 + k * 53 + 3);
       nodes.push({
         l: l,
+        /* Where in the volume this one sits, and how long it takes to breathe
+           between the two. The period is long and prime-ish against the drift
+           periods so no two nodes are ever at the same depth for long. */
+        z0: 0.08 + (h2 % 85) / 100,
+        pz: 97 + ((h2 >>> 8) % 59),         // 97-155s, against the drift periods
         bx: LX[l] + ((h % 11) - 5) * 0.0018,
         by: 0.5 + (C > 1 ? (k - (C - 1) / 2) / (C - 1) * ext : 0) + (((h >>> 4) % 11) - 5) * 0.0042,
         ax: 0.0035 + ((h >>> 8) % 5) * 0.0011,
         ay: 0.0055 + ((h >>> 11) % 5) * 0.0015,
         px: 29 + ((h >>> 14) % 41),
         py: 33 + ((h >>> 17) % 47),
-        x: 0, y: 0, act: 0, hold: 0, held: 0, pulse: 0, deg: 0, r: 1.5, out: []
+        x: 0, y: 0, z: 0.5, sc: 1, dep: 1, act: 0, hold: 0, held: 0, pulse: 0, deg: 0, r: 1.5, out: []
       });
     }
   }
@@ -280,11 +310,25 @@
     return v >= FADE ? 1 : FLOOR + (1 - FLOOR) * (v / FADE);
   }
 
+  /* Depth, resolved once a node per frame. Three numbers come out of it and
+     every one of them tops out at 1: `par` shortens the distance the node
+     drifts, `sc` shrinks it, `dep` dims it. `par` is the one doing the real
+     work — a near node sweeping a wider arc than a far one is parallax, and it
+     is what separates this from an arrangement of assorted dot sizes.
+
+     Topping out at 1 is the whole safety argument, and it is why the ranges
+     here can be widened by eye without anyone having to re-measure the type. */
   function place(t) {
     for (var i = 0; i < N; i++) {
       var n = nodes[i];
-      n.x = (n.bx + n.ax * Math.sin(t / n.px * 6.2832)) * W;
-      n.y = (n.by + n.ay * Math.cos(t / n.py * 6.2832)) * H;
+      var z = n.z0 + 0.12 * Math.sin(t / n.pz * 6.2832);
+      if (z < 0) z = 0; else if (z > 1) z = 1;
+      var par = 0.40 + 0.60 * z;
+      n.x = (n.bx + n.ax * Math.sin(t / n.px * 6.2832) * par) * W;
+      n.y = (n.by + n.ay * Math.cos(t / n.py * 6.2832) * par) * H;
+      n.z = z;
+      n.sc = 0.66 + 0.34 * z;            // size
+      n.dep = 0.45 + 0.55 * z;           // brightness
     }
   }
 
@@ -389,6 +433,11 @@
      passes. Fourteen steps, not seven — see the note above about how this
      number and FLOOR set the floor brightness together. */
   var BUCKETS = 14;
+  /* Below a quarter of a bucket, the midpoint rule draws a thing several times
+     brighter than its own value; at that point not drawing it is the more
+     truthful answer as well as the cheaper one. Only ever reached where the
+     dimming is already near the floor, which is to say on top of a word. */
+  var CULL = 0.018;
   function paint(now) {
     var i, b;
     ctx.clearRect(0, 0, W, H);
@@ -405,11 +454,14 @@
       if (vis <= 0) continue;
       var na = nodes[e.a], nb = nodes[e.b];
       var cm = calmSeg(na.x, na.y, nb.x, nb.y);
-      var f = cm * vis * e.w;
+      // A wire lies between its two ends, so it takes their depth between them.
+      var dep = (na.dep + nb.dep) * 0.5;
+      var f = cm * vis * e.w * dep;
+      if (f < CULL) continue;            // fainter than it can honestly be drawn
       b = Math.min(BUCKETS - 1, Math.floor(f * BUCKETS));
       if (!paths[b]) paths[b] = [];
       paths[b].push(na.x, na.y, nb.x, nb.y);
-      if (e.heat > 0.02) { if (!hot) hot = []; hot.push(i, cm * cm * vis); }
+      if (e.heat > 0.02) { if (!hot) hot = []; hot.push(i, cm * cm * vis * dep, dep); }
     }
     for (b = 0; b < BUCKETS; b++) {
       var pts = paths[b]; if (!pts) continue;
@@ -423,10 +475,10 @@
 
     // Wires still warm from something that crossed them.
     if (hot) {
-      for (i = 0; i < hot.length; i += 2) {
+      for (i = 0; i < hot.length; i += 3) {
         var he = edges[hot[i]], hv = hot[i + 1];
         var ha = nodes[he.a], hb = nodes[he.b];
-        ctx.lineWidth = 0.9 + 0.7 * he.w;
+        ctx.lineWidth = (0.9 + 0.7 * he.w) * hot[i + 2];
         ctx.strokeStyle = 'rgba(' + LIGHT + ',' + (0.22 * he.heat * hv).toFixed(4) + ')';
         ctx.beginPath(); ctx.moveTo(ha.x, ha.y); ctx.lineTo(hb.x, hb.y); ctx.stroke();
       }
@@ -442,37 +494,39 @@
       if (nv <= 0) continue;
       var cm = calm(n.x, n.y);
       if (n.act < 0.03 && n.pulse <= 0) {
-        b = Math.min(BUCKETS - 1, Math.floor(cm * nv * BUCKETS));
+        if (cm * nv * n.dep < CULL) continue;
+        b = Math.min(BUCKETS - 1, Math.floor(cm * nv * n.dep * BUCKETS));
         if (!bulk[b]) bulk[b] = [];
-        bulk[b].push(n.x, n.y, n.r);
+        bulk[b].push(n.x, n.y, n.r * n.sc);
         continue;
       }
-      var a = n.act * cm * cm * nv;        // bright things get calmed twice
-      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 0.25 + a * 1.3, 0, 6.2832);
-      ctx.fillStyle = 'rgba(' + AMBER + ',' + (0.18 * cm * cm * nv + a * 0.42) + ')';
+      var a = n.act * cm * cm * nv * n.dep;   // bright things get calmed twice
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * n.sc + 0.25 + a * 1.3, 0, 6.2832);
+      ctx.fillStyle = 'rgba(' + AMBER + ',' + (0.18 * cm * cm * nv * n.dep + a * 0.42) + ')';
       ctx.fill();
-      ctx.beginPath(); ctx.arc(n.x, n.y, 4.2 + a * 1.6, 0, 6.2832);
+      ctx.beginPath(); ctx.arc(n.x, n.y, 4.2 * n.sc + a * 1.6, 0, 6.2832);
       ctx.strokeStyle = 'rgba(' + AMBER + ',' + (a * 0.30) + ')';
       ctx.stroke();
       // The step running, drawn as it goes round.
       if (n.hold > 0 && n.held > 0) {
         var pr = 1 - n.hold / n.held;
-        ctx.beginPath(); ctx.arc(n.x, n.y, 6.4, -1.5708, -1.5708 + 6.2832 * pr);
+        ctx.beginPath(); ctx.arc(n.x, n.y, 6.4 * n.sc, -1.5708, -1.5708 + 6.2832 * pr);
         ctx.strokeStyle = 'rgba(' + LIGHT + ',' + (a * 0.34) + ')';
         ctx.stroke();
       }
       // Something reached the far side: one ring opening outwards.
       if (n.pulse > 0) {
-        ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 3 + (1 - n.pulse) * 15, 0, 6.2832);
-        ctx.strokeStyle = 'rgba(' + LIGHT + ',' + (0.26 * n.pulse * n.pulse * cm * cm * nv).toFixed(4) + ')';
+        ctx.beginPath(); ctx.arc(n.x, n.y, (n.r + 3 + (1 - n.pulse) * 15) * n.sc, 0, 6.2832);
+        ctx.strokeStyle = 'rgba(' + LIGHT + ',' + (0.26 * n.pulse * n.pulse * cm * cm * nv * n.dep).toFixed(4) + ')';
         ctx.stroke();
       }
       if (a > 0.25) {
-        var rg = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 26);
+        var gr = 26 * n.sc;
+        var rg = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, gr);
         rg.addColorStop(0, 'rgba(' + LIGHT + ',' + (a * 0.09) + ')');
         rg.addColorStop(1, 'rgba(' + LIGHT + ',0)');
         ctx.fillStyle = rg;
-        ctx.fillRect(n.x - 26, n.y - 26, 52, 52);
+        ctx.fillRect(n.x - gr, n.y - gr, gr * 2, gr * 2);
       }
     }
     for (b = 0; b < BUCKETS; b++) {
@@ -489,6 +543,10 @@
     if (sa <= 0) { ctx.globalAlpha = 1; return; }
     for (i = 0; i < signals.length; i++) {
       var s = signals[i], E = edges[s.e], A = nodes[E.a], B = nodes[E.b];
+      // Something crossing a near wire is a larger, brighter event than the
+      // same thing crossing one at the back. Signals are the brightest part of
+      // the layer, so this is where the depth is most visible.
+      var dp = (A.dep + B.dep) * 0.5, ds = (A.sc + B.sc) * 0.5;
       var dx = B.x - A.x, dy = B.y - A.y;
       var hx = A.x + dx * s.t, hy = A.y + dy * s.t;
       var back = Math.max(0, s.t - 0.30);
@@ -496,14 +554,14 @@
       // The tail is a line, so it takes the quietest point along itself. Judging
       // it by the head alone lets a signal whose head is in open space drag a
       // bright streak back across a paragraph.
-      var ct = calmSeg(bx2, by2, hx, hy), at = sa * ct * ct;
-      var ch = calm(hx, hy), ah = sa * ch * ch;
+      var ct = calmSeg(bx2, by2, hx, hy), at = sa * ct * ct * dp;
+      var ch = calm(hx, hy), ah = sa * ch * ch * dp;
       var lg = ctx.createLinearGradient(bx2, by2, hx, hy);
       lg.addColorStop(0, 'rgba(' + LIGHT + ',0)');
       lg.addColorStop(1, 'rgba(' + LIGHT + ',' + (0.50 * at).toFixed(4) + ')');
-      ctx.strokeStyle = lg; ctx.lineWidth = 1.2 + 0.6 * E.w;
+      ctx.strokeStyle = lg; ctx.lineWidth = (1.2 + 0.6 * E.w) * dp;
       ctx.beginPath(); ctx.moveTo(bx2, by2); ctx.lineTo(hx, hy); ctx.stroke();
-      ctx.beginPath(); ctx.arc(hx, hy, 1.7, 0, 6.2832);
+      ctx.beginPath(); ctx.arc(hx, hy, 1.7 * ds, 0, 6.2832);
       ctx.fillStyle = 'rgba(' + LIGHT + ',' + (0.75 * ah).toFixed(4) + ')';
       ctx.fill();
     }
