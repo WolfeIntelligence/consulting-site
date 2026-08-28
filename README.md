@@ -14,7 +14,7 @@ favicon.svg      the W mark
 robots.txt       crawl rules
 sitemap.xml      submitted to Search Console
 assets/          fonts, images, the social card, the two background canvases
-                 (ambient = lamplight, flow = the workflow circuit), and the
+                 (ambient = lamplight, flow = the net signals run through), and the
                  vendored runtime + React
 ws.js + ws.css   the workspace browser — the client-facing view of the graph
 api/             serverless functions (auth, chat, provisioning, the graph)
