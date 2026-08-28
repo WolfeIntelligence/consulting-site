@@ -6,7 +6,7 @@
 <script src="assets/resources.js"></script>
 <script src="assets/runtime.js"></script>
 <script src="assets/ambient.js" defer></script>
-<script src="assets/flow-3.js" defer></script>
+<script src="assets/flow-4.js" defer></script>
 <!-- Google Ads tag (home page only): measures clicks on "Book a free consult" when the visitor came from an ad. -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=AW-788072268"></script>
 <script src="assets/tag.js" defer></script>
@@ -37,17 +37,46 @@
 {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
+  "@id": "https://www.wolfeintelligence.com/#organization",
   "name": "Wolfe Intelligence",
+  "legalName": "Wolfe Holdings LLC",
   "url": "https://www.wolfeintelligence.com/",
   "email": "support@wolfeintelligence.com",
   "description": "AI consultancy and custom AI setup for owner-operators, small businesses, and professional firms: private AI assistants, intake and follow-up automation, research systems, Google presence with every inquiry tracked, systems that learn from their own results, coaching, and AI adoption for professional firms — staff training, written AI use policies, and readiness assessments.",
-  "areaServed": { "@type": "Country", "name": "United States" },
+  "areaServed": [
+    { "@type": "City", "name": "Lakeland", "containedInPlace": { "@type": "AdministrativeArea", "name": "Polk County, Florida" } },
+    { "@type": "City", "name": "Bartow", "containedInPlace": { "@type": "AdministrativeArea", "name": "Polk County, Florida" } },
+    { "@type": "City", "name": "Mulberry", "containedInPlace": { "@type": "AdministrativeArea", "name": "Polk County, Florida" } },
+    { "@type": "City", "name": "Plant City", "containedInPlace": { "@type": "AdministrativeArea", "name": "Hillsborough County, Florida" } },
+    { "@type": "AdministrativeArea", "name": "Polk County, Florida" }
+  ],
   "knowsAbout": ["small business AI", "custom AI assistants", "workflow automation", "customer intake automation", "research automation", "Google Business Profile", "conversion tracking", "offline conversion import", "marketing automation", "AI training workshops", "AI use policies", "AI readiness assessments", "responsible AI adoption"],
   "founder": {
     "@type": "Person",
+    "@id": "https://www.wolfeintelligence.com/#zachary-wolfe",
     "name": "Zachary Wolfe",
+    "givenName": "Zachary",
+    "familyName": "Wolfe",
     "jobTitle": "AI Strategist",
-    "alumniOf": { "@type": "CollegeOrUniversity", "name": "Wake Forest University" }
+    "disambiguatingDescription": "Zachary Wolfe is the founder of Wolfe Intelligence, an AI consultancy based in Lakeland, Florida, serving small businesses across Polk County. He holds a Master of AI Strategy and Innovation from Wake Forest University.",
+    "description": "Founder of Wolfe Intelligence. Builds private AI assistants, intake and follow-up automation, and Google Business Profile presence for small businesses in Lakeland and Polk County, Florida.",
+    "worksFor": { "@id": "https://www.wolfeintelligence.com/#organization" },
+    "workLocation": {
+      "@type": "Place",
+      "address": { "@type": "PostalAddress", "addressLocality": "Lakeland", "addressRegion": "FL", "addressCountry": "US" }
+    },
+    "knowsAbout": ["artificial intelligence strategy", "small business automation", "Google Business Profile"],
+    "alumniOf": {
+      "@type": "CollegeOrUniversity",
+      "name": "Wake Forest University",
+      "sameAs": "https://en.wikipedia.org/wiki/Wake_Forest_University"
+    },
+    "hasCredential": {
+      "@type": "EducationalOccupationalCredential",
+      "credentialCategory": "Master's Degree",
+      "name": "Master of AI Strategy and Innovation",
+      "recognizedBy": { "@type": "CollegeOrUniversity", "name": "Wake Forest University" }
+    }
   },
   "makesOffer": [
     { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Get found on Google" } },
