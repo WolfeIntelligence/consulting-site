@@ -23,8 +23,19 @@
    The awkward part of a net this size is that it wants the whole screen and
    the words are in the middle of it. So the net is not cut away around the
    text — it is dimmed there, hard, and the brighter something is the harder it
-   is dimmed. Full strength out in the margins, a whisper behind a paragraph.
+   is dimmed. Full strength in open space, a whisper behind a paragraph.
    Nothing is ever laid over a line of type at a weight you could read against.
+
+   That dimming used to be a band pinned to the viewport, which protected the
+   first screenful and nothing after it: the layer is fixed but the page scrolls
+   underneath, and by the second screen a third of the type was sitting in the
+   bright zone. So the layer measures where the words actually are — every text
+   node on the page, in page coordinates, minus anything with something solid
+   in front of the canvas — and keeps a coarse map of the distance from any
+   point to the nearest word. The net dims around type wherever type happens to
+   be, and opens up in the gutters, between the columns, and in the space
+   between sections. The measure costs about a millisecond and runs on load, on
+   resize, and when the page changes height.
 
    The rest is the lamplight's manners (assets/ambient.js), because the same
    objection killed an earlier version of this: motion here is meant to be
@@ -55,6 +66,7 @@
   var L = COUNT.length;
 
   var AMBER = '201,161,95', LIGHT = '233,201,141';
+  var NUMS = /[0-9.]+/g;
   var STEP = 1000 / 24, W, H, DPR = 1, DIM = 1, last = 0, prev = 0, raf = 0;
   var t0 = performance.now(), age = 0, intro = 0, lin = 0, boost = 0, scrolled = 0;
   var spawn = 0, SPAWN_EVERY = 3.6, MAX_SIGNALS = 60;
@@ -135,29 +147,126 @@
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
 
-  /* How much of itself the net is allowed at a point: all of it out in the
-     margins, a fifth of it behind the reading column. Brighter things get
-     this applied twice, so a firing node over a paragraph stays under the type
-     rather than competing with it. */
+  /* How much of itself the net is allowed at a point: all of it in open space,
+     a fifth of it right behind a word, ramping between over about 120px.
+     Brighter things get this applied twice, so a firing node over a paragraph
+     stays under the type rather than competing with it. */
+  var FLOOR = 0.14, CELL = 20, FADE = 6;      // FADE in cells: 120px to full
+  var gw = 0, gh = 0, dist = null, scY = 0;
   var qx = 0, qy0 = 0, qy1 = 0;
+
+  // Fallback for when the page cannot be read: the old viewport band.
   function quiet() {
     qx = Math.min(1240, Math.max(320, W - 80)) / 2;
     qy0 = 0.12 * H; qy1 = 0.82 * H;
   }
-  // A wire is only ever as bright as the quietest place it passes through.
-  // Judging it by its midpoint alone lets a wire whose middle sits out in the
-  // margin cross the reading column at full strength, which is how type ends
-  // up with a bright line through it.
+  function band(x, y) {
+    var dx = Math.abs(x - W / 2) - qx;
+    var dy = Math.max(qy0 - y, y - qy1);
+    var o = Math.max(dx, dy);
+    return FLOOR + (1 - FLOOR) * Math.max(0, Math.min(1, (o + 30) / 110));
+  }
+
+  /* Find every word on the page and build a distance map around it. Text with
+     something opaque between it and this canvas is skipped: the frosted header
+     and the filled buttons hide the layer completely, so dimming under them
+     would cost brightness and buy nothing. */
+  function measure() {
+    var boxes = [], docH = H, i;
+    try {
+      docH = Math.max(document.body.scrollHeight || 0, H);
+      var sy = window.scrollY || window.pageYOffset || 0;
+      var wlk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+      var node, p, e, cs, m, skip;
+      while ((node = wlk.nextNode())) {
+        if (!node.nodeValue || !node.nodeValue.trim()) continue;
+        p = node.parentElement;
+        if (!p || p === c) continue;
+        skip = false;
+        for (e = p; e && e !== document.body; e = e.parentElement) {
+          cs = getComputedStyle(e);
+          if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) { skip = true; break; }
+          if (cs.backdropFilter && cs.backdropFilter !== 'none') { skip = true; break; }
+          m = cs.backgroundColor.match(NUMS);
+          if (m && (m.length < 4 || +m[3] > 0.5)) { skip = true; break; }
+        }
+        if (skip) continue;
+        var rg = document.createRange();
+        rg.selectNodeContents(node);
+        var rl = rg.getClientRects();
+        for (i = 0; i < rl.length; i++) {
+          var b = rl[i];
+          if (b.width < 2 || b.height < 2) continue;
+          boxes.push(b.left, b.top + sy, b.right, b.bottom + sy);
+        }
+      }
+    } catch (err) { boxes = []; }
+
+    if (!boxes.length) { dist = null; return; }
+
+    gw = Math.ceil(W / CELL);
+    gh = Math.ceil(docH / CELL);
+    if (gw * gh > 4000000) { dist = null; return; }   // absurd page, keep the band
+    var BIG = 30000, d = new Uint16Array(gw * gh);
+    for (i = 0; i < d.length; i++) d[i] = BIG;
+    for (i = 0; i < boxes.length; i += 4) {
+      var x0 = Math.max(0, Math.floor(boxes[i] / CELL));
+      var y0 = Math.max(0, Math.floor(boxes[i + 1] / CELL));
+      var x1 = Math.min(gw - 1, Math.floor(boxes[i + 2] / CELL));
+      var y1 = Math.min(gh - 1, Math.floor(boxes[i + 3] / CELL));
+      for (var yy = y0; yy <= y1; yy++) for (var xx = x0; xx <= x1; xx++) d[yy * gw + xx] = 0;
+    }
+    /* Chamfer distance transform, 3 orthogonal and 4 diagonal, so the answer
+       comes out in thirds of a cell. Two passes over the grid, no square
+       roots, and it runs once per measure rather than per frame. */
+    var x, y, k, v;
+    for (y = 0; y < gh; y++) for (x = 0; x < gw; x++) {
+      k = y * gw + x; v = d[k]; if (!v) continue;
+      if (x > 0 && d[k - 1] + 3 < v) v = d[k - 1] + 3;
+      if (y > 0) {
+        if (d[k - gw] + 3 < v) v = d[k - gw] + 3;
+        if (x > 0 && d[k - gw - 1] + 4 < v) v = d[k - gw - 1] + 4;
+        if (x < gw - 1 && d[k - gw + 1] + 4 < v) v = d[k - gw + 1] + 4;
+      }
+      d[k] = v;
+    }
+    for (y = gh - 1; y >= 0; y--) for (x = gw - 1; x >= 0; x--) {
+      k = y * gw + x; v = d[k]; if (!v) continue;
+      if (x < gw - 1 && d[k + 1] + 3 < v) v = d[k + 1] + 3;
+      if (y < gh - 1) {
+        if (d[k + gw] + 3 < v) v = d[k + gw] + 3;
+        if (x < gw - 1 && d[k + gw + 1] + 4 < v) v = d[k + gw + 1] + 4;
+        if (x > 0 && d[k + gw - 1] + 4 < v) v = d[k + gw - 1] + 4;
+      }
+      d[k] = v;
+    }
+    dist = d;
+  }
+
+  /* Anything drawn as a line is only ever as bright as the quietest place it
+     passes through. Sampling the ends and the middle is not enough: a wire is
+     a couple of hundred pixels long and a line of type is twenty tall, so
+     three samples can step straight over a paragraph and the wire gets drawn
+     across it at full strength. Walk it instead, at roughly one sample per
+     cell of the map. */
   function calmSeg(ax, ay, bx, by) {
-    var m = calm((ax + bx) / 2, (ay + by) / 2), a = calm(ax, ay), b = calm(bx, by);
-    if (a < m) m = a; if (b < m) m = b;
+    var dx = bx - ax, dy = by - ay;
+    var n = Math.ceil(Math.sqrt(dx * dx + dy * dy) / CELL);
+    if (n < 2) n = 2; else if (n > 16) n = 16;
+    var m = 1;
+    for (var i = 0; i <= n; i++) {
+      var v = calm(ax + dx * i / n, ay + dy * i / n);
+      if (v < m) { m = v; if (m <= FLOOR) return m; }
+    }
     return m;
   }
   function calm(x, y) {
-    var dx = Math.abs(x - W / 2) - qx;
-    var dy = Math.max(qy0 - y, y - qy1);
-    var out = Math.max(dx, dy);
-    return 0.18 + 0.82 * Math.max(0, Math.min(1, (out + 30) / 110));
+    if (!dist) return band(x, y);
+    var gx = (x / CELL) | 0, gy = ((y + scY) / CELL) | 0;
+    if (gx < 0) gx = 0; else if (gx >= gw) gx = gw - 1;
+    if (gy < 0) gy = 0; else if (gy >= gh) gy = gh - 1;
+    var v = dist[gy * gw + gx] / 3;
+    return v >= FADE ? 1 : FLOOR + (1 - FLOOR) * (v / FADE);
   }
 
   function place(t) {
@@ -370,14 +479,19 @@
       var dx = B.x - A.x, dy = B.y - A.y;
       var hx = A.x + dx * s.t, hy = A.y + dy * s.t;
       var back = Math.max(0, s.t - 0.30);
-      var cm2 = calm(hx, hy), al = sa * cm2 * cm2;
-      var lg = ctx.createLinearGradient(A.x + dx * back, A.y + dy * back, hx, hy);
+      var bx2 = A.x + dx * back, by2 = A.y + dy * back;
+      // The tail is a line, so it takes the quietest point along itself. Judging
+      // it by the head alone lets a signal whose head is in open space drag a
+      // bright streak back across a paragraph.
+      var ct = calmSeg(bx2, by2, hx, hy), at = sa * ct * ct;
+      var ch = calm(hx, hy), ah = sa * ch * ch;
+      var lg = ctx.createLinearGradient(bx2, by2, hx, hy);
       lg.addColorStop(0, 'rgba(' + LIGHT + ',0)');
-      lg.addColorStop(1, 'rgba(' + LIGHT + ',' + (0.50 * al).toFixed(4) + ')');
+      lg.addColorStop(1, 'rgba(' + LIGHT + ',' + (0.50 * at).toFixed(4) + ')');
       ctx.strokeStyle = lg; ctx.lineWidth = 1.2 + 0.6 * E.w;
-      ctx.beginPath(); ctx.moveTo(A.x + dx * back, A.y + dy * back); ctx.lineTo(hx, hy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx2, by2); ctx.lineTo(hx, hy); ctx.stroke();
       ctx.beginPath(); ctx.arc(hx, hy, 1.7, 0, 6.2832);
-      ctx.fillStyle = 'rgba(' + LIGHT + ',' + (0.75 * al).toFixed(4) + ')';
+      ctx.fillStyle = 'rgba(' + LIGHT + ',' + (0.75 * ah).toFixed(4) + ')';
       ctx.fill();
     }
     ctx.lineWidth = 1;
@@ -390,6 +504,7 @@
     var e = reduce.matches ? 1 : Math.max(0, Math.min(1, (age - 0.25) / 2.6));
     intro = 1 - Math.pow(1 - e, 3);
     lin = e;                                  // the wiring comes up at an even pace
+    scY = window.scrollY || window.pageYOffset || 0;
     quiet();
     place(t);
     if (dt) advance(dt);
@@ -406,7 +521,7 @@
   function start() { if (!raf && !reduce.matches && !document.hidden) { prev = 0; raf = requestAnimationFrame(loop); } }
   function stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
 
-  size(); quiet();
+  size(); quiet(); measure();
   // Asked for less motion: one still frame, but not a dead one — a scatter of
   // nodes mid-step, wires still warm from traffic, signals caught part way
   // along, so the net reads as a net at rest rather than a diagram.
@@ -427,6 +542,24 @@
     var y = window.scrollY || 0; scrolled += Math.abs(y - sl); sl = y;
   }, { passive: true });
   var rt; addEventListener('resize', function () {
-    clearTimeout(rt); rt = setTimeout(function () { size(); quiet(); frame(performance.now(), 0); }, 150);
+    clearTimeout(rt); rt = setTimeout(function () {
+      size(); quiet(); measure(); frame(performance.now(), 0);
+    }, 150);
   });
+  /* The page is not the same height at first paint as it is once the fonts
+     have swapped in and the app has rendered, so the map is rebuilt when the
+     document changes size rather than trusted from load. */
+  var mt, lastH = 0;
+  function remeasure() { clearTimeout(mt); mt = setTimeout(measure, 250); }
+  if (window.ResizeObserver) {
+    try {
+      new ResizeObserver(function () {
+        var h = document.body.scrollHeight;
+        if (h !== lastH) { lastH = h; remeasure(); }
+      }).observe(document.body);
+    } catch (err) {}
+  }
+  if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+    document.fonts.ready.then(remeasure);
+  }
 })();
