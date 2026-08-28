@@ -13,7 +13,9 @@ lead-status.html one-tap outcome page opened from the new-inquiry email
 favicon.svg      the W mark
 robots.txt       crawl rules
 sitemap.xml      submitted to Search Console
-assets/          fonts, images, the social card, and the vendored runtime + React
+assets/          fonts, images, the social card, the two background canvases
+                 (ambient = lamplight, flow = the workflow circuit), and the
+                 vendored runtime + React
 ws.js + ws.css   the workspace browser — the client-facing view of the graph
 api/             serverless functions (auth, chat, provisioning, the graph)
 lib/             shared helpers — NOT routes (see below)

@@ -6,7 +6,7 @@
 <script src="assets/resources.js"></script>
 <script src="assets/runtime.js"></script>
 <script src="assets/ambient.js" defer></script>
-<script src="assets/flow.js" defer></script>
+<script src="assets/flow-2.js" defer></script>
 <!-- Google Ads tag (home page only): measures clicks on "Book a free consult" when the visitor came from an ad. -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=AW-788072268"></script>
 <script src="assets/tag.js" defer></script>
@@ -136,11 +136,14 @@
   [data-w]{display:inline-block}
   html.wolfe-anim [data-w]{animation:wolfe-word .9s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(120ms + var(--w,0) * 90ms)}
   @keyframes wolfe-word{from{opacity:0;filter:blur(10px);transform:translateY(.14em)}to{opacity:1;filter:blur(0);transform:translateY(0)}}
-  #wolfe-ambient{position:fixed;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 1.4s ease}
+  #wolfe-ambient{position:fixed;inset:0;z-index:-3;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 1.4s ease}
   #wolfe-ambient.is-on{opacity:1}
-  /* The workflow loop rides on top of the lamplight and under everything
-     else, and comes up slower than the light does. */
-  #wolfe-flow{position:fixed;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 1.8s ease .3s}
+  /* Lamp, then circuit, then grain: -3, -2, -1. Stated rather than left to
+     the order the two scripts happen to insert their canvases in, which had
+     the lamplight painting over the circuit it is supposed to sit under.
+     The circuit draws itself on from inside the canvas, so the fade here is
+     short — it is only there to cover the first frame. */
+  #wolfe-flow{position:fixed;inset:0;z-index:-2;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .9s ease .15s}
   #wolfe-flow.is-on{opacity:1}
   /* Hero into Services: the seam the trust bar used to be. A hairline that
      is only there in the middle, so the circuit behind it stays visible. */
