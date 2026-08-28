@@ -37,6 +37,17 @@
    between sections. The measure costs about a millisecond and runs on load, on
    resize, and when the page changes height.
 
+   How dark the layer goes under a word is set by two numbers together, not
+   one. Alphas are drawn in fourteen quantised steps, and what actually reaches
+   the screen is the midpoint of whichever step the value lands in — so
+   changing the number of steps silently changes how dark the floor is. At
+   seven steps a floor of 0.14 was drawing at about 4/255 by accident; at
+   fourteen it would have drawn at 6/255. The pair is now chosen deliberately:
+   fourteen steps, floor 0.07, about 2/255 under type. Fourteen rather than
+   seven also matters while scrolling — the dimming sweeps across the net as
+   the page moves, and at seven steps a wire crosses a visible 8/255 jump every
+   couple of frames.
+
    The rest is the lamplight's manners (assets/ambient.js), because the same
    objection killed an earlier version of this: motion here is meant to be
    felt, not watched. Nodes drift on incommensurate periods so the shape is
@@ -151,7 +162,7 @@
      a fifth of it right behind a word, ramping between over about 120px.
      Brighter things get this applied twice, so a firing node over a paragraph
      stays under the type rather than competing with it. */
-  var FLOOR = 0.14, CELL = 20, FADE = 6;      // FADE in cells: 120px to full
+  var FLOOR = 0.07, CELL = 20, FADE = 6;      // FADE in cells: 120px to full
   var gw = 0, gh = 0, dist = null, scY = 0;
   var qx = 0, qy0 = 0, qy1 = 0;
 
@@ -372,10 +383,12 @@
     if (spawn >= SPAWN_EVERY) { spawn = 0; fireSeq++; wave(fireSeq); }
   }
 
-  // Wire alphas are bucketed so the whole net is a handful of stroked paths
-  // rather than two hundred and twenty-five of them. Weight goes into the bucket, so
-  // the heavy wires sort themselves into the brighter, thicker passes.
-  var BUCKETS = 7;
+  /* Wire alphas are bucketed so the whole net is a handful of stroked paths
+     rather than two hundred and twenty-five of them; weight goes into the
+     bucket, so the heavy wires sort themselves into the brighter, thicker
+     passes. Fourteen steps, not seven — see the note above about how this
+     number and FLOOR set the floor brightness together. */
+  var BUCKETS = 14;
   function paint(now) {
     var i, b;
     ctx.clearRect(0, 0, W, H);
