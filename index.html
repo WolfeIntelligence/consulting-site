@@ -64,7 +64,7 @@
     "givenName": "Zachary",
     "familyName": "Wolfe",
     "jobTitle": "Founder and AI consultant",
-    "disambiguatingDescription": "Zachary Wolfe is the founder of Wolfe Intelligence, an AI consultancy based in Lakeland, Florida, serving small businesses across Polk County. He holds a Master of AI Strategy and Innovation from Wake Forest University.",
+    "disambiguatingDescription": "Zachary Wolfe is the founder of Wolfe Intelligence, an AI consultancy based in Lakeland, Florida, serving small businesses across Polk County. He is completing a Master of AI Strategy and Innovation at Wake Forest University.",
     "description": "Founder of Wolfe Intelligence. Builds private AI assistants, intake and follow-up automation, and Google Business Profile presence for small businesses in Lakeland and Polk County, Florida.",
     "sameAs": ["https://www.linkedin.com/in/zachary-wolfe-3bbb9ab0/"],
     "worksFor": { "@id": "https://www.wolfeintelligence.com/#organization" },
@@ -77,12 +77,6 @@
       "@type": "CollegeOrUniversity",
       "name": "Wake Forest University",
       "sameAs": "https://en.wikipedia.org/wiki/Wake_Forest_University"
-    },
-    "hasCredential": {
-      "@type": "EducationalOccupationalCredential",
-      "credentialCategory": "Master's Degree",
-      "name": "Master of AI Strategy and Innovation",
-      "recognizedBy": { "@type": "CollegeOrUniversity", "name": "Wake Forest University" }
     }
   },
   "makesOffer": [
@@ -447,7 +441,7 @@
         <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:22px;">WHO YOU ARE ACTUALLY WORKING WITH</div>
         <h2 style="font:400 clamp(28px,3.6vw,40px)/1.15 'Newsreader',serif;letter-spacing:-.01em;margin-bottom:24px;">I set it up. Then I teach you to run it without me.</h2>
         <p style="font:400 17px/1.65 'Instrument Sans',sans-serif;color:#cabda8;max-width:52ch;margin-bottom:20px;">I&rsquo;m Zachary Wolfe &mdash; Zach to most people. The big companies already have all of this. They built it in-house and they aren&rsquo;t sharing. That&rsquo;s why I started Wolfe Intelligence &mdash; a small business ought to have the same thing and still own its data, its accounts and its tools at the end of it.</p>
-        <p style="font:400 17px/1.65 'Instrument Sans',sans-serif;color:#cabda8;max-width:52ch;">My Master&rsquo;s is in AI Strategy &amp; Innovation, from Wake Forest. What that buys you isn&rsquo;t the diploma. It&rsquo;s that I build the work myself instead of reselling you somebody else&rsquo;s, and that I measure what each piece brought in. You shouldn&rsquo;t have to take my word for it.</p>
+        <p style="font:400 17px/1.65 'Instrument Sans',sans-serif;color:#cabda8;max-width:52ch;">I&rsquo;m finishing my Master&rsquo;s in AI Strategy &amp; Innovation at Wake Forest. What that buys you isn&rsquo;t the diploma. It&rsquo;s that I build the work myself instead of reselling you somebody else&rsquo;s, and that I measure what each piece brought in. You shouldn&rsquo;t have to take my word for it.</p>
         <p style="font:400 17px/1.65 'Instrument Sans',sans-serif;color:#cabda8;max-width:52ch;margin-top:20px;">I&rsquo;d rather you didn&rsquo;t.</p>
       </div>
     </div>
@@ -609,7 +603,7 @@ class Component extends DCLogic {
     if (has('privacy', 'private', 'my data', 'data ', 'local', 'secure', 'security', 'key', 'credential', 'cloud', 'on prem')) return { text: 'Your assistant runs on your own machines or in your own accounts. Your logins and keys are encrypted on your device, I never see them, and your data stays with you.' };
     if (has("can't", 'cannot', 'cant', 'limit', 'not do', "won't", 'wont', 'trade', 'publish', 'guarantee', 'risk', 'autonomous')) return { text: "What it won't do: nothing gets posted or emailed on your behalf unless you said so. And I don't guarantee outcomes — I tell you what stage each piece is at, and nothing counts as finished until it's been used on a real job." };
     if (has('service', 'offer', 'install', 'set up', 'setup', 'agent', 'automat', 'research', 'coach', 'knowledge', 'flywheel', 'do for me', 'help me', 'can it', 'can you')) return { text: 'Six services, standalone or combined: custom AI built around your business; intake and follow-up that run themselves; research that files itself; getting you found on Google with every inquiry tracked; a system that learns from your own results; and one-on-one coaching. For professional firms — law, accounting, insurance, real estate — there is also staff AI training, a written AI use policy, and a readiness assessment.' };
-    if (has('who', 'zach', 'founder', 'advisor', 'wake forest', 'background', 'about you')) return { text: "It's one person: me. I started Wolfe Intelligence so a small business can get the kind of AI setup big companies build in-house. My Master's is in AI Strategy & Innovation, from Wake Forest." };
+    if (has('who', 'zach', 'founder', 'advisor', 'wake forest', 'background', 'about you')) return { text: "It's one person: me. I started Wolfe Intelligence so a small business can get the kind of AI setup big companies build in-house. I'm finishing my Master's in AI Strategy & Innovation at Wake Forest." };
     if (has('email', 'contact', 'reach', 'phone', 'write')) return { text: 'The direct line is support@wolfeintelligence.com — or book the free consult and skip the inbox.', href: 'mailto:support@wolfeintelligence.com', linkLabel: 'support@wolfeintelligence.com' };
     if (/^(hi|hello|hey|yo|howdy)\b/.test(t.trim())) return { text: 'Hello. Ask me what I do, what it can and cannot do, how privacy works, or what it costs.' };
     if (has('what is', 'what do', 'about', 'wolfe intelligence', 'this site', 'company', 'explain')) return { text: 'Wolfe Intelligence sets up private AI and automation for owner-operators and small businesses: custom assistants on your own machines, intake and follow-up that run themselves, getting found on Google with every inquiry tracked, and a system that learns from your results — then coaches you until you can run it yourself.' };
