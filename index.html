@@ -55,7 +55,7 @@
     { "@type": "City", "name": "Plant City", "containedInPlace": { "@type": "AdministrativeArea", "name": "Hillsborough County, Florida" } },
     { "@type": "AdministrativeArea", "name": "Polk County, Florida" }
   ],
-  "knowsAbout": ["small business AI", "custom AI assistants", "workflow automation", "customer intake automation", "research automation", "Google Business Profile", "conversion tracking", "offline conversion import", "marketing automation", "AI training workshops", "AI use policies", "AI readiness assessments", "responsible AI adoption"],
+  "knowsAbout": ["small business AI", "custom AI assistants", "workflow automation", "customer intake automation", "research automation", "Google Business Profile", "conversion tracking", "offline conversion import", "marketing automation", "AI training workshops", "AI use policies", "AI readiness assessments", "responsible AI adoption", "patent analysis", "prior art search", "invalidity search", "patent classification", "patent landscape analysis", "semiconductors", "optics and imaging", "electrical engineering"],
   "founder": {
     "@type": "Person",
     "@id": "https://www.wolfeintelligence.com/#zachary-wolfe",
@@ -86,7 +86,9 @@
     { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Private AI assistant setup" } },
     { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Research automation" } },
     { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Coaching" } },
-    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "AI training and policy for professional firms" } }
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "AI training and policy for professional firms" } },
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Prior art and invalidity searching" } },
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Patent classification and landscape analysis" } }
   ]
 }
 </script>
@@ -100,7 +102,7 @@
     {
       "@type": "Question",
       "name": "What does Wolfe Intelligence do?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Wolfe Intelligence sets up private AI and automation for owner-operators and small businesses: getting you found on Google, capturing every lead, automating follow-up, and running an AI assistant on your own machine." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Wolfe Intelligence sets up private AI and automation for owner-operators and small businesses: getting you found on Google, capturing every lead, automating follow-up, and running an AI assistant on your own machine. It also runs AI training and written AI use policies for professional firms, and patent searching and analysis for patent and IP teams in the electrical and physics arts." }
     },
     {
       "@type": "Question",
@@ -148,6 +150,7 @@
   @media (max-width:820px){
     [data-nav-bar]{position:static}
     [data-grid="services"],[data-grid="testimonials"]{grid-template-columns:1fr 1fr!important}
+    [data-grid="services"]>div:last-child{grid-column:1/-1}
     [data-screen-label="Nav"]{flex-wrap:wrap;gap:16px}
     [data-screen-label="Nav"]>div:last-child{gap:20px!important;flex-wrap:wrap}
     [data-stack]{flex-direction:column!important;align-items:flex-start!important;gap:22px!important}
@@ -192,6 +195,7 @@
   [data-reveal-stagger]>[data-reveal]:nth-child(4){--d:240ms}
   [data-reveal-stagger]>[data-reveal]:nth-child(5){--d:320ms}
   [data-reveal-stagger]>[data-reveal]:nth-child(6){--d:400ms}
+  [data-reveal-stagger]>[data-reveal]:nth-child(n+7){--d:400ms}
   /* Cards lift with `translate`, separate from the reveal's `transform`, so the
      two never fight and the stagger delay never leaks into hover. */
   [data-grid="services"]>div{position:relative;transition:opacity .6s ease var(--d,0s),transform .6s cubic-bezier(.2,.7,.2,1) var(--d,0s),translate .25s ease,box-shadow .25s ease,background-color .25s ease}
@@ -278,41 +282,56 @@
   <div id="services" data-screen-label="Services" data-pad="x" style="max-width:1240px;margin:0 auto;padding:40px 40px;">
     <div data-reveal data-stack="x" style="display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:52px;flex-wrap:wrap;">
       <div>
-        <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:20px;">WHAT I SET UP &amp; OPERATE</div>
+        <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:20px;">EVERYTHING I DO</div>
         <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:20ch;">AI that works for you, not one more thing you&rsquo;re locked into.</h2>
       </div>
-      <p style="font:400 15px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:34ch;">For trades, home services, solo professionals and small firms. There are six services. You can take one or all six, and each one is tracked in your own private portal.</p>
+      <p style="font:400 15px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:34ch;">Nine services in three groups: the AI setup work for small businesses, training and policy for professional firms, and patent searching and analysis for IP teams. Take one or take several. Each tile says who it is for.</p>
     </div>
     <div data-grid="services" data-reveal-stagger style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(244,238,227,.14);border-left:1px solid rgba(244,238,227,.14);">
       <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
-        <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">01</div>
+        <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:22px;"><span style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">01</span><span style="font:700 10px 'Space Mono',monospace;letter-spacing:.14em;color:#8a7e6e;">SMALL BUSINESS</span></div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Custom AI, built around you</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">A private assistant on your own computer, or in your own accounts. It works from your prices, your services, your documents and the answers you already give customers. I also build tools for the parts of your job that regular software doesn&rsquo;t handle. Usually that turns out to be pricing, because most shops price a little differently than the software expects them to.</p>
       </div>
       <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
-        <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">02</div>
+        <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:22px;"><span style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">02</span><span style="font:700 10px 'Space Mono',monospace;letter-spacing:.14em;color:#8a7e6e;">SMALL BUSINESS</span></div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Intake and follow-up that run themselves</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">A call comes in while you&rsquo;re on a job and can&rsquo;t pick up. It gets caught, sorted and handled, and the same happens with forms and texts as soon as they arrive. Quotes get followed up on, appointments get confirmed, and last year&rsquo;s customers hear from you when it&rsquo;s time for the work again.</p>
       </div>
       <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
-        <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">03</div>
+        <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:22px;"><span style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">03</span><span style="font:700 10px 'Space Mono',monospace;letter-spacing:.14em;color:#8a7e6e;">SMALL BUSINESS</span></div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Research that files itself</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">Suppliers, competitors, pricing, or whatever else you keep meaning to look into. It gets gathered, sourced and written up on a schedule, so you are not doing it yourself late at night.</p>
       </div>
       <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
-        <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">04</div>
+        <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:22px;"><span style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">04</span><span style="font:700 10px 'Space Mono',monospace;letter-spacing:.14em;color:#8a7e6e;">SMALL BUSINESS</span></div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Get found on Google</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">Your Google Business Profile set up and verified properly, and a page of your own with an estimate form on it. Every inquiry is tracked from the first click through to the paying customer, so you can see which search, ad or listing brought them in.</p>
       </div>
       <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
-        <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">05</div>
+        <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:22px;"><span style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">05</span><span style="font:700 10px 'Space Mono',monospace;letter-spacing:.14em;color:#8a7e6e;">SMALL BUSINESS</span></div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">A system that learns from your results</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">Everything I set up gets tracked. Did the inquiry turn into a customer? Was the answer right? Did someone have to step in and fix it? All of that goes back into the setup, so the second month is built on what actually happened in the first month rather than on what I guessed at the start.</p>
       </div>
       <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
-        <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:22px;">06</div>
+        <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:22px;"><span style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">06</span><span style="font:700 10px 'Space Mono',monospace;letter-spacing:.14em;color:#8a7e6e;">SMALL BUSINESS</span></div>
         <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Coaching</h3>
         <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">One-on-one sessions until you can run the whole thing yourself. I won&rsquo;t use jargon, there is no homework, and the point is for you to stop needing me.</p>
+      </div>
+      <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
+        <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:22px;"><span style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">07</span><span style="font:700 10px 'Space Mono',monospace;letter-spacing:.14em;color:#8a7e6e;">PROFESSIONAL FIRMS</span></div>
+        <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">AI training and a written policy</h3>
+        <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">A half-day workshop for your whole staff: which tools to use, what must never be put into them, and how to check the answers they give you. Then the policy that goes with it, in writing. Approved tools, what data can go where, what to tell clients, and who reviews what. I also take an honest look at what your staff is already using without telling anyone, and put together a 90-day plan.</p>
+      </div>
+      <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
+        <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:22px;"><span style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">08</span><span style="font:700 10px 'Space Mono',monospace;letter-spacing:.14em;color:#8a7e6e;">PATENT AND IP TEAMS</span></div>
+        <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Prior-art and invalidity searching</h3>
+        <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">Searches in the arts I actually know: semiconductors and solid state, optics and imaging, measurement and instrumentation, power systems, and lighting. You get the references, the relevant passages, and a chart showing where each one reads on the claims. The legal conclusions stay with you.</p>
+      </div>
+      <div data-reveal style="border-right:1px solid rgba(244,238,227,.14);border-bottom:1px solid rgba(244,238,227,.14);padding:40px 34px;">
+        <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:22px;"><span style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);">09</span><span style="font:700 10px 'Space Mono',monospace;letter-spacing:.14em;color:#8a7e6e;">PATENT AND IP TEAMS</span></div>
+        <h3 style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:14px;">Patent classification and landscapes</h3>
+        <p style="font:400 15px/1.62 'Instrument Sans',sans-serif;color:#b3a593;">Sorting a large set of patents by what the claims actually cover, rather than by keyword. Who is filing in a space, how that has changed over time, and which assignees are moving in. Every number traces back to the search that produced it, and all of it is built on public patent data.</p>
       </div>
     </div>
   </div>
@@ -327,21 +346,14 @@
         </div>
         <p style="font:400 15px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:38ch;">Law practices, accounting firms, insurance agencies, real estate brokerages. Your staff is already using AI, usually with no rules at all. I help you use it inside your profession&rsquo;s actual rules.</p>
       </div>
-      <div data-grid="approach" data-reveal-stagger style="display:grid;grid-template-columns:repeat(3,1fr);gap:36px;">
-        <div data-reveal style="border-top:1px solid rgba(244,238,227,.14);padding-top:22px;">
-          <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:16px;">01</div>
-          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Train your team</h3>
-          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">I run a half-day workshop for your whole staff: which tools to use, what must never be put into them, and how to check the answers they give you. I build it on your profession&rsquo;s own rules and on real cases where firms got this wrong.</p>
+      <div data-grid="split" data-reveal-stagger style="display:grid;grid-template-columns:1fr 1fr;gap:44px;border-top:1px solid rgba(244,238,227,.14);padding-top:30px;">
+        <div data-reveal>
+          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">What that looks like</h3>
+          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">The workshop and the written policy are listed above. After those, the two or three jobs that will clearly pay for themselves, usually intake, follow-up and chasing documents, which is the same automation work I set up for any small business.</p>
         </div>
-        <div data-reveal style="border-top:1px solid rgba(244,238,227,.14);padding-top:22px;">
-          <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:16px;">02</div>
-          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Put it in writing</h3>
-          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">I write your firm an AI use policy: which tools are approved, what data can go where, what to tell clients, and who reviews what. I also take an honest look at what your staff is already using without telling anyone, and put together a 90-day plan.</p>
-        </div>
-        <div data-reveal style="border-top:1px solid rgba(244,238,227,.14);padding-top:22px;">
-          <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:16px;">03</div>
-          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Automate what pays</h3>
-          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">Then I take the two or three jobs that will clearly pay for themselves, like intake, follow-up and chasing documents, and set those up. You are not locked to one vendor, the results are measured from the first day, and nothing goes out without someone reviewing it.</p>
+        <div data-reveal style="--d:80ms;">
+          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">How it stays safe</h3>
+          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">You are not locked to one vendor. The results are measured from the first day. Nothing goes out without someone at the firm reviewing it, and the policy says in writing who that person is.</p>
         </div>
       </div>
       <div data-reveal style="margin-top:44px;display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
@@ -361,26 +373,19 @@
         </div>
         <p style="font:400 15px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:38ch;">For patent attorneys, patent agents, small IP boutiques and in-house teams. I have a physics degree, a background in electrical engineering, and years of professional experience reading and classifying patents at volume.</p>
       </div>
-      <div data-grid="approach" data-reveal-stagger style="display:grid;grid-template-columns:repeat(3,1fr);gap:36px;">
-        <div data-reveal style="border-top:1px solid rgba(244,238,227,.14);padding-top:22px;">
-          <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:16px;">01</div>
-          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Prior-art and invalidity searching</h3>
-          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">Searches in the arts I actually know: semiconductors and solid state, optics and imaging, measurement and instrumentation, power systems, and lighting. You get the references, the relevant passages, and a chart showing where each one reads on the claims. The legal conclusions stay with you.</p>
+      <div data-grid="split" data-reveal-stagger style="display:grid;grid-template-columns:1fr 1fr;gap:44px;border-top:1px solid rgba(244,238,227,.14);padding-top:30px;">
+        <div data-reveal>
+          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">The arts I work in</h3>
+          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">Semiconductors and solid state, optics and imaging, measurement and instrumentation, power systems, and lighting. The searching and the landscape work are listed above. All of it is built on public patent data.</p>
         </div>
-        <div data-reveal style="border-top:1px solid rgba(244,238,227,.14);padding-top:22px;">
-          <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:16px;">02</div>
-          <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Classification and landscapes</h3>
-          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">Sorting a large set of patents by what the claims actually cover, rather than by keyword. Who is filing in a space, how that has changed over time, and which assignees are moving in. Every number traces back to the search that produced it.</p>
-        </div>
-        <div data-reveal style="border-top:1px solid rgba(244,238,227,.14);padding-top:22px;">
-          <div style="font:700 12px 'Space Mono',monospace;color:var(--accent,#c9a15f);margin-bottom:16px;">03</div>
+        <div data-reveal style="--d:80ms;">
           <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">Document workflows</h3>
-          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">The AI plumbing around the work: pulling patent families, extracting claim text, keeping every citation attached to its source, and getting large document sets into a form your team can actually search. Built on public patent data.</p>
+          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">The plumbing around the work, if you want it. Pulling patent families, extracting claim text, keeping every citation attached to its source, and getting a large document set into a form your team can actually search.</p>
         </div>
       </div>
       <div data-reveal style="margin-top:44px;display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
         <a data-cta-ghost href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="display:inline-block;border:1px solid var(--accent,#c9a15f);color:var(--accent-lt,#e9c98d);padding:14px 26px;border-radius:2px;font:600 14px 'Instrument Sans',sans-serif;">Book a free consult ↗</a>
-        <span style="font:400 12.5px 'Instrument Sans',sans-serif;color:#988b7a;max-width:52ch;">I am not a registered patent agent or attorney. This is search and analysis work, not legal advice, and not an opinion on whether a patent is valid, invalid or infringed.</span>
+        <span style="font:400 12.5px 'Instrument Sans',sans-serif;color:#988b7a;max-width:74ch;">I am not a registered patent agent or attorney. This is search and analysis work, not legal advice, and not an opinion on whether a patent is valid, invalid or infringed.</span>
       </div>
     </div>
   </div>
@@ -635,7 +640,7 @@ class Component extends DCLogic {
     if (has('portal', 'login', 'log in', 'dashboard', 'client account')) return { text: 'The portal is each client\'s private page: inquiries from their website as they arrive, each step of their setup and whose turn it is, and results counted by source. Accounts get set up while I\'m working with you, not self-serve — but there\'s a sample portal you can walk through.', href: '/portal?tour=1', linkLabel: 'See the sample portal' };
     if (has('privacy', 'private', 'my data', 'data ', 'local', 'secure', 'security', 'key', 'credential', 'cloud', 'on prem')) return { text: 'Your assistant runs on your own machines or in your own accounts. Your logins and keys are encrypted on your device, I never see them, and your data stays with you.' };
     if (has("can't", 'cannot', 'cant', 'limit', 'not do', "won't", 'wont', 'trade', 'publish', 'guarantee', 'risk', 'autonomous')) return { text: "What it won't do: nothing gets posted or emailed on your behalf unless you said so. And I don't guarantee outcomes — I tell you what stage each piece is at, and nothing counts as finished until it's been used on a real job." };
-    if (has('service', 'offer', 'install', 'set up', 'setup', 'agent', 'automat', 'research', 'coach', 'knowledge', 'flywheel', 'do for me', 'help me', 'can it', 'can you')) return { text: 'Six services, standalone or combined: custom AI built around your business; intake and follow-up that run themselves; research that files itself; getting you found on Google with every inquiry tracked; a system that learns from your own results; and one-on-one coaching. For professional firms — law, accounting, insurance, real estate — there is also staff AI training, a written AI use policy, and a readiness assessment.' };
+    if (has('service', 'offer', 'install', 'set up', 'setup', 'agent', 'automat', 'research', 'coach', 'knowledge', 'flywheel', 'do for me', 'help me', 'can it', 'can you')) return { text: 'Nine services, standalone or combined, in three groups. For small businesses: custom AI built around your business; intake and follow-up that run themselves; research that files itself; getting you found on Google with every inquiry tracked; a system that learns from your own results; and one-on-one coaching. For professional firms — law, accounting, insurance, real estate — staff AI training with a written AI use policy and a 90-day plan. For patent and IP teams: prior-art and invalidity searching, and patent classification and landscape work, in the electrical and physics arts.' };
     if (has('patent', 'prior art', 'invalidity', 'claim chart', 'uspto', 'ip team', 'landscape')) return { text: "For patent attorneys, agents and in-house IP teams I do prior-art and invalidity searching, classification and landscape work, and the document workflows around them — strongest in semiconductors, optics and imaging, measurement, power systems and lighting. I'm not a patent agent or an attorney, so it's search and analysis, never legal advice or an opinion on validity." };
     if (has('who', 'zach', 'founder', 'advisor', 'wake forest', 'background', 'about you')) return { text: "It's one person: me. I started Wolfe Intelligence so a small business can get the kind of AI setup big companies build in-house. I'm finishing my Master's in AI Strategy & Innovation at Wake Forest." };
     if (has('email', 'contact', 'reach', 'phone', 'write')) return { text: 'The direct line is support@wolfeintelligence.com — or book the free consult and skip the inbox.', href: 'mailto:support@wolfeintelligence.com', linkLabel: 'support@wolfeintelligence.com' };
