@@ -46,6 +46,30 @@
   #wolfe-grain{position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:var(--wolfe-grain);background-size:128px 128px;opacity:.04}
   [data-cta]{transition:transform .2s ease,box-shadow .2s ease}
   [data-cta-ghost]{transition:background-color .2s ease,color .2s ease}
+  /* The two menus in the nav, What we do and Who we serve, are <details>
+     elements: they open and close on a tap, a click or Enter on the keyboard
+     and need no script. business.html and firms.html carry none, and the CSP
+     allows no inline one. `name` makes them exclusive where the browser
+     supports it; elsewhere each one simply toggles. On the desktop the panel
+     drops down from the bar; under 820px, where the nav already wraps, an open
+     menu takes the full row and lists its links in the flow instead. */
+  [data-menu]{position:relative}
+  [data-menu]>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;-webkit-tap-highlight-color:transparent;transition:color .15s ease}
+  [data-menu]>summary::-webkit-details-marker{display:none}
+  [data-menu]>summary::after{content:"";width:5px;height:5px;border-right:1px solid currentColor;border-bottom:1px solid currentColor;transform:translateY(-2px) rotate(45deg);opacity:.75;transition:transform .2s ease}
+  [data-menu]>summary:hover,[data-menu][open]>summary{color:var(--accent-lt,#e9c98d)}
+  [data-menu][open]>summary::after{transform:translateY(1px) rotate(225deg)}
+  [data-menu]>summary:focus-visible,[data-menu-panel]>a:focus-visible{outline:1px solid var(--accent,#c9a15f);outline-offset:5px}
+  [data-menu-panel]{position:absolute;left:-20px;top:calc(100% + 15px);z-index:60;min-width:310px;padding:16px 20px 6px;background:rgba(31,27,23,.96);border:1px solid rgba(244,238,227,.14);border-radius:2px;box-shadow:0 24px 54px rgba(0,0,0,.45);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2)}
+  [data-menu-panel]>div:first-child{font:700 10px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);padding-bottom:12px;border-bottom:1px solid rgba(244,238,227,.14)}
+  [data-menu-panel]>a{display:block;padding:12px 0;border-bottom:1px solid rgba(244,238,227,.08);font:500 13.5px/1.4 'Instrument Sans',sans-serif;color:#d8cdba;transition:color .15s ease}
+  [data-menu-panel]>a:last-child{border-bottom:0}
+  [data-menu-panel]>a:hover{color:var(--accent-lt,#e9c98d)}
+  /* The page the visitor is on is lit, in the menus and in the footer. */
+  [data-menu-panel]>a[aria-current="page"],[data-foot-col]>a[aria-current="page"]{color:var(--accent-lt,#e9c98d)}
+  [data-foot-col]>div:first-child{font:700 10px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:14px}
+  [data-foot-col]>a{display:block;padding:5px 0;font:400 13px/1.45 'Instrument Sans',sans-serif;color:#b3a593;transition:color .15s ease}
+  [data-foot-col]>a:hover{color:var(--paper,#f4eee3)}
   [data-grid="services"]>div{position:relative;transition:translate .25s ease,box-shadow .25s ease,background-color .25s ease}
   @media (hover:hover){
     [data-grid="services"]>div:hover{translate:0 -3px;z-index:1;background:rgba(244,238,227,.035)!important;box-shadow:inset 0 0 0 1px rgba(201,161,95,.45),0 18px 40px rgba(0,0,0,.35)}
@@ -59,6 +83,9 @@
     [data-grid="services"]{grid-template-columns:1fr 1fr!important}
     [data-screen-label="Nav"]{flex-wrap:wrap;gap:16px}
     [data-screen-label="Nav"]>div:last-child{gap:20px!important;flex-wrap:wrap}
+    [data-menu][open]{flex-basis:100%}
+    [data-menu-panel]{position:static;min-width:0;margin:12px 0 2px;padding:12px 16px 4px;box-shadow:none;background:rgba(0,0,0,.18);-webkit-backdrop-filter:none;backdrop-filter:none}
+    [data-grid="footer"]{grid-template-columns:1fr 1fr!important}
     [data-stack]{flex-direction:column!important;align-items:flex-start!important;gap:22px!important}
   }
   @media (max-width:600px){[data-grid]{grid-template-columns:1fr!important}[data-pad]{padding-left:22px!important;padding-right:22px!important}}
@@ -68,13 +95,33 @@
 <div style="width:100%;background:transparent;color:var(--paper,#f4eee3);overflow:clip;">
 
   <div data-nav-bar>
-  <div data-screen-label="Nav" data-pad="x" style="max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:18px 40px;">
+  <nav aria-label="Site" data-screen-label="Nav" data-pad="x" style="max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:18px 40px;">
     <a href="/" style="font:700 13px 'Space Mono',monospace;letter-spacing:.24em;">WOLFE&nbsp;INTELLIGENCE</a>
     <div style="display:flex;align-items:center;gap:34px;font:500 13.5px 'Instrument Sans',sans-serif;color:#d8cdba;">
-      <a href="/">Home</a><a href="/business">Businesses</a><a href="/firms">For firms</a><a href="/portal">Portal</a>
+      <details data-menu name="site-menu">
+        <summary>What we do</summary>
+        <div data-menu-panel>
+          <div>WHAT WE DO</div>
+          <a href="/#patents">Patent search and analysis</a>
+          <a href="/#research">IP-based equity research and the Optical Alpha newsletter</a>
+          <a href="/business" aria-current="page">AI systems for businesses</a>
+          <a href="/firms">AI training and policy for firms</a>
+        </div>
+      </details>
+      <details data-menu name="site-menu">
+        <summary>Who we serve</summary>
+        <div data-menu-panel>
+          <div>WHO WE SERVE</div>
+          <a href="/#patents">Patent and IP teams</a>
+          <a href="/#research">Investors and analysts</a>
+          <a href="/business" aria-current="page">Small businesses</a>
+          <a href="/firms">Law, accounting, insurance and real estate firms</a>
+        </div>
+      </details>
+      <a href="/#about">About</a><a href="/portal">Portal</a>
       <a data-cta-ghost href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="border:1px solid var(--accent,#c9a15f);color:var(--accent-lt,#e9c98d);border-radius:2px;padding:9px 16px;">Book a free consult ↗</a>
     </div>
-  </div>
+  </nav>
   </div>
 
   <div data-pad="x" style="max-width:1240px;margin:0 auto;padding:96px 40px 40px;">
@@ -192,13 +239,34 @@
   </div>
 
 
-  <div style="border-top:1px solid rgba(244,238,227,.14);">
-    <div data-pad="x" style="max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:34px 40px;font:400 12.5px 'Instrument Sans',sans-serif;color:#988b7a;flex-wrap:wrap;gap:16px;">
-      <div style="font:700 12px 'Space Mono',monospace;letter-spacing:.22em;color:#d8cdba;">WOLFE&nbsp;INTELLIGENCE</div>
-      <div style="display:flex;gap:28px;"><a href="/">Home</a><a href="/business">Businesses</a><a href="/firms">For firms</a><a href="/portal">Portal</a></div>
-      <div style="font-family:'Space Mono',monospace;">Zachary Wolfe &middot; Lakeland, FL &middot; <a href="tel:+18137207924" style="color:inherit;">(813) 720-7924</a> &middot; © 2026 Wolfe Intelligence</div>
+  <footer style="border-top:1px solid rgba(244,238,227,.14);">
+    <div data-pad="x" data-grid="footer" style="max-width:1240px;margin:0 auto;padding:60px 40px 44px;display:grid;grid-template-columns:1.3fr 1fr 1fr .9fr;gap:36px 40px;font:400 12.5px 'Instrument Sans',sans-serif;color:#988b7a;">
+      <div>
+        <a href="/" style="display:inline-block;font:700 12px 'Space Mono',monospace;letter-spacing:.22em;color:#d8cdba;margin-bottom:16px;">WOLFE&nbsp;INTELLIGENCE</a>
+        <div style="font:400 12px/1.8 'Space Mono',monospace;">Zachary Wolfe<br>Lakeland, FL<br><a href="tel:+18137207924" style="color:inherit;">(813) 720-7924</a><br>© 2026 Wolfe Intelligence</div>
+      </div>
+      <div data-foot-col>
+        <div>WHAT WE DO</div>
+        <a href="/#patents">Patent search and analysis</a>
+        <a href="/#research">IP-based equity research and the Optical Alpha newsletter</a>
+        <a href="/business" aria-current="page">AI systems for businesses</a>
+        <a href="/firms">AI training and policy for firms</a>
+      </div>
+      <div data-foot-col>
+        <div>WHO WE SERVE</div>
+        <a href="/#patents">Patent and IP teams</a>
+        <a href="/#research">Investors and analysts</a>
+        <a href="/business" aria-current="page">Small businesses</a>
+        <a href="/firms">Law, accounting, insurance and real estate firms</a>
+      </div>
+      <div data-foot-col>
+        <div>START HERE</div>
+        <a href="https://calendar.app.google/U4v93mjmVGS14Kwp6" target="_blank" rel="noopener" style="color:var(--accent-lt,#e9c98d);">Book a free consult ↗</a>
+        <a href="/#about">About</a>
+        <a href="/portal">Portal</a>
+      </div>
     </div>
-  </div>
+  </footer>
 
 </div>
 </body></html>
