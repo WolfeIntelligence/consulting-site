@@ -113,7 +113,7 @@
     },
     {
       "@type": "Question",
-      "name": "Is the IP-based equity research investment advice?",
+      "name": "Is Optical Alpha, the IP-based equity research newsletter, investment advice?",
       "acceptedAnswer": { "@type": "Answer", "text": "No. It is research only: a reading of what public companies are actually building, taken from their patent claims and classifications, with every count traceable to the query that produced it. Zachary Wolfe is not a registered investment adviser. Do your own due diligence." }
     },
     {
@@ -230,6 +230,8 @@
   [data-guide-scroll]::-webkit-scrollbar{width:6px}[data-guide-scroll]::-webkit-scrollbar-thumb{background:rgba(201,161,95,.35);border-radius:3px}
   [data-guide-input]::placeholder{color:#988b7a}
   [data-guide-input]:focus{border-color:rgba(201,161,95,.6)!important}
+  [data-sub-input]::placeholder{color:#988b7a}
+  [data-sub-input]:focus{border-color:rgba(201,161,95,.6)!important}
   [data-guide-chip]:hover{border-color:var(--accent,#c9a15f)!important;color:var(--paper,#f4eee3)!important}
   @media (max-width:600px){
     [data-grid]{grid-template-columns:1fr!important}
@@ -327,7 +329,7 @@
       <div data-reveal data-stack="x" style="display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:52px;flex-wrap:wrap;">
         <div>
           <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:20px;">FOR INVESTORS AND ANALYSTS</div>
-          <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:20ch;">IP-based equity research.</h2>
+          <h2 style="font:400 clamp(30px,4.2vw,46px)/1.1 'Newsreader',serif;letter-spacing:-.01em;max-width:20ch;">IP-based equity research. The newsletter is Optical Alpha.</h2>
         </div>
         <p style="font:400 15px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:40ch;">The same read I do on patents, turned on public companies. Which companies are actually building what in the AI buildout, according to their claims rather than their press releases. Who is filing where, how fast, and whether the claims cover the thing the market says they cover.</p>
       </div>
@@ -338,7 +340,22 @@
         </div>
         <div data-reveal style="--d:80ms;">
           <h3 style="font:400 22px/1.25 'Newsreader',serif;margin-bottom:12px;">What you get</h3>
-          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">Written research on a company, a technology, or a whole space, in the arts I read: semiconductors, optics and photonics, imaging, power. One-off or on a schedule.</p>
+          <p style="font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;">Optical Alpha, the newsletter: written research on a company, a technology, or a whole space, in the arts I read. Semiconductors, optics and photonics, imaging, power. Custom reads for a fund or a desk are scoped on the consult.</p>
+        </div>
+      </div>
+      <div data-reveal style="margin-top:52px;border:1px solid rgba(201,161,95,.35);background:rgba(201,161,95,.05);padding:34px 36px;display:grid;grid-template-columns:1fr 1fr;gap:28px 48px;align-items:center;" data-grid="split">
+        <div>
+          <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:14px;">OPTICAL ALPHA &middot; THE NEWSLETTER</div>
+          <div style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:10px;">Get the research as it comes out.</div>
+          <p style="margin:0;font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:44ch;">Patent-record reads on the AI buildout: who is actually building what, with every count traceable. Free to start. Leave whenever you like.</p>
+        </div>
+        <div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <input data-sub-input value="{{ subEmail }}" sc-camel-on-change="{{ subSet }}" sc-camel-on-key-down="{{ subKey }}" sc-camel-max-length="160" type="email" autocomplete="email" placeholder="you@company.com" aria-label="Email address" style="flex:1;min-width:220px;background:rgba(0,0,0,.25);border:1px solid rgba(244,238,227,.18);border-radius:2px;color:var(--paper,#f4eee3);padding:14px 16px;font:400 15px 'Instrument Sans',sans-serif;outline:none;">
+            <button sc-camel-on-click="{{ subSend }}" style="{{ subBtnStyle }}">Subscribe</button>
+          </div>
+          <input value="{{ subHp }}" sc-camel-on-change="{{ subHpSet }}" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+          <p style="margin:12px 0 0;min-height:20px;font:400 13px/1.5 'Instrument Sans',sans-serif;color:#cabda8;">{{ subNote }}</p>
         </div>
       </div>
       <div data-reveal style="margin-top:44px;display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
@@ -475,9 +492,11 @@
 class Component extends DCLogic {
   state = {
     chatOpen: false, chatInput: '', chatBusy: false, chatMode: '', chatNudge: false, chatGlow: false, chatAsked: false,
+    subEmail: '', subHp: '', subBusy: false, subNote: '',
     chatMsgs: [{ from: 'w', text: "Hi — I'm the Site Guide. Ask me anything about Wolfe Intelligence: the patent work, the business work, what it costs, how the portal works. Pick a question or type your own." }],
   };
   componentDidMount() {
+    this.mountedAt = Date.now();
     this.applyTheme();
     this.startNudgeTimer();
     this.startReveal();
@@ -537,6 +556,25 @@ class Component extends DCLogic {
       : [];
     this.setState({ chatOpen: true, chatNudge: false, chatGlow: false, chatMsgs: [...this.state.chatMsgs, ...extra].slice(-40) });
   }
+  // Newsletter signup. The address goes to our own store; the owner is
+  // emailed. Nothing here promises a send date, because there is no issue
+  // published yet.
+  async subSend() {
+    if (this.state.subBusy) return;
+    const email = String(this.state.subEmail || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { this.setState({ subNote: 'That does not look like an email address.' }); return; }
+    this.setState({ subBusy: true, subNote: '' });
+    const fail = 'That did not go through. Email support@wolfeintelligence.com and I will add you by hand.';
+    try {
+      const r = await fetch('/api/subscribe', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, website: this.state.subHp, dwell: Date.now() - (this.mountedAt || 0), landing: location.pathname + location.search, referrer: document.referrer || '' }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ok) this.setState({ subBusy: false, subEmail: '', subNote: j.already ? 'You are already on the list.' : 'You are on the list.' });
+      else this.setState({ subBusy: false, subNote: fail });
+    } catch (e) { this.setState({ subBusy: false, subNote: fail }); }
+  }
   // Fixed answers, used only when the model cannot be reached.
   answer(q) {
     const t = q.toLowerCase();
@@ -546,7 +584,7 @@ class Component extends DCLogic {
     if (has('portal', 'login', 'log in', 'dashboard', 'client account')) return { text: 'The portal is each client\'s private page: inquiries from their website as they arrive, each step of their setup and whose turn it is, and results counted by source. Accounts get set up while I\'m working with you, not self-serve — but there\'s a sample portal you can walk through.', href: '/portal?tour=1', linkLabel: 'See the sample portal' };
     if (has('privacy', 'private', 'my data', 'data ', 'local', 'secure', 'security', 'key', 'credential', 'cloud', 'on prem')) return { text: 'Your assistant runs on your own machines or in your own accounts. Your logins and keys are encrypted on your device, I never see them, and your data stays with you.' };
     if (has("can't", 'cannot', 'cant', 'limit', 'not do', "won't", 'wont', 'trade', 'publish', 'guarantee', 'risk', 'autonomous')) return { text: "What it won't do: nothing gets posted or emailed on your behalf unless you said so. And I don't guarantee outcomes — I tell you what stage each piece is at, and nothing counts as finished until it's been used on a real job." };
-    if (has('equity', 'invest', 'stock', 'ticker', 'fund', 'analyst', 'buildout', 'market')) return { text: "IP-based equity research: the same read I do on patents, turned on public companies. Which companies are actually building what in the AI buildout, from their claims and classifications, with every count traceable to the query. Written research on a company, a technology or a space, in semiconductors, optics and photonics, imaging and power. Research only, not investment advice — I won't tell you what to buy or sell, and I don't discuss specific tickers here." };
+    if (has('equity', 'invest', 'stock', 'ticker', 'fund', 'analyst', 'buildout', 'market')) return { text: "IP-based equity research: the same read I do on patents, turned on public companies. Which companies are actually building what in the AI buildout, from their claims and classifications, with every count traceable to the query. The newsletter is Optical Alpha; you can subscribe in the Research section of the homepage. Custom reads for a fund or desk are scoped on the consult. Research only, not investment advice — I won't tell you what to buy or sell, and I don't discuss specific tickers here." };
     if (has('service', 'offer', 'install', 'set up', 'setup', 'agent', 'automat', 'research', 'coach', 'knowledge', 'flywheel', 'do for me', 'help me', 'can it', 'can you')) return { text: 'Three kinds of work. For patent and IP teams: prior-art and invalidity searching, classification and landscapes, and patent intake systems, in the electrical and physics arts. For investors and analysts: IP-based equity research, the same patent read turned on public companies. For businesses: a conversation about what you need, then the pieces worth building. The six for small businesses are at /business, and the workshop and policy work for law, accounting, insurance and real estate firms is at /firms.' };
     if (has('patent', 'prior art', 'invalidity', 'claim chart', 'uspto', 'ip team', 'landscape')) return { text: "I read about twenty patents a day for a living, in semiconductors, optics and imaging, measurement, power systems and lighting. For patent attorneys, agents and in-house IP teams I do prior-art and invalidity searching, classification and landscape work, and I build patent intake and analysis systems. I'm not a patent agent or an attorney, so it's search and analysis, never legal advice or an opinion on validity." };
     if (has('who', 'zach', 'founder', 'advisor', 'wake forest', 'background', 'about you')) return { text: "It's one person: me. Physics degree, electrical engineering background, and I read about twenty patents a day for a living. Wolfe Intelligence is that work with AI doing the heavy lifting, for IP teams and for businesses. I'm finishing my Master's in AI Strategy & Innovation at Wake Forest." };
@@ -638,6 +676,14 @@ class Component extends DCLogic {
       chatSet: (e) => this.setState({ chatInput: e.target.value }),
       chatKey: (e) => { if (e.key === 'Enter') this.sendQ(this.state.chatInput); },
       chatSend: () => this.sendQ(this.state.chatInput),
+      subEmail: s.subEmail,
+      subHp: s.subHp,
+      subNote: s.subNote,
+      subSet: (e) => this.setState({ subEmail: e.target.value }),
+      subHpSet: (e) => this.setState({ subHp: e.target.value }),
+      subKey: (e) => { if (e.key === 'Enter') this.subSend(); },
+      subSend: () => this.subSend(),
+      subBtnStyle: "border:0;background:var(--accent,#c9a15f);color:var(--ink,#241e19);padding:14px 24px;border-radius:2px;font:600 14.5px 'Instrument Sans',sans-serif;cursor:pointer;" + (s.subBusy ? 'opacity:.55;' : ''),
     };
   }
 }

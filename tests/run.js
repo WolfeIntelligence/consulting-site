@@ -39,6 +39,7 @@ global.fetch = async (url, opt) => {
 };
 
 const lead = require(path.join(__dirname, '..', 'api', 'lead.js'));
+const subscribe = require(path.join(__dirname, '..', 'api', 'subscribe.js'));
 const visit = require(path.join(__dirname, '..', 'api', 'visit.js'));
 const leadStatus = require(path.join(__dirname, '..', 'api', 'lead-status.js'));
 const apps = require(path.join(__dirname, '..', 'api', 'apps.js'));
@@ -438,6 +439,36 @@ const ok = (name, fn) => Promise.resolve().then(fn).then(() => { pass++; console
     assert.strictEqual(r.code, 200);
     assert.ok(await wsFor('legacy@client.test'), 'the operator looking was enough');
     assert.ok(r.body.workspaces.some((w) => w.name === 'Old Timer Paving'), 'and it is in the list they got back');
+  });
+
+  console.log('api/subscribe');
+  const subs = () => JSON.parse(store.get('subscribers') || '[]');
+  await ok('rejects a bad address', async () => {
+    const r = res(); await subscribe(req('POST', { email: 'not-an-email', dwell: 9000 }), r);
+    assert.strictEqual(r.code, 400); assert.strictEqual(subs().length, 0);
+  });
+  await ok('honeypot and fast submits answer ok, store nothing', async () => {
+    let r = res(); await subscribe(req('POST', { email: 'bot@x.test', website: 'spam', dwell: 9000 }), r);
+    assert.strictEqual(r.code, 200); assert.strictEqual(subs().length, 0);
+    r = res(); await subscribe(req('POST', { email: 'fast@x.test', dwell: 200 }), r);
+    assert.strictEqual(r.code, 200); assert.strictEqual(subs().length, 0);
+  });
+  await ok('stores the address, emails the owner, dedupes on repeat', async () => {
+    process.env.RESEND_API_KEY = 'rk';
+    const before = mails.length;
+    let r = res(); await subscribe(req('POST', { email: 'Reader@Fund.test', dwell: 9000, referrer: 'https://x.com/' }), r);
+    assert.strictEqual(r.code, 200); assert.strictEqual(r.body.ok, true); assert.strictEqual(r.body.count, 1);
+    assert.strictEqual(subs()[0].email, 'reader@fund.test', 'lowercased');
+    assert.strictEqual(mails.length, before + 1); assert.ok(mails[mails.length - 1].subject.includes('reader@fund.test'));
+    r = res(); await subscribe(req('POST', { email: 'reader@fund.test', dwell: 9000 }), r);
+    assert.strictEqual(r.body.already, true); assert.strictEqual(subs().length, 1);
+    assert.strictEqual(mails.length, before + 1, 'no second mail for a repeat');
+  });
+  await ok('no mail key: still stored', async () => {
+    delete process.env.RESEND_API_KEY;
+    const r = res(); await subscribe(req('POST', { email: 'quiet@fund.test', dwell: 9000 }), r);
+    assert.strictEqual(r.code, 200); assert.strictEqual(r.body.notified, false); assert.strictEqual(subs().length, 2);
+    process.env.RESEND_API_KEY = 'rk';
   });
 
   console.log('\n' + pass + ' passed' + (process.exitCode ? ', with failures' : ''));
