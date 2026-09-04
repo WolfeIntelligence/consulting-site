@@ -43,6 +43,7 @@
   "legalName": "Wolfe Holdings LLC",
   "url": "https://www.wolfeintelligence.com/",
   "email": "support@wolfeintelligence.com",
+  "sameAs": ["https://wolfeintelligence.substack.com/"],
   "description": "Patent search and analysis for patent and IP teams in the electrical and physics arts (prior-art and invalidity searching, classification and landscapes, patent intake and analysis systems), IP-based equity research for investors and analysts, and AI systems for businesses: private assistants, intake and follow-up automation, research systems, Google presence with every inquiry tracked, coaching, and AI training with written AI use policies for professional firms.",
   "areaServed": [
     { "@type": "City", "name": "Lakeland", "containedInPlace": { "@type": "AdministrativeArea", "name": "Polk County, Florida" } },
@@ -401,7 +402,7 @@
         <div>
           <div style="font:700 11px 'Space Mono',monospace;letter-spacing:.22em;color:var(--accent,#c9a15f);margin-bottom:14px;">OPTICAL ALPHA &middot; THE NEWSLETTER</div>
           <div style="font:400 24px/1.2 'Newsreader',serif;margin-bottom:10px;">Get the research as it comes out.</div>
-          <p style="margin:0;font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:44ch;">Patent-record reads on the AI buildout: who is actually building what, with every count traceable. Free to start. Leave whenever you like.</p>
+          <p style="margin:0;font:400 14.5px/1.6 'Instrument Sans',sans-serif;color:#b3a593;max-width:44ch;">Patent-record reads on the AI buildout: who is actually building what, with every count traceable. Free to start. Leave whenever you like. <a href="https://wolfeintelligence.substack.com" target="_blank" rel="noopener" style="color:var(--accent-lt,#e9c98d);border-bottom:1px solid var(--accent,#c9a15f);white-space:nowrap;">Read past issues &rarr;</a></p>
         </div>
         <div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -647,7 +648,10 @@ class Component extends DCLogic {
         body: JSON.stringify({ email, website: this.state.subHp, dwell: Date.now() - (this.mountedAt || 0), landing: location.pathname + location.search, referrer: document.referrer || '' }),
       });
       const j = await r.json().catch(() => ({}));
-      if (r.ok && j.ok) this.setState({ subBusy: false, subEmail: '', subNote: j.already ? 'You are already on the list.' : 'You are on the list.' });
+      if (r.ok && j.ok) {
+        this.setState({ subBusy: false, subEmail: '', subNote: 'Taking you to Substack to confirm your subscription.' });
+        setTimeout(() => location.assign('https://wolfeintelligence.substack.com/subscribe?email=' + encodeURIComponent(email)), 600);
+      }
       else this.setState({ subBusy: false, subNote: fail });
     } catch (e) { this.setState({ subBusy: false, subNote: fail }); }
   }
@@ -660,7 +664,7 @@ class Component extends DCLogic {
     if (has('portal', 'login', 'log in', 'dashboard', 'client account')) return { text: 'The portal is each client\'s private page: inquiries from their website as they arrive, each step of their setup and whose turn it is, and results counted by source. Accounts get set up while I\'m working with you, not self-serve — but there\'s a sample portal you can walk through.', href: '/portal?tour=1', linkLabel: 'See the sample portal' };
     if (has('privacy', 'private', 'my data', 'data ', 'local', 'secure', 'security', 'key', 'credential', 'cloud', 'on prem')) return { text: 'Your assistant runs on your own machines or in your own accounts. Your logins and keys are encrypted on your device, I never see them, and your data stays with you.' };
     if (has("can't", 'cannot', 'cant', 'limit', 'not do', "won't", 'wont', 'trade', 'publish', 'guarantee', 'risk', 'autonomous')) return { text: "What it won't do: nothing gets posted or emailed on your behalf unless you said so. And I don't guarantee outcomes — I tell you what stage each piece is at, and nothing counts as finished until it's been used on a real job." };
-    if (has('equity', 'invest', 'stock', 'ticker', 'fund', 'analyst', 'buildout', 'market')) return { text: "IP-based equity research: the same read I do on patents, turned on public companies. Which companies are actually building what in the AI buildout, from their claims and classifications, with every count traceable to the query. The newsletter is Optical Alpha; you can subscribe in the Research section of the homepage. Custom reads for a fund or desk are scoped on the consult. Research only, not investment advice — I won't tell you what to buy or sell, and I don't discuss specific tickers here." };
+    if (has('equity', 'invest', 'stock', 'ticker', 'fund', 'analyst', 'buildout', 'market')) return { text: "IP-based equity research: the same read I do on patents, turned on public companies. Which companies are actually building what in the AI buildout, from their claims and classifications, with every count traceable to the query. The newsletter is Optical Alpha, at wolfeintelligence.substack.com; you can subscribe in the Research section of the homepage or read past issues there. Custom reads for a fund or desk are scoped on the consult. Research only, not investment advice — I won't tell you what to buy or sell, and I don't discuss specific tickers here." };
     if (has('service', 'offer', 'install', 'set up', 'setup', 'agent', 'automat', 'research', 'coach', 'knowledge', 'flywheel', 'do for me', 'help me', 'can it', 'can you')) return { text: 'Three kinds of work. For patent and IP teams: prior-art and invalidity searching, classification and landscapes, and patent intake systems, in the electrical and physics arts. For investors and analysts: IP-based equity research, the same patent read turned on public companies. For businesses: a conversation about what you need, then the pieces worth building. The six for small businesses are at /business, and the workshop and policy work for law, accounting, insurance and real estate firms is at /firms.' };
     if (has('patent', 'prior art', 'invalidity', 'claim chart', 'uspto', 'ip team', 'landscape')) return { text: "I read about twenty patents a day for a living, in semiconductors, optics and imaging, measurement, power systems and lighting. For patent attorneys, agents and in-house IP teams I do prior-art and invalidity searching, classification and landscape work, and I build patent intake and analysis systems. I'm not a patent agent or an attorney, so it's search and analysis, never legal advice or an opinion on validity." };
     if (has('who', 'zach', 'founder', 'advisor', 'wake forest', 'background', 'about you')) return { text: "It's one person: me. Physics degree, electrical engineering background, and I read about twenty patents a day for a living. Wolfe Intelligence is that work with AI doing the heavy lifting, for IP teams and for businesses. I'm finishing my Master's in AI Strategy & Innovation at Wake Forest." };
